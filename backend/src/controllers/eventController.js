@@ -25,33 +25,29 @@ async function getEventById(req, res) {
 
 async function createEvent(req, res) {
   try {
-    const event = await eventService.createEvent(req.body)
+    const event = await eventService.createEvent(req.body, req.user.userId)
     return res.status(201).json(event)
   } catch (error) { return handleError(res, error) }
 }
 
 async function checkEventConflicts(req, res) {
-  try { return res.json({ conflicts: await eventService.checkEventConflicts(req.body) }) } catch (error) { return handleError(res, error) }
+  try { return res.json({ conflicts: await eventService.checkEventConflicts(req.body, req.user.userId) }) } catch (error) { return handleError(res, error) }
 }
 
 async function createEventAnyway(req, res) {
-  try { return res.status(201).json(await eventService.createEventAnyway(req.body)) } catch (error) { return handleError(res, error) }
+  try { return res.status(201).json(await eventService.createEventAnyway(req.body, req.user.userId)) } catch (error) { return handleError(res, error) }
 }
 
 async function updateEvent(req, res) {
   try {
-    const existing = await eventService.getEventById(req.params.eventId)
-    if (!existing) return res.status(404).json({ error: 'Event not found' })
-    const event = await eventService.saveEvent({ ...req.body, eventId: req.params.eventId })
+    const event = await eventService.saveEvent({ ...req.body, eventId: req.params.eventId }, req.user.userId)
     return res.json(event)
   } catch (error) { return handleError(res, error) }
 }
 
 async function deleteEvent(req, res) {
   try {
-    const existing = await eventService.getEventById(req.params.eventId)
-    if (!existing) return res.status(404).json({ error: 'Event not found' })
-    await eventService.deleteEvent(req.params.eventId)
+    await eventService.deleteEvent(req.params.eventId, req.user.userId)
     return res.status(204).send()
   } catch (error) { return handleError(res, error) }
 }
