@@ -21,6 +21,7 @@ export function useEventRequests() {
   const addInterest = useCallback(async (requestId) => {
     if (interestLoadingId || interestedIds.has(requestId)) return
     setInterestLoadingId(requestId)
+    setState((current) => ({ ...current, error: null }))
     try {
       const updatedRequest = await expressInterest(requestId)
       setInterestedIds((current) => new Set(current).add(requestId))
@@ -28,6 +29,8 @@ export function useEventRequests() {
         ...current,
         requests: current.requests.map((request) => request.requestId === requestId ? updatedRequest : request),
       }))
+    } catch (error) {
+      setState((current) => ({ ...current, error: error.message }))
     } finally {
       setInterestLoadingId(null)
     }
