@@ -24,8 +24,15 @@ async function checkAndThrow(proposedEvent) {
 
 async function saveConflicts(conflicts, eventId) {
   for (const conflict of conflicts) {
+    const {
+      activitySimilarity: _activitySimilarity,
+      activityDomain: _activityDomain,
+      activityReason: _activityReason,
+      ...persistedConflict
+    } = conflict
+
     await eventConflictRepository.saveConflict({
-      ...conflict,
+      ...persistedConflict,
       eventId,
       status: 'POTENTIAL',
       createdAt: Date.now(),
