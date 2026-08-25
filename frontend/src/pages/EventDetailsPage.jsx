@@ -1,12 +1,15 @@
 import { Link, useParams } from 'react-router-dom'
 import CategoryBadge from '../components/events/CategoryBadge.jsx'
 import EventStatusBadge from '../components/events/EventStatusBadge.jsx'
+import EventActions from '../components/events/EventActions.jsx'
 import { useEvent } from '../hooks/useEvent.js'
+import { useEventRSVP } from '../hooks/useEventRSVP.js'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
 
 export default function EventDetailsPage() {
   const { eventId } = useParams()
   const { status, event, error } = useEvent(eventId)
+  const rsvp = useEventRSVP(eventId)
 
   if (status === 'loading') {
     return <div className="state-card" role="status"><strong>Loading event…</strong><span>Retrieving event details.</span></div>
@@ -67,8 +70,20 @@ export default function EventDetailsPage() {
 
       <div className="event-details__rsvp" aria-label="RSVP count">
         <strong>{event.rsvpCount} {event.rsvpCount === 1 ? 'person is' : 'people are'} going!</strong>
-        <span>RSVP information is read-only in this phase.</span>
+        {rsvp.going && <span>You're on the list!</span>}
       </div>
+
+      <EventActions
+        event={event}
+        going={rsvp.going}
+        isBusy={rsvp.isBusy || rsvp.status === 'loading'}
+        onGoing={rsvp.setGoing}
+        onNotGoing={rsvp.setNotGoing}
+      />
+
+      {rsvp.status === 'loading' && <p className="action-message" role="status">Checking your RSVP status…</p>}
+      {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
+      {rsvp.action === 'idle' && rsvp.error && rsvp.status === 'ready' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
     </article>
   )
 }
