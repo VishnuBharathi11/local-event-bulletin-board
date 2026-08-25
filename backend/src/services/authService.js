@@ -1,11 +1,10 @@
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
 const crypto = require('node:crypto')
 const userRepository = require('../repositories/userRepository')
 const { validateRegistration, validateLogin, toPublicUser } = require('../models/userModel')
 
 const SESSION_COOKIE = 'eventhive_session'
 const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+const PASSWORD_SCRYPT = Object.freeze({ N: 16384, r: 8, p: 1, keyLength: 64 })
 
 function getJwtSecret() {
   const secret = process.env.AUTH_JWT_SECRET
@@ -17,24 +16,87 @@ function getJwtSecret() {
   return secret
 }
 
+function base64UrlEncode(value) {
+  return Buffer.from(value).toString('base64url')
+}
+
+function base64UrlDecode(value) {
+  return Buffer.from(value, 'base64url').toString('utf8')
+}
+
+function signJwt(payload) {
+  const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const body = base64UrlEncode(JSON.stringify(payload))
+  const unsigned = `${header}.${body}`
+  const signature = crypto.createHmac('sha256', getJwtSecret()).update(unsigned).digest('base64url')
+  return `${unsigned}.${signature}`
+}
+
+function verifyJwt(token) {
+  const parts = String(token || '').split('.')
+  if (parts.length !== 3) throw new Error('Invalid session token')
+
+  const [header, body, signature] = parts
+  let parsedHeader
+  let payload
+  try {
+    parsedHeader = JSON.parse(base64UrlDecode(header))
+    payload = JSON.parse(base64UrlDecode(body))
+  } catch {
+    throw new Error('Invalid session token')
+  }
+
+  if (parsedHeader.alg !== 'HS256' || parsedHeader.typ !== 'JWT') throw new Error('Invalid session token')
+
+  const expected = crypto.createHmac('sha256', getJwtSecret()).update(`${header}.${body}`).digest('base64url')
+  const receivedBuffer = Buffer.from(signature)
+  const expectedBuffer = Buffer.from(expected)
+  if (receivedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) throw new Error('Invalid session token')
+  if (payload.iss !== 'eventhive-api' || payload.aud !== 'eventhive-web') throw new Error('Invalid session token')
+  if (!Number.isSafeInteger(payload.exp) || payload.exp <= Math.floor(Date.now() / 1000)) throw new Error('Session expired')
+  if (!payload.sub) throw new Error('Invalid session token')
+  return payload
+}
+
 function createSessionToken(user) {
-  return jwt.sign({ sub: user.userId, jti: crypto.randomUUID() }, getJwtSecret(), {
-    expiresIn: '7d',
-    issuer: 'eventhive-api',
-    audience: 'eventhive-web',
+  const now = Math.floor(Date.now() / 1000)
+  return signJwt({ sub: user.userId, jti: crypto.randomUUID(), iat: now, exp: now + 7 * 24 * 60 * 60, iss: 'eventhive-api', aud: 'eventhive-web' })
+}
+
+function derivePassword(password, salt, options = PASSWORD_SCRYPT) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, options.keyLength, { N: options.N, r: options.r, p: options.p, maxmem: 64 * 1024 * 1024 }, (error, derivedKey) => {
+      if (error) reject(error)
+      else resolve(derivedKey)
+    })
   })
 }
 
-function verifySessionToken(token) {
-  return jwt.verify(token, getJwtSecret(), {
-    issuer: 'eventhive-api',
-    audience: 'eventhive-web',
-  })
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('base64url')
+  const derivedKey = await derivePassword(password, salt)
+  return `scrypt$${PASSWORD_SCRYPT.N}$${PASSWORD_SCRYPT.r}$${PASSWORD_SCRYPT.p}$${salt}$${derivedKey.toString('base64url')}`
+}
+
+async function verifyPassword(password, storedHash) {
+  const parts = String(storedHash || '').split('$')
+  if (parts.length !== 6 || parts[0] !== 'scrypt') return false
+  const [, n, r, p, salt, encodedHash] = parts
+  const options = { N: Number(n), r: Number(r), p: Number(p), keyLength: PASSWORD_SCRYPT.keyLength }
+  if (!Number.isInteger(options.N) || !Number.isInteger(options.r) || !Number.isInteger(options.p) || !salt || !encodedHash) return false
+
+  try {
+    const derivedKey = await derivePassword(password, salt, options)
+    const expected = Buffer.from(encodedHash, 'base64url')
+    return expected.length === derivedKey.length && crypto.timingSafeEqual(expected, derivedKey)
+  } catch {
+    return false
+  }
 }
 
 async function register(input) {
   const { name, email, password } = validateRegistration(input)
-  const passwordHash = await bcrypt.hash(password, 12)
+  const passwordHash = await hashPassword(password)
   try {
     const user = await userRepository.createUser({ name, email, passwordHash, createdAt: Date.now() })
     return { user: toPublicUser(user), token: createSessionToken(user) }
@@ -51,7 +113,7 @@ async function register(input) {
 async function login(input) {
   const { email, password } = validateLogin(input)
   const user = await userRepository.getUserByEmail(email)
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
     const error = new Error('Invalid email or password.')
     error.statusCode = 401
     throw error
@@ -68,8 +130,11 @@ async function getCurrentUser(userId) {
 module.exports = {
   SESSION_COOKIE,
   SESSION_MAX_AGE_MS,
+  PASSWORD_SCRYPT,
   createSessionToken,
-  verifySessionToken,
+  verifySessionToken: verifyJwt,
+  hashPassword,
+  verifyPassword,
   register,
   login,
   getCurrentUser,
