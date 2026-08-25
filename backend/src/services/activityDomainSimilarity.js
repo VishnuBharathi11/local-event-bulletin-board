@@ -73,17 +73,6 @@ const ACTIVITY_DOMAINS = Object.freeze({
   }),
 })
 
-const CATEGORY_DOMAIN = Object.freeze({
-  Sports: 'Sports',
-  Music: 'Music',
-  Food: 'Food',
-  Workshops: 'Technology / Workshop',
-  Meetups: 'Community',
-  'Student Events': 'Education',
-  'Garage Sale': 'Garage Sale',
-  Community: 'Community',
-})
-
 const STOP_WORDS = new Set([
   'a', 'an', 'the', 'and', 'or', 'in', 'on', 'at', 'to', 'for', 'with', 'by',
   'of', 'from', 'this', 'that', 'these', 'those', 'is', 'are', 'be', 'as',
@@ -96,7 +85,6 @@ const TOKEN_ALIASES = Object.freeze({
   crickets: 'cricket',
   basketballs: 'basketball',
   volleyballs: 'volleyball',
-  badminton: 'badminton',
   tournaments: 'tournament',
   matches: 'match',
   trainings: 'training',
@@ -177,27 +165,21 @@ function domainCoverage(terms1, terms2) {
   return 0.6 + (coverage * 0.4)
 }
 
-function selectActivityDomain(sharedTerms, terms1, terms2, category1, category2) {
-  if (sharedTerms.length > 0) {
-    const counts = new Map()
-    for (const token of sharedTerms) {
-      const domain = terms1.get(token)?.domain || terms2.get(token)?.domain
-      if (domain) counts.set(domain, (counts.get(domain) || 0) + 1)
-    }
-    const bestDomain = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
-    if (bestDomain) {
-      const labels = sharedTerms
-        .filter((token) => (terms1.get(token)?.domain || terms2.get(token)?.domain) === bestDomain)
-        .map((token) => terms1.get(token)?.label || terms2.get(token)?.label)
-      return labels.slice(0, 2).join(' ')
-    }
+function selectActivityDomain(sharedTerms, terms1, terms2) {
+  if (sharedTerms.length === 0) return 'Unknown / General'
+
+  const counts = new Map()
+  for (const token of sharedTerms) {
+    const domain = terms1.get(token)?.domain || terms2.get(token)?.domain
+    if (domain) counts.set(domain, (counts.get(domain) || 0) + 1)
   }
+  const bestDomain = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+  if (!bestDomain) return 'Unknown / General'
 
-  const domain1 = CATEGORY_DOMAIN[category1]
-  const domain2 = CATEGORY_DOMAIN[category2]
-  if (domain1 && domain1 === domain2) return domain1
-
-  return 'Unknown / General'
+  const labels = sharedTerms
+    .filter((token) => (terms1.get(token)?.domain || terms2.get(token)?.domain) === bestDomain)
+    .map((token) => terms1.get(token)?.label || terms2.get(token)?.label)
+  return labels.slice(0, 2).join(' ')
 }
 
 function calculateActivitySimilarity(event1 = {}, event2 = {}) {
@@ -219,8 +201,6 @@ function calculateActivitySimilarity(event1 = {}, event2 = {}) {
     focusedSharedTerms.length > 0 ? focusedSharedTerms : sharedTerms,
     terms1,
     terms2,
-    event1.category,
-    event2.category,
   )
 
   let activityReason = ''
