@@ -1,14 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getEventById } from '../services/eventService.js'
 
 export function useEvent(eventId) {
   const [state, setState] = useState({ status: 'loading', event: null, error: null })
 
+  const loadEvent = useCallback(async () => {
+    setState({ status: 'loading', event: null, error: null })
+    try {
+      const event = await getEventById(eventId)
+      setState({ status: event ? 'success' : 'not-found', event, error: null })
+      return event
+    } catch (error) {
+      setState({
+        status: error.message === 'Event not found' ? 'not-found' : 'error',
+        event: null,
+        error: error.message,
+      })
+      return null
+    }
+  }, [eventId])
+
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      setState({ status: 'loading', event: null, error: null })
       try {
         const event = await getEventById(eventId)
         if (!cancelled) {
@@ -25,9 +40,10 @@ export function useEvent(eventId) {
       }
     }
 
+    setState({ status: 'loading', event: null, error: null })
     load()
     return () => { cancelled = true }
   }, [eventId])
 
-  return state
+  return { ...state, reload: loadEvent }
 }
