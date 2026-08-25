@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ConflictReview from '../components/ConflictReview.jsx'
 import { confirmEventRequest, confirmEventRequestAnyway, declineEventRequest, expressInterest, getEventRequestById, getInterestStatus } from '../services/eventRequestService.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
 import {
   getDemandCount,
@@ -13,12 +14,12 @@ import {
 } from '../utils/eventRequestPresentation.js'
 import '../styles/communityRequests.css'
 
-const DEVELOPMENT_USER_ID = 'dev_user'
 const statusLabels = { COLLECTING_DEMAND: 'Collecting Demand', THRESHOLD_REACHED: 'Threshold Reached', CONFIRMED: 'Confirmed', DECLINED: 'Declined' }
 
 export default function EventRequestDetailsPage() {
   const { requestId } = useParams()
   const navigate = useNavigate()
+  const { authenticated, currentUser } = useAuth()
   const [request, setRequest] = useState(null)
   const [interested, setInterested] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -32,13 +33,15 @@ export default function EventRequestDetailsPage() {
       setLoading(true)
       setError(null)
       try {
-        const [requestData, interestData] = await Promise.all([getEventRequestById(requestId), getInterestStatus(requestId)])
+        const requestData = await getEventRequestById(requestId)
+        let interestData = { interested: false }
+        if (authenticated) interestData = await getInterestStatus(requestId)
         if (!cancelled) { setRequest(requestData); setInterested(Boolean(interestData.interested)) }
       } catch (loadError) { if (!cancelled) setError(loadError.message) } finally { if (!cancelled) setLoading(false) }
     }
     load()
     return () => { cancelled = true }
-  }, [requestId])
+  }, [requestId, authenticated])
 
   async function handleInterest() {
     setAction('interest'); setError(null)
@@ -85,7 +88,7 @@ export default function EventRequestDetailsPage() {
   const progress = getDemandProgress(request)
   const demandMessage = getDemandMessage(request)
   const demandState = getDemandStateLabel(request.status)
-  const isOrganizer = request.organizerId === DEVELOPMENT_USER_ID
+  const isOrganizer = authenticated && currentUser?.userId === request.organizerId
   const canReview = isOrganizer && request.status === 'THRESHOLD_REACHED'
 
   return (
@@ -94,9 +97,7 @@ export default function EventRequestDetailsPage() {
 
       <div className="request-card__topline">
         <span className="request-card__category">{request.category}</span>
-        <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>
-          {statusLabels[request.status] || request.status}
-        </span>
+        <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>{statusLabels[request.status] || request.status}</span>
       </div>
 
       <h1>{request.title}</h1>
@@ -115,22 +116,15 @@ export default function EventRequestDetailsPage() {
 
       <section className="request-details__demand" aria-label="Community demand">
         <div className="request-details__demand-heading">
-          <div>
-            <p className="eyebrow">Demand intelligence</p>
-            <h2>Community Demand</h2>
-          </div>
+          <div><p className="eyebrow">Demand intelligence</p><h2>Community Demand</h2></div>
           <strong>{Math.round(demandPercentage)}%</strong>
         </div>
         <p className="request-details__demand-count"><strong>{demandCount} / {demandThreshold}</strong> people interested</p>
-        <div className="demand-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} aria-label="Community demand progress">
-          <span style={{ width: `${progress * 100}%` }} />
-        </div>
-        <div className="request-details__demand-state">
-          <strong>{demandState}</strong>
-          <span>{demandMessage}</span>
-        </div>
+        <div className="demand-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} aria-label="Community demand progress"><span style={{ width: `${progress * 100}%` }} /></div>
+        <div className="request-details__demand-state"><strong>{demandState}</strong><span>{demandMessage}</span></div>
         <div className="request-details__actions">
-          {request.status === 'COLLECTING_DEMAND' && <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>{action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}</button>}
+          {request.status === 'COLLECTING_DEMAND' && authenticated && <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>{action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}</button>}
+          {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span>Sign in to express interest.</span><Link className="primary-button" to="/login">Login</Link></>}
           {request.status === 'THRESHOLD_REACHED' && <strong>Threshold reached — organizer review is now available.</strong>}
           {request.status === 'CONFIRMED' && <strong>This request has been confirmed and is now a published event.</strong>}
           {request.status === 'DECLINED' && <strong>This request was declined by the organizer.</strong>}
@@ -150,14 +144,7 @@ export default function EventRequestDetailsPage() {
         </section>
       )}
 
-      {conflicts.length > 0 && (
-        <ConflictReview
-          conflicts={conflicts}
-          onCancel={() => setConflicts([])}
-          onContinue={handleContinueAnyway}
-          continuing={action === 'continue'}
-        />
-      )}
+      {conflicts.length > 0 && <ConflictReview conflicts={conflicts} onCancel={() => setConflicts([])} onContinue={handleContinueAnyway} continuing={action === 'continue'} />}
     </section>
   )
 }
