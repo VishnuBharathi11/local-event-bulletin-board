@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { shareEvent } from '../../utils/eventShare.js'
+import '../../styles/eventActions.css'
 
 export default function EventActions({ event, going, isBusy, onGoing, onNotGoing }) {
   const [shareState, setShareState] = useState({ status: 'idle', message: '' })
