@@ -1,6 +1,11 @@
 const eventService = require('../services/eventService')
 
 function handleError(res, error) {
+  if (error.statusCode) {
+    const body = { error: error.message }
+    if (error.conflicts) body.conflicts = error.conflicts
+    return res.status(error.statusCode).json(body)
+  }
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
   console.error('Event API error:', error)
   return res.status(500).json({ error: 'Event data operation failed' })
@@ -25,6 +30,14 @@ async function createEvent(req, res) {
   } catch (error) { return handleError(res, error) }
 }
 
+async function checkEventConflicts(req, res) {
+  try { return res.json({ conflicts: await eventService.checkEventConflicts(req.body) }) } catch (error) { return handleError(res, error) }
+}
+
+async function createEventAnyway(req, res) {
+  try { return res.status(201).json(await eventService.createEventAnyway(req.body)) } catch (error) { return handleError(res, error) }
+}
+
 async function updateEvent(req, res) {
   try {
     const existing = await eventService.getEventById(req.params.eventId)
@@ -43,4 +56,4 @@ async function deleteEvent(req, res) {
   } catch (error) { return handleError(res, error) }
 }
 
-module.exports = { getEvents, getEventById, createEvent, updateEvent, deleteEvent }
+module.exports = { getEvents, getEventById, createEvent, checkEventConflicts, createEventAnyway, updateEvent, deleteEvent }

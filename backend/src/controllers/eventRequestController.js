@@ -1,7 +1,11 @@
 const eventRequestService = require('../services/eventRequestService')
 
 function handleError(res, error) {
-  if (error.statusCode) return res.status(error.statusCode).json({ error: error.message })
+  if (error.statusCode) {
+    const body = { error: error.message }
+    if (error.conflicts) body.conflicts = error.conflicts
+    return res.status(error.statusCode).json(body)
+  }
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
   if (error.message === 'Event request not found') return res.status(404).json({ error: error.message })
   console.error('Event Request API error:', error)
@@ -21,9 +25,7 @@ async function getEventRequestById(req, res) {
 }
 
 async function createEventRequest(req, res) {
-  try {
-    return res.status(201).json(await eventRequestService.createEventRequest(req.body))
-  } catch (error) { return handleError(res, error) }
+  try { return res.status(201).json(await eventRequestService.createEventRequest(req.body)) } catch (error) { return handleError(res, error) }
 }
 
 async function getInterestStatus(req, res) {
@@ -35,22 +37,19 @@ async function getInterestStatus(req, res) {
 }
 
 async function expressInterest(req, res) {
-  try {
-    const request = await eventRequestService.expressInterest(req.params.requestId)
-    return res.json(request)
-  } catch (error) { return handleError(res, error) }
+  try { return res.json(await eventRequestService.expressInterest(req.params.requestId)) } catch (error) { return handleError(res, error) }
 }
 
 async function confirmEventRequest(req, res) {
-  try {
-    return res.status(201).json(await eventRequestService.confirmEventRequest(req.params.requestId))
-  } catch (error) { return handleError(res, error) }
+  try { return res.status(201).json(await eventRequestService.confirmEventRequest(req.params.requestId)) } catch (error) { return handleError(res, error) }
+}
+
+async function confirmEventRequestAnyway(req, res) {
+  try { return res.status(201).json(await eventRequestService.confirmEventRequestAnyway(req.params.requestId)) } catch (error) { return handleError(res, error) }
 }
 
 async function declineEventRequest(req, res) {
-  try {
-    return res.json(await eventRequestService.declineEventRequest(req.params.requestId))
-  } catch (error) { return handleError(res, error) }
+  try { return res.json(await eventRequestService.declineEventRequest(req.params.requestId)) } catch (error) { return handleError(res, error) }
 }
 
 module.exports = {
@@ -60,5 +59,6 @@ module.exports = {
   getInterestStatus,
   expressInterest,
   confirmEventRequest,
+  confirmEventRequestAnyway,
   declineEventRequest,
 }

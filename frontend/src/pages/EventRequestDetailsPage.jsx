@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { confirmEventRequest, declineEventRequest, expressInterest, getEventRequestById, getInterestStatus } from '../services/eventRequestService.js'
+import ConflictReview from '../components/ConflictReview.jsx'
+import { confirmEventRequest, confirmEventRequestAnyway, declineEventRequest, expressInterest, getEventRequestById, getInterestStatus } from '../services/eventRequestService.js'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
 import '../styles/communityRequests.css'
 
@@ -15,6 +16,7 @@ export default function EventRequestDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [action, setAction] = useState(null)
   const [error, setError] = useState(null)
+  const [conflicts, setConflicts] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -39,14 +41,30 @@ export default function EventRequestDetailsPage() {
 
   async function handleConfirm() {
     setAction('confirm'); setError(null)
-    try { const event = await confirmEventRequest(requestId); navigate(`/events/${encodeURIComponent(event.eventId)}`) }
-    catch (actionError) { setError(actionError.message); setAction(null) }
+    try {
+      const event = await confirmEventRequest(requestId)
+      navigate(`/events/${encodeURIComponent(event.eventId)}`)
+    } catch (actionError) {
+      if (actionError.status === 409 && actionError.conflicts?.length) setConflicts(actionError.conflicts)
+      else setError(actionError.message)
+    } finally { setAction(null) }
+  }
+
+  async function handleContinueAnyway() {
+    setAction('continue'); setError(null)
+    try {
+      const event = await confirmEventRequestAnyway(requestId)
+      setConflicts([])
+      navigate(`/events/${encodeURIComponent(event.eventId)}`)
+    } catch (actionError) { setError(actionError.message) }
+    finally { setAction(null) }
   }
 
   async function handleDecline() {
     setAction('decline'); setError(null)
     try { await declineEventRequest(requestId); navigate('/community-requests') }
-    catch (actionError) { setError(actionError.message); setAction(null) }
+    catch (actionError) { setError(actionError.message) }
+    finally { setAction(null) }
   }
 
   if (loading) return <div className="state-card" role="status"><strong>Loading request…</strong><span>Retrieving request details.</span></div>
@@ -84,10 +102,19 @@ export default function EventRequestDetailsPage() {
           <h2>Organizer Review</h2>
           <p>The demand threshold has been reached. Confirming creates the existing Event model as a published event; declining closes the request.</p>
           <div className="request-details__actions">
-            <button className="primary-button" type="button" disabled={action !== null} onClick={handleConfirm}>{action === 'confirm' ? 'Confirming…' : 'Confirm Event'}</button>
+            <button className="primary-button" type="button" disabled={action !== null} onClick={handleConfirm}>{action === 'confirm' ? 'Checking…' : 'Confirm Event'}</button>
             <button className="button-danger" type="button" disabled={action !== null} onClick={handleDecline}>{action === 'decline' ? 'Declining…' : 'Decline'}</button>
           </div>
         </section>
+      )}
+
+      {conflicts.length > 0 && (
+        <ConflictReview
+          conflicts={conflicts}
+          onCancel={() => setConflicts([])}
+          onContinue={handleContinueAnyway}
+          continuing={action === 'continue'}
+        />
       )}
     </section>
   )

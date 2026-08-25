@@ -9,10 +9,7 @@ export function getEventRequestById(requestId) {
 }
 
 export function createEventRequest(request) {
-  return apiRequest('/event-requests', {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
+  return apiRequest('/event-requests', { method: 'POST', body: JSON.stringify(request) })
 }
 
 export function getInterestStatus(requestId) {
@@ -25,6 +22,10 @@ export function expressInterest(requestId) {
 
 export function confirmEventRequest(requestId) {
   return apiRequest(`/event-requests/${encodeURIComponent(requestId)}/confirm`, { method: 'POST' })
+}
+
+export function confirmEventRequestAnyway(requestId) {
+  return apiRequest(`/event-requests/${encodeURIComponent(requestId)}/confirm-anyway`, { method: 'POST' })
 }
 
 export function declineEventRequest(requestId) {

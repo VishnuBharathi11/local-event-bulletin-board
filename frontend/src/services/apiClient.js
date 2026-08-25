@@ -19,7 +19,10 @@ export async function apiRequest(path, options = {}) {
   try { payload = await response.json() } catch { /* empty response */ }
 
   if (!response.ok) {
-    throw new Error(payload?.error || `API request failed with status ${response.status}`)
+    const error = new Error(payload?.error || `API request failed with status ${response.status}`)
+    error.status = response.status
+    error.conflicts = payload?.conflicts || []
+    throw error
   }
 
   return payload

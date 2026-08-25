@@ -6,6 +6,7 @@ const {
   getInterestStatus,
   expressInterest,
   confirmEventRequest,
+  confirmEventRequestAnyway,
   declineEventRequest,
 } = require('../controllers/eventRequestController')
 
@@ -17,6 +18,7 @@ router.post('/event-requests', createEventRequest)
 router.get('/event-requests/:requestId/interest', getInterestStatus)
 router.post('/event-requests/:requestId/interest', expressInterest)
 router.post('/event-requests/:requestId/confirm', confirmEventRequest)
+router.post('/event-requests/:requestId/confirm-anyway', confirmEventRequestAnyway)
 router.post('/event-requests/:requestId/decline', declineEventRequest)
 
 module.exports = router

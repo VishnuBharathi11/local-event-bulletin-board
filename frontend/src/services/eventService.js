@@ -15,14 +15,13 @@ async function request(path, options = {}) {
   }
 
   let payload = null
-  try {
-    payload = await response.json()
-  } catch {
-    // Empty responses, such as DELETE 204, are valid.
-  }
+  try { payload = await response.json() } catch { /* empty response */ }
 
   if (!response.ok) {
-    throw new Error(payload?.error || 'The event service returned an unexpected error.')
+    const error = new Error(payload?.error || 'The event service returned an unexpected error.')
+    error.status = response.status
+    error.conflicts = payload?.conflicts || []
+    throw error
   }
 
   return payload
@@ -37,8 +36,13 @@ export function getEventById(eventId) {
 }
 
 export function createEvent(event) {
-  return request('/events', {
-    method: 'POST',
-    body: JSON.stringify(event),
-  })
+  return request('/events', { method: 'POST', body: JSON.stringify(event) })
+}
+
+export function checkEventConflicts(event) {
+  return request('/events/conflicts/check', { method: 'POST', body: JSON.stringify(event) })
+}
+
+export function continueEventCreation(event) {
+  return request('/events/conflicts/continue', { method: 'POST', body: JSON.stringify(event) })
 }
