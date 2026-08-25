@@ -25,31 +25,31 @@ async function getEventRequestById(req, res) {
 }
 
 async function createEventRequest(req, res) {
-  try { return res.status(201).json(await eventRequestService.createEventRequest(req.body)) } catch (error) { return handleError(res, error) }
+  try { return res.status(201).json(await eventRequestService.createEventRequest(req.body, req.user.userId)) } catch (error) { return handleError(res, error) }
 }
 
 async function getInterestStatus(req, res) {
   try {
     const request = await eventRequestService.getEventRequestById(req.params.requestId)
     if (!request) return res.status(404).json({ error: 'Event request not found' })
-    return res.json({ interested: await eventRequestService.getInterestStatus(req.params.requestId) })
+    return res.json({ interested: await eventRequestService.getInterestStatus(req.params.requestId, req.user.userId) })
   } catch (error) { return handleError(res, error) }
 }
 
 async function expressInterest(req, res) {
-  try { return res.json(await eventRequestService.expressInterest(req.params.requestId)) } catch (error) { return handleError(res, error) }
+  try { return res.json(await eventRequestService.expressInterest(req.params.requestId, req.user.userId)) } catch (error) { return handleError(res, error) }
 }
 
 async function confirmEventRequest(req, res) {
-  try { return res.status(201).json(await eventRequestService.confirmEventRequest(req.params.requestId)) } catch (error) { return handleError(res, error) }
+  try { return res.status(201).json(await eventRequestService.confirmEventRequest(req.params.requestId, req.user.userId)) } catch (error) { return handleError(res, error) }
 }
 
 async function confirmEventRequestAnyway(req, res) {
-  try { return res.status(201).json(await eventRequestService.confirmEventRequestAnyway(req.params.requestId)) } catch (error) { return handleError(res, error) }
+  try { return res.status(201).json(await eventRequestService.confirmEventRequestAnyway(req.params.requestId, req.user.userId)) } catch (error) { return handleError(res, error) }
 }
 
 async function declineEventRequest(req, res) {
-  try { return res.json(await eventRequestService.declineEventRequest(req.params.requestId)) } catch (error) { return handleError(res, error) }
+  try { return res.json(await eventRequestService.declineEventRequest(req.params.requestId, req.user.userId)) } catch (error) { return handleError(res, error) }
 }
 
 module.exports = {
