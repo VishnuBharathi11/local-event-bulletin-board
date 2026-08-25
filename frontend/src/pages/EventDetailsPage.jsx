@@ -8,7 +8,7 @@ import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
 
 export default function EventDetailsPage() {
   const { eventId } = useParams()
-  const { status, event, error } = useEvent(eventId)
+  const { status, event, error, reload } = useEvent(eventId)
   const rsvp = useEventRSVP(eventId)
 
   if (status === 'loading') {
@@ -33,6 +33,16 @@ export default function EventDetailsPage() {
         <Link className="secondary-link" to="/">Back to Event Board</Link>
       </div>
     )
+  }
+
+  async function handleGoing() {
+    const success = await rsvp.setGoing()
+    if (success) await reload()
+  }
+
+  async function handleNotGoing() {
+    const success = await rsvp.setNotGoing()
+    if (success) await reload()
   }
 
   return (
@@ -77,8 +87,8 @@ export default function EventDetailsPage() {
         event={event}
         going={rsvp.going}
         isBusy={rsvp.isBusy || rsvp.status === 'loading'}
-        onGoing={rsvp.setGoing}
-        onNotGoing={rsvp.setNotGoing}
+        onGoing={handleGoing}
+        onNotGoing={handleNotGoing}
       />
 
       {rsvp.status === 'loading' && <p className="action-message" role="status">Checking your RSVP status…</p>}
