@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+.gradle_home/
+
+# Android SDK/local caches
+.android_home/
+
+# Build output
+build/
+**/build/
+
+# IDE
+.idea/
+*.iml
+
+# Local configuration
+local.properties
+
+# APK
+*.apk
+*.aab

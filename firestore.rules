@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{eventId} {
+      // Phase 2: Open read/write for development.
+      // Future phases should restrict write access to authenticated users.
+      allow read, write: if true;
+    }
+  }
+}
