@@ -8,11 +8,7 @@ const authService = require('../src/services/authService')
 const { validateRegistration, validateLogin, normalizeEmail, toPublicUser } = require('../src/models/userModel')
 const { parseCookies } = require('../src/middleware/authMiddleware')
 
-const originalRepository = {
-  createUser: userRepository.createUser,
-  getUserByEmail: userRepository.getUserByEmail,
-  getUserById: userRepository.getUserById,
-}
+const originalRepository = { createUser: userRepository.createUser, getUserByEmail: userRepository.getUserByEmail, getUserById: userRepository.getUserById }
 
 function fakeUser(overrides = {}) {
   return { userId: 'user-a', name: 'User A', email: 'user@example.com', passwordHash: '', createdAt: 1000, ...overrides }
@@ -20,9 +16,7 @@ function fakeUser(overrides = {}) {
 
 function fakeResponse() {
   return {
-    statusCode: 200,
-    body: null,
-    headers: {},
+    statusCode: 200, body: null, headers: {},
     status(code) { this.statusCode = code; return this },
     json(body) { this.body = body; return this },
     setHeader(name, value) { this.headers[name] = value; return this },
@@ -35,9 +29,7 @@ async function withRepository(stubs, callback) {
   try { return await callback() } finally { Object.assign(userRepository, originalRepository) }
 }
 
-test('1. valid registration input is accepted', () => {
-  assert.deepEqual(validateRegistration({ name: ' User ', email: ' USER@Example.COM ', password: 'password8' }), { name: 'User', email: 'user@example.com', password: 'password8' })
-})
+test('1. valid registration input is accepted', () => assert.deepEqual(validateRegistration({ name: ' User ', email: ' USER@Example.COM ', password: 'password8' }), { name: 'User', email: 'user@example.com', password: 'password8' }))
 test('2. registration rejects missing name', () => assert.throws(() => validateRegistration({ email: 'user@example.com', password: 'password8' }), /Name is required/))
 test('3. registration rejects missing email', () => assert.throws(() => validateRegistration({ name: 'User', password: 'password8' }), /Email is required/))
 test('4. registration rejects invalid email', () => assert.throws(() => validateRegistration({ name: 'User', email: 'not-an-email', password: 'password8' }), /Invalid email address/))
@@ -48,7 +40,7 @@ test('8. valid login input is accepted', () => assert.deepEqual(validateLogin({ 
 test('9. invalid login input produces a generic authentication error', () => assert.throws(() => validateLogin({ email: 'bad', password: 'password8' }), /Invalid email or password/))
 test('10. public user projection contains only MVP fields', () => assert.deepEqual(toPublicUser(fakeUser({ passwordHash: 'secret-hash' })), { userId: 'user-a', name: 'User A', email: 'user@example.com' }))
 
-test('11. registration creates a bcrypt password hash', async () => {
+test('11. registration creates a scrypt password hash', async () => {
   await withRepository({ createUser: async (user) => ({ ...user, userId: 'user-a' }) }, async () => {
     const result = await authService.register({ name: 'User A', email: 'hash@example.com', password: 'password8' })
     assert.equal(result.user.passwordHash, undefined)
@@ -73,8 +65,7 @@ test('14. duplicate email maps to conflict', async () => {
   })
 })
 test('15. valid login verifies the password and returns the user', async () => {
-  const bcrypt = require('bcryptjs')
-  const passwordHash = await bcrypt.hash('password8', 4)
+  const passwordHash = await authService.hashPassword('password8')
   await withRepository({ getUserByEmail: async () => fakeUser({ passwordHash }) }, async () => {
     const result = await authService.login({ email: 'user@example.com', password: 'password8' })
     assert.deepEqual(result.user, { userId: 'user-a', name: 'User A', email: 'user@example.com' })
