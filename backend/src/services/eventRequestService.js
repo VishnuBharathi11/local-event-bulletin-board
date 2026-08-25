@@ -1,5 +1,4 @@
 const eventRequestRepository = require('../repositories/eventRequestRepository')
-const { getDevelopmentUserId } = require('../config/developmentUser')
 const { validateEventRequestForCreation } = require('../models/eventRequestModel')
 const { normalizeEvent } = require('../models/eventModel')
 const conflictService = require('./conflictService')
@@ -12,28 +11,28 @@ async function getEventRequestById(requestId) {
   return eventRequestRepository.getEventRequestById(requestId)
 }
 
-async function createEventRequest(input) {
-  const request = validateEventRequestForCreation(input, getDevelopmentUserId())
+async function createEventRequest(input, userId) {
+  const request = validateEventRequestForCreation(input, userId)
   return eventRequestRepository.createEventRequest(request)
 }
 
-async function getInterestStatus(requestId) {
-  return eventRequestRepository.hasUserExpressedInterest(requestId, getDevelopmentUserId())
+async function getInterestStatus(requestId, userId) {
+  return eventRequestRepository.hasUserExpressedInterest(requestId, userId)
 }
 
-async function expressInterest(requestId) {
-  return eventRequestRepository.expressInterest(requestId, getDevelopmentUserId())
+async function expressInterest(requestId, userId) {
+  return eventRequestRepository.expressInterest(requestId, userId)
 }
 
-async function assertOrganizer(requestId) {
+async function assertOrganizer(requestId, userId) {
   const request = await eventRequestRepository.getEventRequestById(requestId)
   if (!request) {
     const error = new Error('Event request not found')
     error.statusCode = 404
     throw error
   }
-  if (request.organizerId !== getDevelopmentUserId()) {
-    const error = new Error('Only the request organizer can perform this action')
+  if (request.organizerId !== userId) {
+    const error = new Error('You are not authorized to perform this action.')
     error.statusCode = 403
     throw error
   }
@@ -60,8 +59,8 @@ function requestToConflictEvent(request) {
   })
 }
 
-async function confirmEventRequest(requestId) {
-  const request = await assertOrganizer(requestId)
+async function confirmEventRequest(requestId, userId) {
+  const request = await assertOrganizer(requestId, userId)
   if (request.status !== 'THRESHOLD_REACHED') {
     const error = new Error('Event request must reach the demand threshold before confirmation')
     error.statusCode = 409
@@ -79,8 +78,8 @@ async function confirmEventRequest(requestId) {
   return eventRequestRepository.confirmEventRequest(requestId)
 }
 
-async function confirmEventRequestAnyway(requestId) {
-  const request = await assertOrganizer(requestId)
+async function confirmEventRequestAnyway(requestId, userId) {
+  const request = await assertOrganizer(requestId, userId)
   if (request.status !== 'THRESHOLD_REACHED') {
     const error = new Error('Event request must reach the demand threshold before confirmation')
     error.statusCode = 409
@@ -89,8 +88,8 @@ async function confirmEventRequestAnyway(requestId) {
   return eventRequestRepository.confirmEventRequest(requestId)
 }
 
-async function declineEventRequest(requestId) {
-  const request = await assertOrganizer(requestId)
+async function declineEventRequest(requestId, userId) {
+  const request = await assertOrganizer(requestId, userId)
   if (request.status !== 'THRESHOLD_REACHED') {
     const error = new Error('Event request must reach the demand threshold before decline')
     error.statusCode = 409
