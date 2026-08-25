@@ -78,7 +78,7 @@ const CATEGORY_DOMAIN = Object.freeze({
   Music: 'Music',
   Food: 'Food',
   Workshops: 'Technology / Workshop',
-  Meetups: 'Meetup',
+  Meetups: 'Community',
   'Student Events': 'Education',
   'Garage Sale': 'Garage Sale',
   Community: 'Community',
@@ -101,7 +101,6 @@ const TOKEN_ALIASES = Object.freeze({
   matches: 'match',
   trainings: 'training',
   workouts: 'fitness',
-  singing: 'singing',
   concerts: 'concert',
   bands: 'band',
   guitars: 'guitar',
@@ -113,7 +112,6 @@ const TOKEN_ALIASES = Object.freeze({
   workshops: 'workshop',
   coders: 'coding',
   programs: 'programming',
-  programming: 'programming',
   technologies: 'technology',
   softwares: 'software',
   meetups: 'meetup',
@@ -131,11 +129,17 @@ const TOKEN_ALIASES = Object.freeze({
   markets: 'market',
 })
 
+const BROAD_DOMAIN_TERMS = new Set([
+  'tournament', 'match', 'training', 'fitness', 'performance', 'workshop',
+  'technology', 'web', 'software', 'community', 'discussion', 'social',
+  'student', 'college', 'campus', 'academic', 'sale', 'market', 'festival',
+])
+
 function normalizeActivityTokens(text) {
   return String(text ?? '')
     .toLocaleLowerCase()
-    .replace(/[^a-z0-9\\s]/g, ' ')
-    .split(/\\s+/)
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
     .map((token) => TOKEN_ALIASES[token] || token)
     .filter((token) => token && !STOP_WORDS.has(token))
     .reduce((tokens, token) => tokens.add(token), new Set())
@@ -146,7 +150,7 @@ function getDomainTerms(tokens) {
   for (const [domain, vocabulary] of Object.entries(ACTIVITY_DOMAINS)) {
     for (const token of tokens) {
       if (Object.prototype.hasOwnProperty.call(vocabulary, token)) {
-        terms.set(token, { domain, label: vocabulary[token] })
+        terms.set(token, { domain, label: vocabulary[token], broad: BROAD_DOMAIN_TERMS.has(token) })
       }
     }
   }
@@ -161,10 +165,16 @@ function jaccardSimilarity(tokens1, tokens2) {
 }
 
 function domainCoverage(terms1, terms2) {
-  if (terms1.size === 0 || terms2.size === 0) return 0
-  const shared = [...terms1.keys()].filter((token) => terms2.has(token)).length
-  const smallerSetSize = Math.min(terms1.size, terms2.size)
-  return smallerSetSize === 0 ? 0 : shared / smallerSetSize
+  const focused1 = new Map([...terms1].filter(([, term]) => !term.broad))
+  const focused2 = new Map([...terms2].filter(([, term]) => !term.broad))
+  if (focused1.size === 0 || focused2.size === 0) return 0
+
+  const shared = [...focused1.keys()].filter((token) => focused2.has(token)).length
+  if (shared === 0) return 0
+
+  const smallerSetSize = Math.min(focused1.size, focused2.size)
+  const coverage = shared / smallerSetSize
+  return 0.6 + (coverage * 0.4)
 }
 
 function selectActivityDomain(sharedTerms, terms1, terms2, category1, category2) {
@@ -198,14 +208,15 @@ function calculateActivitySimilarity(event1 = {}, event2 = {}) {
   const genericSimilarity = jaccardSimilarity(tokens1, tokens2)
   const domainSimilarity = domainCoverage(terms1, terms2)
 
-  const rawSimilarity = terms1.size > 0 && terms2.size > 0
-    ? (domainSimilarity * 0.75) + (genericSimilarity * 0.25)
+  const rawSimilarity = domainSimilarity > 0
+    ? (domainSimilarity * 0.8) + (genericSimilarity * 0.2)
     : genericSimilarity
   const activitySimilarity = Math.max(0, Math.min(1, Number(rawSimilarity.toFixed(2))))
 
   const sharedTerms = [...terms1.keys()].filter((token) => terms2.has(token))
+  const focusedSharedTerms = sharedTerms.filter((token) => !terms1.get(token)?.broad && !terms2.get(token)?.broad)
   const activityDomain = selectActivityDomain(
-    sharedTerms,
+    focusedSharedTerms.length > 0 ? focusedSharedTerms : sharedTerms,
     terms1,
     terms2,
     event1.category,
