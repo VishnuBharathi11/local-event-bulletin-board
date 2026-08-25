@@ -8,7 +8,7 @@ export function useEvents() {
     setState((current) => ({ ...current, status: 'loading', error: null }))
     try {
       const events = await getEvents()
-      setState({ status: events.length === 0 ? 'empty' : 'success', events, error: null })
+      setState({ status: 'success', events, error: null })
     } catch (error) {
       setState({ status: 'error', events: [], error: error.message })
     }
