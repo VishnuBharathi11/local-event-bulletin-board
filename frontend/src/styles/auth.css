@@ -1,0 +1,102 @@
+.auth-page {
+  min-height: calc(100vh - 180px);
+  display: grid;
+  place-items: center;
+  padding: 24px 0;
+}
+
+.auth-card {
+  width: min(100%, 460px);
+  padding: clamp(24px, 5vw, 36px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 14px 40px rgb(22 34 54 / 7%);
+}
+
+.auth-card h1 {
+  margin: 0;
+  color: #101828;
+  font-size: clamp(30px, 6vw, 40px);
+  line-height: 1.15;
+}
+
+.auth-card__description {
+  margin: 12px 0 26px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 17px;
+}
+
+.auth-form .form-field span {
+  color: #344054;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-form .primary-button {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.auth-card__footer {
+  margin: 22px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-card__footer a {
+  color: var(--brand);
+  font-weight: 750;
+}
+
+.auth-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.auth-nav__user {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-nav__state {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.auth-nav__logout,
+.auth-nav__register {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+  .auth-nav { margin-left: auto; }
+}
+
+@media (max-width: 760px) {
+  .auth-nav { width: 100%; justify-content: flex-start; overflow-x: auto; }
+  .auth-nav .health-indicator { margin-left: auto; }
+  .auth-nav__user { max-width: 100px; }
+}
+
+@media (max-width: 480px) {
+  .auth-page { min-height: calc(100vh - 150px); }
+  .auth-card { padding: 22px 18px; }
+  .auth-nav .health-indicator { display: none; }
+}
