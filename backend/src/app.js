@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const healthRoutes = require('./routes/healthRoutes')
 const eventRoutes = require('./routes/eventRoutes')
+const rsvpRoutes = require('./routes/rsvpRoutes')
 
 function createApp() {
   const app = express()
@@ -16,6 +17,7 @@ function createApp() {
   app.use(express.json())
   app.use('/api', healthRoutes)
   app.use('/api', eventRoutes)
+  app.use('/api', rsvpRoutes)
 
   return app
 }
