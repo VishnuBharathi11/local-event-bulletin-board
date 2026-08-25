@@ -1,5 +1,6 @@
 import Calendar from '../components/calendar/Calendar.jsx'
 import { useCalendar } from '../hooks/useCalendar.js'
+import '../styles/calendar.css'
 
 export default function CalendarPage() {
   const calendar = useCalendar()
