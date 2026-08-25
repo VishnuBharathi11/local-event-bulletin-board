@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getRSVPStatus, removeRSVP, rsvpToEvent } from '../services/rsvpService.js'
 
-export function useEventRSVP(eventId) {
-  const [state, setState] = useState({ status: 'loading', going: false, action: 'idle', error: null })
+export function useEventRSVP(eventId, enabled = true) {
+  const [state, setState] = useState({ status: enabled ? 'loading' : 'unauthenticated', going: false, action: 'idle', error: null })
 
   const loadStatus = useCallback(async () => {
-    if (!eventId) return
+    if (!eventId || !enabled) {
+      setState({ status: 'unauthenticated', going: false, action: 'idle', error: null })
+      return
+    }
     setState((current) => ({ ...current, status: 'loading', error: null }))
     try {
       const result = await getRSVPStatus(eventId)
@@ -13,13 +16,12 @@ export function useEventRSVP(eventId) {
     } catch (error) {
       setState({ status: 'error', going: false, action: 'idle', error: error.message })
     }
-  }, [eventId])
+  }, [eventId, enabled])
 
-  useEffect(() => {
-    loadStatus()
-  }, [loadStatus])
+  useEffect(() => { loadStatus() }, [loadStatus])
 
   const setGoing = useCallback(async () => {
+    if (!enabled) return false
     setState((current) => ({ ...current, action: 'adding', error: null }))
     try {
       await rsvpToEvent(eventId)
@@ -29,9 +31,10 @@ export function useEventRSVP(eventId) {
       setState((current) => ({ ...current, action: 'idle', error: error.message }))
       return false
     }
-  }, [eventId])
+  }, [eventId, enabled])
 
   const setNotGoing = useCallback(async () => {
+    if (!enabled) return false
     setState((current) => ({ ...current, action: 'removing', error: null }))
     try {
       await removeRSVP(eventId)
@@ -41,13 +44,7 @@ export function useEventRSVP(eventId) {
       setState((current) => ({ ...current, action: 'idle', error: error.message }))
       return false
     }
-  }, [eventId])
+  }, [eventId, enabled])
 
-  return {
-    ...state,
-    reload: loadStatus,
-    setGoing,
-    setNotGoing,
-    isBusy: state.action !== 'idle',
-  }
+  return { ...state, reload: loadStatus, setGoing, setNotGoing, isBusy: state.action !== 'idle' }
 }
