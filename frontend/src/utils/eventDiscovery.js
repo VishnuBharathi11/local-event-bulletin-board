@@ -7,10 +7,8 @@ function isSameDay(first, second) {
 }
 
 function isPastEvent(event, now) {
-  const startTime = Number(event.startTime)
   const expireAt = Number(event.expireAt)
-  return !Number.isFinite(startTime) || startTime < now.getTime() ||
-    (Number.isFinite(expireAt) && now.getTime() >= expireAt)
+  return Number.isFinite(expireAt) && now.getTime() >= expireAt
 }
 
 function matchesDateFilter(startTime, filter, now) {
