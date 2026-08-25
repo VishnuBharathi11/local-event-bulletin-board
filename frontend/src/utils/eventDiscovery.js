@@ -6,16 +6,10 @@ function isSameDay(first, second) {
     first.getDate() === second.getDate()
 }
 
-function startOfToday(now) {
-  const today = new Date(now)
-  today.setHours(0, 0, 0, 0)
-  return today
-}
-
 function isPastEvent(event, now) {
   const startTime = Number(event.startTime)
   const expireAt = Number(event.expireAt)
-  return !Number.isFinite(startTime) || startTime < startOfToday(now).getTime() ||
+  return !Number.isFinite(startTime) || startTime < now.getTime() ||
     (Number.isFinite(expireAt) && now.getTime() >= expireAt)
 }
 
