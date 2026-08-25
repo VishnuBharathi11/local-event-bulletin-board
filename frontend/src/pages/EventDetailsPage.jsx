@@ -4,12 +4,14 @@ import EventStatusBadge from '../components/events/EventStatusBadge.jsx'
 import EventActions from '../components/events/EventActions.jsx'
 import { useEvent } from '../hooks/useEvent.js'
 import { useEventRSVP } from '../hooks/useEventRSVP.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
 
 export default function EventDetailsPage() {
   const { eventId } = useParams()
   const { status, event, error, reload } = useEvent(eventId)
-  const rsvp = useEventRSVP(eventId)
+  const { authenticated } = useAuth()
+  const rsvp = useEventRSVP(eventId, authenticated)
 
   if (status === 'loading') {
     return <div className="state-card" role="status"><strong>Loading event…</strong><span>Retrieving event details.</span></div>
@@ -83,17 +85,25 @@ export default function EventDetailsPage() {
         {rsvp.going && <span>You're on the list!</span>}
       </div>
 
-      <EventActions
-        event={event}
-        going={rsvp.going}
-        isBusy={rsvp.isBusy || rsvp.status === 'loading'}
-        onGoing={handleGoing}
-        onNotGoing={handleNotGoing}
-      />
-
-      {rsvp.status === 'loading' && <p className="action-message" role="status">Checking your RSVP status…</p>}
-      {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
-      {rsvp.action === 'idle' && rsvp.error && rsvp.status === 'ready' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
+      {authenticated ? (
+        <>
+          <EventActions
+            event={event}
+            going={rsvp.going}
+            isBusy={rsvp.isBusy || rsvp.status === 'loading'}
+            onGoing={handleGoing}
+            onNotGoing={handleNotGoing}
+          />
+          {rsvp.status === 'loading' && <p className="action-message" role="status">Checking your RSVP status…</p>}
+          {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
+          {rsvp.action === 'idle' && rsvp.error && rsvp.status === 'ready' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
+        </>
+      ) : (
+        <div className="event-details__login-prompt">
+          <span>Sign in to RSVP to this event.</span>
+          <Link className="primary-button" to="/login">Login</Link>
+        </div>
+      )}
     </article>
   )
 }
