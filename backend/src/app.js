@@ -3,6 +3,7 @@ const cors = require('cors')
 const healthRoutes = require('./routes/healthRoutes')
 const eventRoutes = require('./routes/eventRoutes')
 const rsvpRoutes = require('./routes/rsvpRoutes')
+const eventRequestRoutes = require('./routes/eventRequestRoutes')
 
 function createApp() {
   const app = express()
@@ -18,6 +19,7 @@ function createApp() {
   app.use('/api', healthRoutes)
   app.use('/api', eventRoutes)
   app.use('/api', rsvpRoutes)
+  app.use('/api', eventRequestRoutes)
 
   return app
 }
