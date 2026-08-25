@@ -13,10 +13,11 @@ function createApp() {
     .map((origin) => origin.trim())
     .filter(Boolean)
 
-  app.use(cors({
-    origin: configuredOrigins.length > 0 ? configuredOrigins : true,
-    credentials: true,
-  }))
+  const corsOrigin = configuredOrigins.length > 0
+    ? configuredOrigins
+    : (process.env.NODE_ENV === 'production' ? false : true)
+
+  app.use(cors({ origin: corsOrigin, credentials: true }))
   app.use(express.json())
   app.use('/api', healthRoutes)
   app.use('/api', authRoutes)
