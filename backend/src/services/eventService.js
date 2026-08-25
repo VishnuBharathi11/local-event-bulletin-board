@@ -1,5 +1,5 @@
 const eventRepository = require('../repositories/eventRepository')
-const { normalizeEvent } = require('../models/eventModel')
+const { normalizeEvent, validateEventForCreation } = require('../models/eventModel')
 
 async function getEvents() {
   return eventRepository.getEvents()
@@ -7,6 +7,11 @@ async function getEvents() {
 
 async function getEventById(eventId) {
   return eventRepository.getEventById(eventId)
+}
+
+async function createEvent(input) {
+  const event = validateEventForCreation(input)
+  return eventRepository.saveEvent(event)
 }
 
 async function saveEvent(input) {
@@ -18,9 +23,4 @@ async function deleteEvent(eventId) {
   return eventRepository.deleteEvent(eventId)
 }
 
-module.exports = {
-  getEvents,
-  getEventById,
-  saveEvent,
-  deleteEvent,
-}
+module.exports = { getEvents, getEventById, createEvent, saveEvent, deleteEvent }
