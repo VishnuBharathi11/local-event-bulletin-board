@@ -1,23 +1,14 @@
 const { getFirestore } = require('../config/firebaseAdmin')
 const { fromFirestoreDocument, toFirestoreEventRequest } = require('../models/eventRequestModel')
-const { EVENT_REQUEST_STATUSES } = require('../models/eventRequestModel')
 
 const EVENT_REQUESTS_COLLECTION = 'eventRequests'
 const INTEREST_COLLECTION = 'eventRequestInterest'
 
-function getRequestCollection() {
-  return getFirestore().collection(EVENT_REQUESTS_COLLECTION)
-}
-
-function getInterestCollection() {
-  return getFirestore().collection(INTEREST_COLLECTION)
-}
+function getRequestCollection() { return getFirestore().collection(EVENT_REQUESTS_COLLECTION) }
+function getInterestCollection() { return getFirestore().collection(INTEREST_COLLECTION) }
 
 async function getEventRequests() {
-  const snapshot = await getRequestCollection()
-    .where('status', 'in', ['COLLECTING_DEMAND', 'THRESHOLD_REACHED'])
-    .orderBy('createdAt', 'desc')
-    .get()
+  const snapshot = await getRequestCollection().where('status', 'in', ['COLLECTING_DEMAND', 'THRESHOLD_REACHED']).orderBy('createdAt', 'desc').get()
   return snapshot.docs.map(fromFirestoreDocument)
 }
 
@@ -27,8 +18,7 @@ async function getEventRequestById(requestId) {
 }
 
 async function createEventRequest(request) {
-  const collection = getRequestCollection()
-  const document = collection.doc()
+  const document = getRequestCollection().doc()
   const fields = toFirestoreEventRequest(request)
   await document.set(fields)
   return { ...fields, requestId: document.id }
@@ -48,23 +38,16 @@ async function expressInterest(requestId, userId) {
     const interestSnapshot = await transaction.get(interestRef)
     const requestSnapshot = await transaction.get(requestRef)
     if (!requestSnapshot.exists) throw new Error('Event request not found')
-
     if (!interestSnapshot.exists) {
       const request = fromFirestoreDocument(requestSnapshot)
       const newCount = request.demandCount + 1
-      transaction.set(interestRef, {
-        interestId: `${requestId}_${userId}`,
-        requestId,
-        userId,
-        createdAt: Date.now(),
-      })
+      transaction.set(interestRef, { interestId: `${requestId}_${userId}`, requestId, userId, createdAt: Date.now() })
       transaction.update(requestRef, {
         demandCount: newCount,
         ...(newCount >= request.demandThreshold ? { status: 'THRESHOLD_REACHED' } : {}),
       })
     }
   })
-
   return getEventRequestById(requestId)
 }
 
@@ -97,26 +80,10 @@ async function confirmEventRequest(requestId) {
       expireAt: request.endTime,
       conflictStatus: 'NONE',
     }
-
-    transaction.set(eventRef, {
-      title: createdEvent.title,
-      description: createdEvent.description,
-      category: createdEvent.category,
-      city: createdEvent.city,
-      neighborhood: createdEvent.neighborhood,
-      location: createdEvent.location,
-      startTime: createdEvent.startTime,
-      endTime: createdEvent.endTime,
-      status: createdEvent.status,
-      rsvpCount: createdEvent.rsvpCount,
-      organizerId: createdEvent.organizerId,
-      createdAt: createdEvent.createdAt,
-      expireAt: createdEvent.expireAt,
-      conflictStatus: createdEvent.conflictStatus,
-    })
+    const { eventId: _eventId, ...eventFields } = createdEvent
+    transaction.set(eventRef, eventFields)
     transaction.update(requestRef, { status: 'CONFIRMED' })
   })
-
   return createdEvent
 }
 
@@ -127,14 +94,4 @@ async function declineEventRequest(requestId) {
   await requestRef.update({ status: 'DECLINED' })
 }
 
-module.exports = {
-  EVENT_REQUESTS_COLLECTION,
-  INTEREST_COLLECTION,
-  getEventRequests,
-  getEventRequestById,
-  createEventRequest,
-  hasUserExpressedInterest,
-  expressInterest,
-  confirmEventRequest,
-  declineEventRequest,
-}
+module.exports = { EVENT_REQUESTS_COLLECTION, INTEREST_COLLECTION, getEventRequests, getEventRequestById, createEventRequest, hasUserExpressedInterest, expressInterest, confirmEventRequest, declineEventRequest }
