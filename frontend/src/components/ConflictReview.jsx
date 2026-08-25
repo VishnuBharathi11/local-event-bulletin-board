@@ -51,12 +51,29 @@ export default function ConflictReview({ conflicts, onCancel, onContinue, contin
         <div className="conflict-list">
           {conflicts.map((conflict) => {
             const event = events[conflict.conflictingEventId]
+            const activityPercent = Math.round((conflict.activitySimilarity ?? 0) * 100)
+            const hasMeaningfulActivity = activityPercent >= 60
+
             return (
               <article className="conflict-card" key={conflict.conflictingEventId}>
                 <div className="conflict-card__topline">
-                  <strong>Conflict Score: {conflict.conflictScore}%</strong>
+                  <strong>Conflict Score: {conflict.conflictScore} / 100</strong>
                   <Link className="secondary-link" to={`/events/${encodeURIComponent(conflict.conflictingEventId)}`}>Review Existing Event</Link>
                 </div>
+
+                <div className="conflict-card__intelligence" aria-label="Conflict intelligence">
+                  <div>
+                    <span>Activity Similarity</span>
+                    <strong>{activityPercent}%</strong>
+                  </div>
+                  {hasMeaningfulActivity && (
+                    <div>
+                      <span>Activity / Domain</span>
+                      <strong>{conflict.activityDomain || 'Unknown / General'}</strong>
+                    </div>
+                  )}
+                </div>
+
                 {event ? (
                   <div className="conflict-card__event">
                     <h3>{event.title}</h3>
