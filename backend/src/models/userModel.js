@@ -48,9 +48,7 @@ function toPublicUser(user) {
 }
 
 function toFirestoreUser(user) {
-  const normalized = normalizeUser(user)
-  const { userId: _userId, ...fields } = normalized
-  return fields
+  return normalizeUser(user)
 }
 
 function fromFirestoreDocument(snapshot) {
