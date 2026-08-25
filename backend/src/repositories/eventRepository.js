@@ -33,9 +33,9 @@ async function saveEvent(event) {
 }
 
 async function deleteEvent(eventId) {
-  await getFirestore().runBatch((batch) => {
-    batch.delete(getEventCollection().doc(eventId))
-  })
+  const batch = getFirestore().batch()
+  batch.delete(getEventCollection().doc(eventId))
+  await batch.commit()
 }
 
 module.exports = {
