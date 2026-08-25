@@ -10,9 +10,9 @@ const DEFAULT_EVENT_CONFLICT = Object.freeze({
   createdAt: 0,
 })
 
-function normalizeEventConflict(input = {}) {
+function normalizeEventConflict(input = {}, conflictId = input.conflictId || '') {
   const conflict = {
-    conflictId: String(input.conflictId ?? DEFAULT_EVENT_CONFLICT.conflictId),
+    conflictId: String(conflictId || ''),
     eventId: String(input.eventId ?? DEFAULT_EVENT_CONFLICT.eventId),
     conflictingEventId: String(input.conflictingEventId ?? DEFAULT_EVENT_CONFLICT.conflictingEventId),
     conflictScore: input.conflictScore ?? DEFAULT_EVENT_CONFLICT.conflictScore,
