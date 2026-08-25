@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useBackendHealth } from '../hooks/useBackendHealth.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const navigation = [
   { to: '/', label: 'Event Board', end: true },
@@ -8,7 +9,18 @@ const navigation = [
 ]
 
 export default function AppShell() {
-  const { status } = useBackendHealth()
+  const { status: backendStatus } = useBackendHealth()
+  const { loading, authenticated, currentUser, logout } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    try {
+      await logout()
+      navigate('/', { replace: true })
+    } catch {
+      // Keep the existing authenticated state when logout cannot reach the backend.
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -33,10 +45,25 @@ export default function AppShell() {
               </NavLink>
             ))}
           </nav>
-          <span className={`health-indicator health-indicator--${status}`}>
-            <span aria-hidden="true" />
-            Backend {status}
-          </span>
+          <div className="auth-nav">
+            {loading ? (
+              <span className="auth-nav__state">Checking account…</span>
+            ) : authenticated ? (
+              <>
+                <span className="auth-nav__user" title={currentUser?.email}>{currentUser?.name}</span>
+                <button className="secondary-button auth-nav__logout" type="button" onClick={handleLogout}>Logout</button>
+              </>
+            ) : (
+              <>
+                <NavLink className="nav-link" to="/login">Login</NavLink>
+                <NavLink className="primary-button auth-nav__register" to="/register">Register</NavLink>
+              </>
+            )}
+            <span className={`health-indicator health-indicator--${backendStatus}`}>
+              <span aria-hidden="true" />
+              Backend {backendStatus}
+            </span>
+          </div>
         </div>
       </header>
       <main className="app-main container">
