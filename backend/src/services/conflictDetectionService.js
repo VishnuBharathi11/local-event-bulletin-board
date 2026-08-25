@@ -1,4 +1,5 @@
 const { normalizeEvent } = require('../models/eventModel')
+const { calculateActivitySimilarity } = require('./activityDomainSimilarity')
 
 const CONFLICT_THRESHOLD = 70
 const STOP_WORDS = new Set(['a', 'an', 'the', 'and', 'or', 'in', 'on', 'at', 'to', 'for', 'with', 'by'])
@@ -62,11 +63,17 @@ function calculateConflict(newEventInput, existingInput) {
     reasons.push('Event title appears similar')
   }
 
+  const activity = calculateActivitySimilarity(newEvent, existing)
+  if (activity.activityReason) reasons.push(activity.activityReason)
+
   return {
     conflictId: '',
     eventId: newEvent.eventId,
     conflictingEventId: existing.eventId,
     conflictScore: score,
+    activitySimilarity: activity.activitySimilarity,
+    activityDomain: activity.activityDomain,
+    activityReason: activity.activityReason,
     reasons,
     status: 'POTENTIAL',
     createdAt: Date.now(),
