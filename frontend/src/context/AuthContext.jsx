@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import * as authService from '../services/authService.js'
 
 const AuthContext = createContext(null)
@@ -7,42 +7,42 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading')
   const [currentUser, setCurrentUser] = useState(null)
 
-  async function refreshCurrentUser() {
+  const refreshCurrentUser = useCallback(async () => {
     try {
       const response = await authService.getCurrentUser()
       setCurrentUser(response.user)
       setStatus('authenticated')
       return response.user
-    } catch (error) {
+    } catch {
       setCurrentUser(null)
-      setStatus(error.status === 401 ? 'unauthenticated' : 'unauthenticated')
+      setStatus('unauthenticated')
       return null
     }
-  }
+  }, [])
 
   useEffect(() => {
     refreshCurrentUser()
-  }, [])
+  }, [refreshCurrentUser])
 
-  async function login(input) {
+  const login = useCallback(async (input) => {
     const response = await authService.login(input)
     setCurrentUser(response.user)
     setStatus('authenticated')
     return response.user
-  }
+  }, [])
 
-  async function register(input) {
+  const register = useCallback(async (input) => {
     const response = await authService.register(input)
     setCurrentUser(response.user)
     setStatus('authenticated')
     return response.user
-  }
+  }, [])
 
-  async function logout() {
+  const logout = useCallback(async () => {
     await authService.logout()
     setCurrentUser(null)
     setStatus('unauthenticated')
-  }
+  }, [])
 
   const value = useMemo(() => ({
     status,
@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     refreshCurrentUser,
-  }), [status, currentUser])
+  }), [status, currentUser, login, register, logout, refreshCurrentUser])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
