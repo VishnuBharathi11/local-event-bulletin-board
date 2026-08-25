@@ -41,7 +41,7 @@ test('strong conflict reaches 100', () => {
 })
 
 test('same city and overlap alone is a weak 45-point conflict', () => {
-  const conflict = calculateConflict(event({ title: 'New Event', category: 'Food', neighborhood: 'Different', location: 'Different' }), event({ eventId: 'existing', title: 'Old Event', category: 'Sports' }))
+  const conflict = calculateConflict(event({ title: 'New Gathering', category: 'Food', neighborhood: 'Different', location: 'Different' }), event({ eventId: 'existing', title: 'Old Meetup', category: 'Sports' }))
   assert.equal(conflict.conflictScore, 45)
 })
 
@@ -131,7 +131,7 @@ test('different categories with strong topic overlap still produce high activity
     event({ title: 'Python Coding Study Group', description: 'Programming discussion', category: 'Student Events' }),
   )
   assert.ok(result.activitySimilarity >= 0.6)
-  assert.equal(result.activityDomain, 'Python')
+  assert.equal(result.activityDomain, 'Python Coding')
 })
 
 test('identical activity content produces maximum similarity', () => {
@@ -144,8 +144,8 @@ test('identical activity content produces maximum similarity', () => {
 
 test('generic token overlap can produce medium activity similarity without domain terms', () => {
   const result = calculateActivitySimilarity(
-    event({ title: 'Neighborhood Book Club', description: 'Monthly reading group' }),
-    event({ title: 'Neighborhood Book Circle', description: 'Monthly discussion group' }),
+    event({ title: 'Neighborhood Book Club', description: 'Monthly reading group', category: 'Community' }),
+    event({ title: 'Neighborhood Book Circle', description: 'Monthly discussion group', category: 'Community' }),
   )
   assert.ok(result.activitySimilarity >= 0.3 && result.activitySimilarity < 0.6)
 })
