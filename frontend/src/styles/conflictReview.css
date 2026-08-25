@@ -61,6 +61,32 @@
   color: var(--danger, #b91c1c);
 }
 
+.conflict-card__intelligence {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.conflict-card__intelligence > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--subtle-surface, #f8fafc);
+}
+
+.conflict-card__intelligence span {
+  color: var(--muted-text, #64748b);
+  font-size: 0.9rem;
+}
+
+.conflict-card__intelligence strong {
+  text-align: right;
+}
+
 .conflict-card__event h3 {
   margin: 12px 0 6px;
 }
@@ -102,6 +128,10 @@
     position: absolute;
     top: 18px;
     right: 18px;
+  }
+
+  .conflict-card__intelligence {
+    grid-template-columns: 1fr;
   }
 
   .conflict-dialog__actions > button,
