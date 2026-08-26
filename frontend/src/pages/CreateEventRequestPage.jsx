@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { createEventRequest } from '../services/eventRequestService.js'
+import { createEventRequest, getEventRequestById, updateEventRequest } from '../services/eventRequestService.js'
 import TimePicker from '../components/common/TimePicker.jsx'
 import '../styles/communityRequests.css'
 
@@ -120,6 +120,8 @@ function getTotalMinutes(
 }
 
 export default function CreateEventRequestPage() {
+  const { requestId } = useParams()
+  const isEdit = Boolean(requestId)
   const navigate =
     useNavigate()
   const { currentUser } = useAuth()
@@ -140,13 +142,56 @@ export default function CreateEventRequestPage() {
     })
 
   const [status, setStatus] =
-    useState('idle')
+    useState(isEdit ? 'loading' : 'idle')
 
   const [error, setError] =
     useState(null)
 
   const [nowTick, setNowTick] =
     useState(Date.now())
+
+  useEffect(() => {
+    if (!isEdit) return
+
+    async function load() {
+      try {
+        const data = await getEventRequestById(requestId)
+
+        // Authorization check
+        if (data.organizerId !== currentUser?.userId) {
+          setError('You are not authorized to edit this request.')
+          setStatus('idle')
+          return
+        }
+
+        const start = new Date(data.startTime)
+        const end = new Date(data.endTime)
+
+        const dateStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`
+        const startStr = `${pad(start.getHours())}:${pad(start.getMinutes())}`
+        const endStr = `${pad(end.getHours())}:${pad(end.getMinutes())}`
+
+        setForm({
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          date: dateStr,
+          startTime: startStr,
+          endTime: endStr,
+          location: data.location,
+          city: data.city,
+          neighborhood: data.neighborhood,
+          demandThreshold: String(data.demandThreshold),
+          imageUrl: data.imageUrl,
+        })
+        setStatus('idle')
+      } catch (err) {
+        setError(err.message)
+        setStatus('idle')
+      }
+    }
+    load()
+  }, [isEdit, requestId, currentUser?.userId])
 
   useEffect(() => {
     const timer =
@@ -388,41 +433,47 @@ export default function CreateEventRequestPage() {
     setStatus('saving')
 
     try {
-      const request =
-        await createEventRequest({
-          title:
-            form.title.trim(),
+      const payload = {
+        title:
+          form.title.trim(),
 
-          description:
-            form.description.trim(),
+        description:
+          form.description.trim(),
 
-          category:
-            form.category,
+        category:
+          form.category,
 
-          city:
-            form.city.trim(),
+        city:
+          form.city.trim(),
 
-          neighborhood:
-            form.neighborhood.trim(),
+        neighborhood:
+          form.neighborhood.trim(),
 
-          location:
-            form.location.trim(),
+        location:
+          form.location.trim(),
 
-          startTime:
-            startTimestamp,
+        startTime:
+          startTimestamp,
 
-          endTime:
-            endTimestamp,
+        endTime:
+          endTimestamp,
 
-          demandThreshold:
-            parseInt(form.demandThreshold, 10) || 0,
+        demandThreshold:
+          parseInt(form.demandThreshold, 10) || 0,
 
-          imageUrl: form.imageUrl,
-        })
+        imageUrl: form.imageUrl,
+      }
+
+      let result
+      if (isEdit) {
+        result = await updateEventRequest(requestId, payload)
+      } else {
+        result = await createEventRequest(payload)
+      }
 
       navigate(
         `/community-requests/${encodeURIComponent(
-          request.requestId
+          result.requestId
         )}`
       )
     } catch (
@@ -436,29 +487,37 @@ export default function CreateEventRequestPage() {
     }
   }
 
+  if (status === 'loading') {
+    return (
+      <div className="state-card">
+        <strong>Loading request data...</strong>
+      </div>
+    )
+  }
+
   return (
     <section className="request-form">
       <Link
         className="back-link"
-        to="/community-requests"
+        to={isEdit ? '/profile' : '/community-requests'}
       >
-        ← Community Requests
+        ← {isEdit ? 'Back to Profile' : 'Community Requests'}
       </Link>
 
       <header className="request-form__intro">
         <p className="eyebrow">
-          Request Event
+          {isEdit ? 'Edit Request' : 'Request Event'}
         </p>
 
         <h1>
-          Tell the community what should happen
+          {isEdit ? 'Update your community request' : 'Tell the community what should happen'}
         </h1>
 
         <p>
-          This creates a demand request,
-          not a published event. If enough
-          people express interest, the
-          organizer can review and confirm it.
+          {isEdit
+            ? 'Refine the details of your event request. Changes will be reflected immediately.'
+            : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
+          }
         </p>
       </header>
 
@@ -775,8 +834,8 @@ export default function CreateEventRequestPage() {
           }
         >
           {status === 'saving'
-            ? 'Submitting…'
-            : 'Submit Request'}
+            ? (isEdit ? 'Updating…' : 'Submitting…')
+            : (isEdit ? 'Update Request' : 'Submit Request')}
         </button>
       </form>
     </section>

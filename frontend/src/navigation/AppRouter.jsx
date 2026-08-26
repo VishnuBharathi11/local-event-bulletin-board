@@ -32,6 +32,7 @@ export default function AppRouter() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/community-requests" element={<CommunityRequestsPage />} />
         <Route path="/community-requests/new" element={<ProtectedRoute><CreateEventRequestPage /></ProtectedRoute>} />
+        <Route path="/community-requests/edit/:requestId" element={<ProtectedRoute><CreateEventRequestPage /></ProtectedRoute>} />
         <Route path="/community-requests/:requestId" element={<EventRequestDetailsPage />} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />

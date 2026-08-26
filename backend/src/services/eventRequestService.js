@@ -8,6 +8,10 @@ async function getEventRequests() {
   return eventRequestRepository.getEventRequests()
 }
 
+async function getUserEventRequests(userId) {
+  return eventRequestRepository.getUserEventRequests(userId)
+}
+
 async function getEventRequestById(requestId) {
   return eventRequestRepository.getEventRequestById(requestId)
 }
@@ -23,6 +27,51 @@ async function createEventRequest(input, userId) {
   }
   const request = validateEventRequestForCreation(input, userId)
   return eventRequestRepository.createEventRequest(request)
+}
+
+async function updateEventRequest(requestId, input, userId) {
+  const existing = await assertOrganizer(requestId, userId)
+
+  if (existing.status === 'CONFIRMED' || existing.eventId) {
+    const error = new Error('Cannot edit a request that has already been confirmed.')
+    error.statusCode = 400
+    throw error
+  }
+
+  // Only allow updating certain fields
+  const updates = {
+    title: input.title || existing.title,
+    description: input.description || existing.description,
+    category: input.category || existing.category,
+    city: input.city || existing.city,
+    neighborhood: input.neighborhood || existing.neighborhood,
+    location: input.location || existing.location,
+    startTime: Number(input.startTime) || existing.startTime,
+    endTime: Number(input.endTime) || existing.endTime,
+    demandThreshold: Number(input.demandThreshold) || existing.demandThreshold,
+  }
+
+  if (input.imageUrl && input.imageUrl !== existing.imageUrl) {
+    if (input.imageUrl.startsWith('data:image')) {
+      updates.imageUrl = await imageService.uploadImage(input.imageUrl)
+    } else {
+      updates.imageUrl = input.imageUrl
+    }
+  }
+
+  return eventRequestRepository.updateEventRequest(requestId, updates)
+}
+
+async function deleteEventRequest(requestId, userId) {
+  const existing = await assertOrganizer(requestId, userId)
+
+  if (existing.status === 'CONFIRMED' || existing.eventId) {
+    const error = new Error('Cannot delete a request that has already been confirmed.')
+    error.statusCode = 400
+    throw error
+  }
+
+  return eventRequestRepository.deleteEventRequest(requestId)
 }
 
 async function getInterestStatus(requestId, userId) {

@@ -22,6 +22,10 @@ async function getEventRequests(_req, res) {
   try { return res.json(await eventRequestService.getEventRequests()) } catch (error) { return handleError(res, error, 'GET /api/event-requests') }
 }
 
+async function getUserEventRequests(req, res) {
+  try { return res.json(await eventRequestService.getUserEventRequests(req.user.userId)) } catch (error) { return handleError(res, error, 'GET /api/event-requests/mine') }
+}
+
 async function getEventRequestById(req, res) {
   try {
     const request = await eventRequestService.getEventRequestById(req.params.requestId)
@@ -32,6 +36,17 @@ async function getEventRequestById(req, res) {
 
 async function createEventRequest(req, res) {
   try { return res.status(201).json(await eventRequestService.createEventRequest(req.body, req.user.userId)) } catch (error) { return handleError(res, error, 'POST /api/event-requests') }
+}
+
+async function updateEventRequest(req, res) {
+  try { return res.json(await eventRequestService.updateEventRequest(req.params.requestId, req.body, req.user.userId)) } catch (error) { return handleError(res, error, 'PATCH /api/event-requests/:requestId') }
+}
+
+async function deleteEventRequest(req, res) {
+  try {
+    await eventRequestService.deleteEventRequest(req.params.requestId, req.user.userId)
+    return res.status(204).send()
+  } catch (error) { return handleError(res, error, 'DELETE /api/event-requests/:requestId') }
 }
 
 async function getInterestStatus(req, res) {
@@ -60,8 +75,11 @@ async function declineEventRequest(req, res) {
 
 module.exports = {
   getEventRequests,
+  getUserEventRequests,
   getEventRequestById,
   createEventRequest,
+  updateEventRequest,
+  deleteEventRequest,
   getInterestStatus,
   expressInterest,
   confirmEventRequest,

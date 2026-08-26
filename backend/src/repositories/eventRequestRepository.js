@@ -19,6 +19,14 @@ async function getEventRequests() {
   return snapshot.docs.map(fromFirestoreDocument)
 }
 
+async function getUserEventRequests(userId) {
+  const snapshot = await getRequestCollection()
+    .where('organizerId', '==', userId)
+    .orderBy('createdAt', 'desc')
+    .get()
+  return snapshot.docs.map(fromFirestoreDocument)
+}
+
 async function getEventRequestById(requestId) {
   const snapshot = await getRequestCollection().doc(requestId).get()
   return fromFirestoreDocument(snapshot)
@@ -29,6 +37,30 @@ async function createEventRequest(request) {
   const fields = toFirestoreEventRequest(request)
   await document.set(fields)
   return { ...fields, requestId: document.id }
+}
+
+async function updateEventRequest(requestId, updates) {
+  const document = getRequestCollection().doc(requestId)
+  await document.update(updates)
+  const snapshot = await document.get()
+  return fromFirestoreDocument(snapshot)
+}
+
+async function deleteEventRequest(requestId) {
+  const firestore = getFirestore()
+  const requestRef = getRequestCollection().doc(requestId)
+
+  // Also cleanup interest data for this request
+  const interestSnapshot = await getInterestCollection()
+    .where('requestId', '==', requestId)
+    .get()
+
+  await firestore.runTransaction(async (transaction) => {
+    transaction.delete(requestRef)
+    interestSnapshot.docs.forEach((doc) => {
+      transaction.delete(doc.ref)
+    })
+  })
 }
 
 async function hasUserExpressedInterest(requestId, userId) {

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { expressInterest, getEventRequests, getInterestStatus } from '../services/eventRequestService.js'
 
 export function useEventRequests() {
-  const { authenticated } = useAuth()
+  const { authenticated, currentUser } = useAuth()
   const [state, setState] = useState({ status: 'loading', requests: [], error: null })
   const [interestedIds, setInterestedIds] = useState(() => new Set())
   const [interestLoadingId, setInterestLoadingId] = useState(null)
@@ -15,10 +15,15 @@ export function useEventRequests() {
     setInterestedIds(new Set())
 
     try {
-      const requests = await getEventRequests()
+      let requests = await getEventRequests()
       let existingInterestIds = new Set()
 
       if (authenticated && requests.length > 0) {
+        // Filter out current user's requests from the public list
+        if (currentUser?.userId) {
+          requests = requests.filter(r => r.organizerId !== currentUser.userId)
+        }
+
         const interestResults = await Promise.all(
           requests.map(async (request) => ({
             requestId: request.requestId,
@@ -36,7 +41,7 @@ export function useEventRequests() {
       setState({ status: 'error', requests: [], error: error.message })
       setInterestedIds(new Set())
     }
-  }, [authenticated])
+  }, [authenticated, currentUser?.userId])
 
   useEffect(() => { reload() }, [reload])
 

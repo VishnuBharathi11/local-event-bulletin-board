@@ -17,7 +17,17 @@ const statusLabels = {
   DECLINED: 'Declined',
 }
 
-export default function EventRequestCard({ request, isInterested, interestLoading, interestError, onInterest }) {
+export default function EventRequestCard({
+  request,
+  isInterested,
+  interestLoading,
+  interestError,
+  onInterest,
+  isManagement = false,
+  onEdit,
+  onDelete,
+  isDeleting = false
+}) {
   const { authenticated } = useAuth()
   const demandCount = getDemandCount(request)
   const demandThreshold = getDemandThreshold(request)
@@ -25,6 +35,8 @@ export default function EventRequestCard({ request, isInterested, interestLoadin
   const progress = getDemandProgress(request)
   const demandMessage = getDemandMessage(request)
   const demandState = getDemandStateLabel(request.status)
+
+  const isConfirmed = request.status === 'CONFIRMED' || Boolean(request.eventId)
 
   return (
     <article className="request-card">
@@ -63,17 +75,37 @@ export default function EventRequestCard({ request, isInterested, interestLoadin
 
       <div className="request-card__footer">
         <Link className="request-card__link" to={`/community-requests/${encodeURIComponent(request.requestId)}`}>View Request</Link>
-        {request.status === 'CONFIRMED' && request.eventId && (
-          <Link className="primary-button" to={`/events/${encodeURIComponent(request.eventId)}`}>View Event</Link>
-        )}
-        {request.status === 'COLLECTING_DEMAND' && (
-          authenticated ? (
-            <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>
-              {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : 'Express Interest'}
+
+        {isManagement ? (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {!isConfirmed && (
+              <button className="secondary-button" type="button" onClick={onEdit}>Edit</button>
+            )}
+            <button
+              className="button-danger"
+              type="button"
+              disabled={isDeleting || isConfirmed}
+              onClick={onDelete}
+              style={{ minHeight: '38px', padding: '0 12px', fontSize: '13px' }}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </button>
-          ) : (
-            <Link className="primary-button" to="/login">Login to Express Interest</Link>
-          )
+          </div>
+        ) : (
+          <>
+            {isConfirmed && request.eventId && (
+              <Link className="primary-button" to={`/events/${encodeURIComponent(request.eventId)}`}>View Event</Link>
+            )}
+            {request.status === 'COLLECTING_DEMAND' && (
+              authenticated ? (
+                <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>
+                  {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : 'Express Interest'}
+                </button>
+              ) : (
+                <Link className="primary-button" to="/login">Login to Express Interest</Link>
+              )
+            )}
+          </>
         )}
       </div>
       {interestError && <p className="form-error" role="alert">{interestError}</p>}

@@ -4,12 +4,24 @@ export function getEventRequests() {
   return apiRequest('/event-requests')
 }
 
+export function getMyEventRequests() {
+  return apiRequest('/event-requests/mine')
+}
+
 export function getEventRequestById(requestId) {
   return apiRequest(`/event-requests/${encodeURIComponent(requestId)}`)
 }
 
 export function createEventRequest(request) {
   return apiRequest('/event-requests', { method: 'POST', body: JSON.stringify(request) })
+}
+
+export function updateEventRequest(requestId, updates) {
+  return apiRequest(`/event-requests/${encodeURIComponent(requestId)}`, { method: 'PATCH', body: JSON.stringify(updates) })
+}
+
+export function deleteEventRequest(requestId) {
+  return apiRequest(`/event-requests/${encodeURIComponent(requestId)}`, { method: 'DELETE' })
 }
 
 export function getInterestStatus(requestId) {
