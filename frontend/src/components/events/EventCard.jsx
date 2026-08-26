@@ -9,6 +9,7 @@ export default function EventCard({ event, onRsvpChanged }) {
   const { authenticated } = useAuth()
   const rsvp = useEventRSVP(event.eventId, authenticated)
   const rsvpLabel = event.rsvpCount === 1 ? '1 person going' : `${event.rsvpCount} people going`
+  const locationLabel = [event.location, event.neighborhood, event.city].filter(Boolean).join(', ')
 
   async function handleGoing() {
     const success = await rsvp.setGoing()
@@ -26,17 +27,23 @@ export default function EventCard({ event, onRsvpChanged }) {
         <CategoryBadge category={event.category} />
         <EventStatusBadge status={event.status} />
       </div>
+
       <h2 className="event-card__title">{event.title}</h2>
       <p className="event-card__date">{formatDate(event.startTime)}</p>
       <p className="event-card__time">{formatEventTimeRange(event.startTime, event.endTime)}</p>
-      <div className="event-card__location" title={`${event.location}, ${event.neighborhood}, ${event.city}`}>
-        <span aria-hidden="true">⌖</span>
-        <span>{event.location}, {event.neighborhood}, {event.city}</span>
+
+      <div className="event-card__location" title={locationLabel}>
+        <span className="event-card__location-icon" aria-hidden="true">⌖</span>
+        <span className="event-card__location-text">
+          <strong>{event.location}</strong>
+          <small>{[event.neighborhood, event.city].filter(Boolean).join(' · ')}</small>
+        </span>
       </div>
+
       <div className="event-card__footer">
         <span className="event-card__rsvp">{rsvpLabel}</span>
         {authenticated ? (
-          <div>
+          <div className="event-card__rsvp-action">
             {rsvp.going ? (
               <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing}>
                 {rsvp.isBusy ? 'Updating…' : 'Going'}
@@ -51,8 +58,9 @@ export default function EventCard({ event, onRsvpChanged }) {
           <Link className="secondary-link" to="/login">Login to RSVP</Link>
         )}
       </div>
+
       {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
-      <Link className="event-card__link" to={`/events/${encodeURIComponent(event.eventId)}`}>View Event</Link>
+      <Link className="event-card__link" to={`/events/${encodeURIComponent(event.eventId)}`}>View Event <span aria-hidden="true">→</span></Link>
     </article>
   )
 }

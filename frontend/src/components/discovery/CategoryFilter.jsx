@@ -2,11 +2,24 @@ import { EVENT_CATEGORIES } from '../../state/discoveryState.js'
 
 export default function CategoryFilter({ value, onChange }) {
   return (
-    <label className="discovery-field" htmlFor="event-category">
-      <span>Category</span>
-      <select id="event-category" value={value} onChange={(event) => onChange(event.target.value)}>
-        {EVENT_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-      </select>
-    </label>
+    <fieldset className="category-section">
+      <legend>Browse by category</legend>
+      <div className="category-chips" role="group" aria-label="Event categories">
+        {EVENT_CATEGORIES.map((category) => {
+          const selected = value === category
+          return (
+            <button
+              key={category}
+              className={`category-chip${selected ? ' category-chip--selected' : ''}`}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onChange(category)}
+            >
+              {category}
+            </button>
+          )
+        })}
+      </div>
+    </fieldset>
   )
 }

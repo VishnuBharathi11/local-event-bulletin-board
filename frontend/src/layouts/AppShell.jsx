@@ -26,11 +26,11 @@ export default function AppShell() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header__inner container">
-          <NavLink className="brand" to="/" aria-label="Local Event Bulletin Board home">
-            <span className="brand__mark" aria-hidden="true">EB</span>
+          <NavLink className="brand" to="/" aria-label="EventHive home">
+            <span className="brand__mark" aria-hidden="true">EH</span>
             <span>
-              <strong>Local Event Bulletin Board</strong>
-              <small>Community events</small>
+              <strong>EventHive</strong>
+              <small>Local Event Bulletin Board</small>
             </span>
           </NavLink>
           <nav className="main-nav" aria-label="Primary navigation">

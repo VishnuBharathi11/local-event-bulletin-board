@@ -1,10 +1,43 @@
-.event-details__actions { display: grid; gap: 10px; margin-top: 18px; }
-.event-details__action-row { display: flex; flex-wrap: wrap; gap: 10px; }
-.event-details__action-row > button { flex: 1 1 180px; }
-.action-message { margin: 0; color: #18794e; font-size: 13px; line-height: 1.5; }
-.action-message--error { color: #b42318; }
+.event-details__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.event-details__action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(150px, .8fr);
+  gap: 10px;
+}
+
+.event-details__action-row > button {
+  min-height: 46px;
+  width: 100%;
+}
+
+.event-details__action-row > button:last-child {
+  background: #fff;
+}
+
+.action-message {
+  margin: 0;
+  color: var(--success);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.action-message--error {
+  color: var(--danger);
+}
 
 @media (max-width: 640px) {
-  .event-details__action-row { flex-direction: column; }
-  .event-details__action-row > button { width: 100%; flex-basis: auto; }
+  .event-details__action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .event-details__action-row > button {
+    width: 100%;
+  }
 }
