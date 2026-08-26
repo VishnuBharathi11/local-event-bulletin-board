@@ -1,32 +1,66 @@
+# ================================
 # Gradle
+# ================================
 .gradle/
 .gradle_home/
 
-# Android SDK/local caches
+# ================================
+# Android SDK / Local caches
+# ================================
 .android_home/
 
-# Build output
+# ================================
+# Android Build Output
+# ================================
 build/
 **/build/
 
-# IDE
+# ================================
+# Android IDE
+# ================================
 .idea/
 *.iml
 
-# Local configuration
+# ================================
+# Android Local Configuration
+# ================================
 local.properties
 
-# Environment files
+# ================================
+# Environment Files
+# ================================
 .env
 .env.*
 !.env.example
+
 frontend/.env
 frontend/.env.*
 !frontend/.env.example
+
 backend/.env
 backend/.env.*
 !backend/.env.example
 
-# APK
+# ================================
+# APK / AAB
+# ================================
 *.apk
 *.aab
+
+# ================================
+# Firebase Generated Files
+# ================================
+.firebase/
+
+# ================================
+# Frontend Build Output
+# ================================
+dist/
+frontend/dist/
+
+# ================================
+# Node Modules
+# ================================
+node_modules/
+frontend/node_modules/
+backend/node_modules/
