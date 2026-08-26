@@ -13,6 +13,7 @@ import {
   getDemandThreshold,
 } from '../utils/eventRequestPresentation.js'
 import '../styles/communityRequests.css'
+import '../styles/communityRequestsUi06.css'
 
 const statusLabels = { COLLECTING_DEMAND: 'Collecting Demand', THRESHOLD_REACHED: 'Threshold Reached', CONFIRMED: 'Confirmed', DECLINED: 'Declined' }
 
@@ -85,10 +86,10 @@ export default function EventRequestDetailsPage() {
     finally { setAction(null) }
   }
 
-  if (loading) return <div className="state-card" role="status"><strong>Loading request…</strong><span>Retrieving request details.</span></div>
-  if (notFound) return <div className="state-card" role="alert"><strong>Request not found</strong><span>The requested community event request does not exist.</span><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
-  if (error && !request) return <div className="state-card state-card--error" role="alert"><strong>Unable to load request</strong><span>{error}</span><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
-  if (!request) return <div className="state-card"><strong>Request not found</strong><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
+  if (loading) return <div className="state-card community-request-state community-request-state--loading" role="status"><span className="community-request-state__icon" aria-hidden="true">…</span><strong>Loading request details</strong><span>Retrieving the selected community request.</span></div>
+  if (notFound) return <div className="state-card community-request-state" role="alert"><span className="community-request-state__icon" aria-hidden="true">?</span><strong>Request not found</strong><span>The requested community event request does not exist.</span><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
+  if (error && !request) return <div className="state-card state-card--error community-request-state" role="alert"><span className="community-request-state__icon" aria-hidden="true">!</span><strong>We couldn't load this request</strong><span>Please return to Community Requests and try again.</span><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
+  if (!request) return <div className="state-card community-request-state"><span className="community-request-state__icon" aria-hidden="true">?</span><strong>Request not found</strong><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
 
   const demandCount = getDemandCount(request)
   const demandThreshold = getDemandThreshold(request)
@@ -98,20 +99,24 @@ export default function EventRequestDetailsPage() {
   const demandState = getDemandStateLabel(request.status)
   const isOrganizer = authenticated && currentUser?.userId === request.organizerId
   const canReview = isOrganizer && request.status === 'THRESHOLD_REACHED'
+  const isThresholdReached = request.status === 'THRESHOLD_REACHED'
 
   return (
-    <section className="request-details">
+    <section className="request-details request-details--ui06">
       <Link className="back-link" to="/community-requests">← Community Requests</Link>
 
-      <div className="request-card__topline">
-        <span className="request-card__category">{request.category}</span>
-        <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>{statusLabels[request.status] || request.status}</span>
-      </div>
+      <header className="request-details__header--ui06">
+        <div className="request-details__status-row">
+          <span className="request-card__category">{request.category}</span>
+          <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>
+            {statusLabels[request.status] || request.status}
+          </span>
+        </div>
+        <h1>{request.title}</h1>
+        <p className="request-details__description">{request.description}</p>
+      </header>
 
-      <h1>{request.title}</h1>
-      <p className="request-details__description">{request.description}</p>
-
-      <dl className="request-details__facts">
+      <dl className="request-details__facts request-details__facts--ui06">
         <div><dt>Category</dt><dd>{request.category}</dd></div>
         <div><dt>City</dt><dd>{request.city}</dd></div>
         <div><dt>Neighborhood</dt><dd>{request.neighborhood || 'Not specified'}</dd></div>
@@ -122,29 +127,42 @@ export default function EventRequestDetailsPage() {
         {request.organizerId && <div><dt>Organizer</dt><dd>Request organizer</dd></div>}
       </dl>
 
-      <section className="request-details__demand" aria-label="Community demand">
+      <section className={`request-details__demand request-details__demand--ui06 ${isThresholdReached ? 'request-details__demand--threshold' : ''}`} aria-label="Community demand">
         <div className="request-details__demand-heading">
-          <div><p className="eyebrow">Demand intelligence</p><h2>Community Demand</h2></div>
+          <div><p className="eyebrow">Demand intelligence</p><h2>Community Demand</h2><p>Progress is based on the configured demand threshold.</p></div>
           <strong>{Math.round(demandPercentage)}%</strong>
         </div>
-        <p className="request-details__demand-count"><strong>{demandCount} / {demandThreshold}</strong> people interested</p>
-        <div className="demand-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} aria-label="Community demand progress"><span style={{ width: `${progress * 100}%` }} /></div>
+        <div className="request-details__demand-count"><strong>{demandCount} / {demandThreshold}</strong><span>people interested</span></div>
+        <div
+          className="demand-progress__track"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax={demandThreshold}
+          aria-valuenow={Math.min(demandCount, demandThreshold)}
+          aria-valuetext={`${demandCount} of ${demandThreshold} people interested`}
+          aria-label="Community demand progress"
+        >
+          <span style={{ width: `${progress * 100}%` }} />
+        </div>
         <div className="request-details__demand-state"><strong>{demandState}</strong><span>{demandMessage}</span></div>
-        <div className="request-details__actions">
+        <div className="request-details__actions request-details__actions--ui06">
           {request.status === 'COLLECTING_DEMAND' && authenticated && <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>{action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}</button>}
-          {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span>Sign in to express interest.</span><Link className="primary-button" to="/login">Login</Link></>}
-          {request.status === 'THRESHOLD_REACHED' && <strong>Threshold reached — organizer review is now available.</strong>}
+          {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span>Sign in to express interest.</span><Link className="primary-button" to="/login">Login to Express Interest</Link></>}
+          {request.status === 'THRESHOLD_REACHED' && <strong className="request-details__threshold-state"><span aria-hidden="true">✓</span> Threshold Reached — organizer review is available.</strong>}
           {request.status === 'CONFIRMED' && <strong>This request has been confirmed and is now a published event.</strong>}
           {request.status === 'DECLINED' && <strong>This request was declined by the organizer.</strong>}
         </div>
       </section>
 
-      {error && <p className="form-error" role="alert" style={{ marginTop: 18 }}>{error}</p>}
+      {error && <p className="form-error request-details__action-error" role="alert">{error}</p>}
 
       {canReview && (
-        <section className="request-details__organizer">
-          <h2>Organizer Review</h2>
-          <p>Demand has reached the configured threshold. Confirming creates the existing Event model as a published event; declining closes the request.</p>
+        <section className="request-details__organizer request-details__organizer--ui06">
+          <div>
+            <p className="eyebrow">Organizer action</p>
+            <h2>Review this request</h2>
+            <p>Demand has reached the configured threshold. Confirming creates the existing Event model as a published event; declining closes the request.</p>
+          </div>
           <div className="request-details__actions">
             <button className="primary-button" type="button" disabled={action !== null} onClick={handleConfirm}>{action === 'confirm' ? 'Checking…' : 'Confirm Event'}</button>
             <button className="button-danger" type="button" disabled={action !== null} onClick={handleDecline}>{action === 'decline' ? 'Declining…' : 'Decline'}</button>
