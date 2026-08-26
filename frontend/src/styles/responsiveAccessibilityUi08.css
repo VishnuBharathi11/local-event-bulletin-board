@@ -1,0 +1,481 @@
+/* UI-08: cross-application responsive and accessibility corrections only. */
+
+/* Keep shared content constrained without hiding overflow. */
+.app-main,
+.event-page,
+.calendar-page,
+.request-form,
+.request-details,
+.auth-page,
+.event-details,
+.create-event-page,
+.community-requests-page,
+.page-placeholder {
+  min-width: 0;
+}
+
+/* Shared keyboard/focus and long-content safety. */
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+:where(h1, h2, h3, p, span, strong, dd, dt, a, button) {
+  overflow-wrap: anywhere;
+}
+
+/* Shared controls retain usable touch areas. */
+.primary-button,
+.secondary-button,
+.nav-link,
+.calendar__nav-button,
+.calendar__today-button,
+.category-chip,
+.discovery-clear {
+  min-height: 44px;
+}
+
+/* Application shell: keep all navigation reachable on narrow screens. */
+@media (max-width: 900px) {
+  .app-header__inner {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding-block: 10px;
+  }
+
+  .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .main-nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .main-nav .nav-link {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .auth-nav {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  .auth-nav__state,
+  .auth-nav__user {
+    max-width: 130px;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-main {
+    width: min(100% - 20px, var(--content-wide));
+    padding-block: 22px 34px;
+  }
+
+  .app-header__inner {
+    width: min(100% - 20px, var(--content-wide));
+  }
+
+  .brand strong {
+    font-size: 15px;
+  }
+
+  .brand small {
+    font-size: 10px;
+  }
+
+  .auth-nav__state,
+  .auth-nav__user {
+    max-width: 90px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-main {
+    width: min(100% - 16px, var(--content-wide));
+    padding-block: 18px 28px;
+  }
+
+  .app-header__inner {
+    width: min(100% - 16px, var(--content-wide));
+  }
+
+  .brand__mark {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .auth-nav__state,
+  .auth-nav__user {
+    max-width: 78px;
+  }
+}
+
+/* Event Board / discovery controls. */
+@media (max-width: 900px) {
+  .event-page__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .event-page__hero-action,
+  .event-page__hero-action .primary-button {
+    width: 100%;
+  }
+
+  .event-page__hero-action .primary-button {
+    min-width: 0;
+  }
+
+  .discovery-controls__top {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .discovery-controls__filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .event-page__hero {
+    min-height: 0;
+    padding: 24px 20px;
+  }
+
+  .event-page__hero h1 {
+    font-size: clamp(30px, 9vw, 44px);
+  }
+
+  .event-page__hero .event-page__description {
+    font-size: 15px;
+  }
+
+  .discovery-controls {
+    padding: 14px;
+  }
+
+  .discovery-controls__top,
+  .discovery-controls__filters {
+    grid-template-columns: 1fr;
+  }
+
+  .discovery-clear {
+    width: 100%;
+  }
+
+  .category-chips {
+    gap: 7px;
+  }
+
+  .category-chip {
+    min-height: 40px;
+  }
+
+  .event-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-card {
+    min-height: 0;
+  }
+
+  .event-card__location-text strong,
+  .event-card__location-text small {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .event-card__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .event-card__rsvp-action,
+  .event-card__rsvp-action .primary-button,
+  .event-card__rsvp-action .secondary-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .event-page__hero {
+    padding: 20px 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .event-page__hero h1 {
+    font-size: clamp(29px, 10vw, 39px);
+  }
+
+  .event-card {
+    padding: 16px;
+  }
+}
+
+/* Event Details: long content and action groups must wrap instead of clipping. */
+.event-details,
+.event-details__layout,
+.event-details__main,
+.event-details__description,
+.event-details__facts,
+.event-details__rsvp {
+  min-width: 0;
+}
+
+.event-details h1,
+.event-details__description p,
+.event-detail-fact strong,
+.event-detail-fact span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .event-details__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .event-details__rsvp {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* Authentication remains a controlled single-column surface. */
+.auth-page {
+  min-width: 0;
+}
+
+.auth-card,
+.auth-form,
+.auth-form .form-field {
+  min-width: 0;
+}
+
+.auth-form input {
+  width: 100%;
+  min-height: 46px;
+}
+
+.auth-form .form-error,
+.create-event-form__error,
+.form-error {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding-inline: 0;
+  }
+
+  .auth-card {
+    width: 100%;
+    padding: 20px 16px;
+  }
+}
+
+/* Create Event and Event Request forms: controls never exceed their grid cell. */
+.event-form,
+.create-event-form,
+.event-form .form-field,
+.create-event-form .form-field {
+  min-width: 0;
+}
+
+.event-form input,
+.event-form textarea,
+.event-form select,
+.create-event-form input,
+.create-event-form textarea,
+.create-event-form select {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .create-event-form__fields--date-time {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .create-event-form__fields--date-time .form-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .create-event-form__fields--date-time,
+  .create-event-form__fields--location {
+    grid-template-columns: 1fr;
+  }
+
+  .create-event-form__fields--date-time .form-field:first-child {
+    grid-column: auto;
+  }
+
+  .create-event-form__actions,
+  .event-form__actions--ui07 {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .create-event-form__actions .primary-button,
+  .event-form__submit--ui07 {
+    width: 100%;
+  }
+}
+
+/* Community Requests and Request Details: long titles, metadata, and actions wrap safely. */
+.request-grid,
+.request-card,
+.request-card__heading,
+.request-card__metadata,
+.request-details,
+.request-details__facts,
+.request-details__demand,
+.request-details__organizer {
+  min-width: 0;
+}
+
+.request-card h2,
+.request-card__description,
+.request-details h1,
+.request-details__description,
+.request-details__facts dd,
+.request-details__organizer p {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .request-details--ui06,
+  .request-details--ui07 {
+    padding: 20px 14px;
+  }
+
+  .request-details__facts--ui06,
+  .request-details__facts--ui07 {
+    grid-template-columns: 1fr;
+  }
+
+  .request-details__organizer--ui06,
+  .request-details__organizer--ui07 {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .request-details__organizer-actions--ui07,
+  .request-details__organizer-actions--ui07 .request-details__actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .community-requests-header--ui06 {
+    padding: 20px 16px;
+  }
+
+  .request-card--ui06 {
+    padding: 16px;
+  }
+}
+
+/* Calendar: preserve the seven-column model while reducing cell chrome on small viewports. */
+.calendar,
+.calendar__grid,
+.calendar__day,
+.calendar__events,
+.calendar__event-grid {
+  min-width: 0;
+}
+
+.calendar__day {
+  min-height: 44px;
+}
+
+@media (max-width: 360px) {
+  .calendar__header {
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    gap: 4px;
+  }
+
+  .calendar__nav-button {
+    width: 36px;
+    min-height: 44px;
+  }
+
+  .calendar__today-button {
+    min-height: 44px;
+    padding-inline: 7px;
+  }
+
+  .calendar__month-heading h2 {
+    font-size: 17px;
+  }
+}
+
+/* Conflict dialog: contain content without hiding it and retain full-width mobile actions. */
+.conflict-overlay {
+  box-sizing: border-box;
+}
+
+.conflict-dialog {
+  box-sizing: border-box;
+  width: min(860px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+}
+
+.conflict-dialog__header,
+.conflict-card__topline,
+.conflict-dialog__actions,
+.conflict-card__intelligence,
+.conflict-card__event {
+  min-width: 0;
+}
+
+.conflict-dialog__header h2,
+.conflict-card__event h3,
+.conflict-card__event p,
+.conflict-card__reasons,
+.conflict-dialog__summary,
+.conflict-dialog__note {
+  overflow-wrap: anywhere;
+}
+
+.conflict-dialog__close {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .conflict-dialog {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+  }
+}
+
+/* Status/health indicators communicate state with text as well as color. */
+.health-indicator {
+  min-height: 36px;
+}
+
+/* Avoid motion being a requirement for comprehension or keyboard use. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
