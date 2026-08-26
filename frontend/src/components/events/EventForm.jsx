@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import '../../styles/createEvent.css'
 
 const CATEGORIES = [
   'Sports',
@@ -93,63 +94,84 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
   }
 
   return (
-    <form className="event-form" onSubmit={handleSubmit} noValidate>
-      <div className="form-field">
-        <label htmlFor="event-title">Event Title</label>
-        <input id="event-title" value={form.title} onChange={(event) => update('title', event.target.value)} />
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="event-description">Description</label>
-        <textarea id="event-description" rows="4" value={form.description} onChange={(event) => update('description', event.target.value)} />
-      </div>
-
-      <div className="form-field">
-        <label htmlFor="event-category">Category</label>
-        <select id="event-category" value={form.category} onChange={(event) => update('category', event.target.value)}>
-          <option value="">Select category</option>
-          {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-        </select>
-      </div>
-
-      <div className="form-grid form-grid--date-time">
-        <div className="form-field">
-          <label htmlFor="event-date">Event Date</label>
-          <input id="event-date" type="date" min={minDate} value={form.date} onChange={(event) => update('date', event.target.value)} />
+    <form className="event-form create-event-form" onSubmit={handleSubmit} noValidate>
+      <fieldset className="create-event-form__section">
+        <div className="create-event-form__section-header">
+          <h2 className="create-event-form__section-title">Basic Information</h2>
+          <p className="create-event-form__section-description">Add the essential details people need to understand your event.</p>
         </div>
-        <div className="form-field">
-          <label htmlFor="event-start">Start Time</label>
-          <input id="event-start" type="time" value={form.startTime} onChange={(event) => update('startTime', event.target.value)} />
+        <div className="create-event-form__fields">
+          <div className="form-field">
+            <label htmlFor="event-title">Event Title</label>
+            <input id="event-title" value={form.title} onChange={(event) => update('title', event.target.value)} />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="event-description">Description</label>
+            <textarea id="event-description" rows="6" value={form.description} onChange={(event) => update('description', event.target.value)} />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="event-category">Category</label>
+            <select id="event-category" value={form.category} onChange={(event) => update('category', event.target.value)}>
+              <option value="">Select category</option>
+              {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="form-field">
-          <label htmlFor="event-end">End Time</label>
-          <input id="event-end" type="time" value={form.endTime} onChange={(event) => update('endTime', event.target.value)} />
+      </fieldset>
+
+      <fieldset className="create-event-form__section">
+        <div className="create-event-form__section-header">
+          <h2 className="create-event-form__section-title">Date &amp; Time</h2>
+          <p className="create-event-form__section-description">Choose when the event starts and ends. The existing local-time behavior is preserved.</p>
         </div>
+        <div className="create-event-form__fields create-event-form__fields--date-time">
+          <div className="form-field">
+            <label htmlFor="event-date">Event Date</label>
+            <input id="event-date" type="date" min={minDate} value={form.date} onChange={(event) => update('date', event.target.value)} />
+          </div>
+          <div className="form-field">
+            <label htmlFor="event-start">Start Time</label>
+            <input id="event-start" type="time" value={form.startTime} onChange={(event) => update('startTime', event.target.value)} />
+          </div>
+          <div className="form-field">
+            <label htmlFor="event-end">End Time</label>
+            <input id="event-end" type="time" value={form.endTime} onChange={(event) => update('endTime', event.target.value)} />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset className="create-event-form__section">
+        <div className="create-event-form__section-header">
+          <h2 className="create-event-form__section-title">Location</h2>
+          <p className="create-event-form__section-description">Tell attendees where the event will take place.</p>
+        </div>
+        <div className="create-event-form__fields">
+          <div className="form-field">
+            <label htmlFor="event-location">Venue / Exact Location</label>
+            <input id="event-location" value={form.location} onChange={(event) => update('location', event.target.value)} />
+          </div>
+        </div>
+        <div className="create-event-form__fields create-event-form__fields--location">
+          <div className="form-field">
+            <label htmlFor="event-city">City</label>
+            <input id="event-city" value={form.city} onChange={(event) => update('city', event.target.value)} />
+          </div>
+          <div className="form-field">
+            <label htmlFor="event-neighborhood">Neighborhood</label>
+            <input id="event-neighborhood" value={form.neighborhood} onChange={(event) => update('neighborhood', event.target.value)} />
+          </div>
+        </div>
+      </fieldset>
+
+      {(error || serverError) && <p className="create-event-form__error form-error" role="alert">{error || serverError}</p>}
+
+      <div className="create-event-form__actions">
+        <button className="primary-button" type="submit" disabled={submitting} aria-busy={submitting}>
+          {submitting ? 'Creating Event…' : 'Create Event'}
+        </button>
       </div>
-
-      <div className="form-section-title">Location Details</div>
-
-      <div className="form-field">
-        <label htmlFor="event-location">Venue / Exact Location</label>
-        <input id="event-location" value={form.location} onChange={(event) => update('location', event.target.value)} />
-      </div>
-
-      <div className="form-grid form-grid--location">
-        <div className="form-field">
-          <label htmlFor="event-city">City</label>
-          <input id="event-city" value={form.city} onChange={(event) => update('city', event.target.value)} />
-        </div>
-        <div className="form-field">
-          <label htmlFor="event-neighborhood">Neighborhood</label>
-          <input id="event-neighborhood" value={form.neighborhood} onChange={(event) => update('neighborhood', event.target.value)} />
-        </div>
-      </div>
-
-      {(error || serverError) && <p className="form-error" role="alert">{error || serverError}</p>}
-
-      <button className="primary-button" type="submit" disabled={submitting}>
-        {submitting ? 'Creating Event…' : 'Create Event'}
-      </button>
     </form>
   )
 }
