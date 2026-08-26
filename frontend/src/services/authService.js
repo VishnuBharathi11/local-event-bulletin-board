@@ -15,3 +15,7 @@ export function logout() {
 export function getCurrentUser() {
   return apiRequest('/auth/me')
 }
+
+export function updateProfile(updates) {
+  return apiRequest('/auth/profile', { method: 'PATCH', body: JSON.stringify(updates) })
+}

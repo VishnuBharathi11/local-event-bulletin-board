@@ -127,6 +127,13 @@ async function getCurrentUser(userId) {
   return toPublicUser(user)
 }
 
+async function updateProfile(userId, input) {
+  const { validateProfileUpdate } = require('../models/userModel')
+  const updates = validateProfileUpdate(input)
+  const user = await userRepository.updateUser(userId, updates)
+  return toPublicUser(user)
+}
+
 module.exports = {
   SESSION_COOKIE,
   SESSION_MAX_AGE_MS,
@@ -138,4 +145,5 @@ module.exports = {
   register,
   login,
   getCurrentUser,
+  updateProfile,
 }

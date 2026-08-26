@@ -60,4 +60,14 @@ async function me(req, res) {
   return res.status(200).json({ user: toPublicUser(req.user) })
 }
 
-module.exports = { register, login, logout, me }
+async function updateProfile(req, res) {
+  if (!req.user) return res.status(401).json({ error: 'Authentication required.' })
+  try {
+    const user = await authService.updateProfile(req.user.userId, req.body)
+    return res.status(200).json({ user })
+  } catch (error) {
+    return handleError(res, error)
+  }
+}
+
+module.exports = { register, login, logout, me, updateProfile }

@@ -44,6 +44,12 @@ export function AuthProvider({ children }) {
     setStatus('unauthenticated')
   }, [])
 
+  const updateProfile = useCallback(async (updates) => {
+    const response = await authService.updateProfile(updates)
+    setCurrentUser(response.user)
+    return response.user
+  }, [])
+
   const value = useMemo(() => ({
     status,
     loading: status === 'loading',
@@ -53,8 +59,9 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    updateProfile,
     refreshCurrentUser,
-  }), [status, currentUser, login, register, logout, refreshCurrentUser])
+  }), [status, currentUser, login, register, logout, updateProfile, refreshCurrentUser])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

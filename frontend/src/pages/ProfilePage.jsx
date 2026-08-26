@@ -6,31 +6,57 @@ import EventRequestCard from '../components/community/EventRequestCard.jsx'
 import '../styles/communityRequests.css'
 
 export default function ProfilePage() {
-  const { currentUser } = useAuth()
+  const { currentUser, updateProfile } = useAuth()
   const navigate = useNavigate()
+
   const [requests, setRequests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [loadingRequests, setLoadingRequests] = useState(true)
+  const [requestError, setRequestError] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+
+  const [isEditing, setIsEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phone: '',
+    country: '',
+    state: '',
+    city: '',
+    pincode: ''
+  })
+  const [updateStatus, setUpdateStatus] = useState('idle')
+  const [updateError, setUpdateError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
-        setLoading(true)
+        setLoadingRequests(true)
         const data = await getMyEventRequests()
         if (!cancelled) setRequests(data)
       } catch (err) {
-        if (!cancelled) setError(err.message)
+        if (!cancelled) setRequestError(err.message)
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoadingRequests(false)
       }
     }
     load()
     return () => { cancelled = true }
   }, [])
 
-  async function handleDelete(requestId) {
+  useEffect(() => {
+    if (currentUser) {
+      setEditForm({
+        name: currentUser.name || '',
+        phone: currentUser.phone || '',
+        country: currentUser.country || '',
+        state: currentUser.state || '',
+        city: currentUser.city || '',
+        pincode: currentUser.pincode || ''
+      })
+    }
+  }, [currentUser])
+
+  async function handleDeleteRequest(requestId) {
     if (!window.confirm('Delete this event request? This action cannot be undone.')) return
 
     setDeletingId(requestId)
@@ -44,75 +70,200 @@ export default function ProfilePage() {
     }
   }
 
-  function handleEdit(requestId) {
+  function handleEditRequest(requestId) {
     navigate(`/community-requests/edit/${encodeURIComponent(requestId)}`)
+  }
+
+  async function handleUpdateProfile(e) {
+    e.preventDefault()
+    setUpdateStatus('saving')
+    setUpdateError(null)
+    try {
+      await updateProfile(editForm)
+      setIsEditMode(false)
+      setUpdateStatus('success')
+      setTimeout(() => setUpdateStatus('idle'), 3000)
+    } catch (err) {
+      setUpdateError(err.message)
+      setUpdateStatus('idle')
+    }
+  }
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A'
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(timestamp))
   }
 
   return (
     <div className="event-page">
       <header className="event-page__header">
         <div>
-          <h1>My Profile</h1>
-          <p className="event-page__description">Manage your account and view your activity.</p>
+          <h1>User Profile</h1>
+          <p className="event-page__description">Manage your account, personal information, and event requests.</p>
         </div>
       </header>
 
-      <div style={{ display: 'grid', gap: '32px', marginTop: '24px' }}>
-        <section className="page-placeholder" style={{ margin: 0 }}>
-          <div style={{ display: 'grid', gap: '24px' }}>
-            <div>
-              <span className="eyebrow" style={{ display: 'block', marginBottom: '8px' }}>User Information</span>
-              <div style={{ display: 'grid', gap: '8px' }}>
-                <p><strong>Name:</strong> {currentUser?.name || 'N/A'}</p>
-                <p><strong>Email:</strong> {currentUser?.email || 'N/A'}</p>
-              </div>
+      <div className="profile-container" style={{ display: 'grid', gap: '32px', marginTop: '24px' }}>
+
+        {/* PROFILE HEADER CARD */}
+        <section className="profile-card profile-header-card" style={{
+          background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%)',
+          color: 'white',
+          padding: '40px',
+          borderRadius: 'var(--radius-lg)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '32px',
+          boxShadow: 'var(--shadow-md)'
+        }}>
+          <div className="profile-avatar" style={{
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: '40px',
+            fontWeight: 'bold',
+            border: '4px solid rgba(255,255,255,0.3)'
+          }}>
+            {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ margin: 0, fontSize: '32px', color: 'white' }}>{currentUser?.name}</h2>
+            <p style={{ margin: '4px 0 0', opacity: 0.9, fontSize: '16px' }}>EventHive Member</p>
+            <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+              <button
+                className="secondary-button"
+                onClick={() => setIsEditMode(true)}
+                style={{ backgroundColor: 'white', border: 'none', color: 'var(--brand-dark)' }}
+              >
+                Edit Profile
+              </button>
             </div>
-
-            <hr style={{ border: 0, borderTop: '1px solid var(--border)', margin: 0 }} />
-
-            <div>
-              <span className="eyebrow" style={{ display: 'block', marginBottom: '8px' }}>Account Status</span>
-              <p>You are currently logged in to EventHive.</p>
+          </div>
+          <div className="profile-header-meta" style={{ textAlign: 'right' }}>
+            <span className="eyebrow" style={{ color: 'rgba(255,255,255,0.7)', display: 'block' }}>Account Status</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#4ade80' }}></span>
+              <strong style={{ fontSize: '18px' }}>{currentUser?.status || 'Active'}</strong>
             </div>
           </div>
         </section>
 
-        <section id="my-requests">
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
+        {updateStatus === 'success' && (
+          <div className="action-message" style={{ backgroundColor: '#ecfdf5', color: 'var(--success)', padding: '12px 16px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
+            Profile updated successfully!
+          </div>
+        )}
+
+        {/* INFO GRID */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: '24px'
+        }}>
+
+          {/* PERSONAL & CONTACT */}
+          <section className="profile-card" style={{
+            backgroundColor: 'white',
+            padding: '28px',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <h3 style={{ margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              Contact Details
+            </h3>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Email Address</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{currentUser?.email}</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Phone Number</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{currentUser?.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Member Since</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{formatDate(currentUser?.createdAt)}</p>
+              </div>
+            </div>
+          </section>
+
+          {/* LOCATION */}
+          <section className="profile-card" style={{
+            backgroundColor: 'white',
+            padding: '28px',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <h3 style={{ margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              Location Details
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Country</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{currentUser?.country || 'Not provided'}</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>State</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{currentUser?.state || 'Not provided'}</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>City</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{currentUser?.city || 'Not provided'}</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Pincode</label>
+                <p style={{ margin: 0, fontSize: '16px' }}>{currentUser?.pincode || 'Not provided'}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* MY REQUESTS SECTION */}
+        <section id="my-requests" style={{ marginTop: '12px' }}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <h2 style={{ margin: 0 }}>Your Event Requests</h2>
-            <Link className="secondary-link" to="/community-requests/new">Request an Event</Link>
+            <Link className="primary-button" to="/community-requests/new">Request an Event</Link>
           </header>
 
-          {loading && (
-            <div className="state-card">
+          {loadingRequests && (
+            <div className="state-card" style={{ padding: '60px' }}>
+              <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid var(--brand)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
               <strong>Loading your event requests...</strong>
             </div>
           )}
 
-          {error && (
+          {requestError && (
             <div className="state-card state-card--error">
               <strong>Unable to load your event requests</strong>
-              <span>{error}</span>
+              <span>{requestError}</span>
             </div>
           )}
 
-          {!loading && !error && requests.length === 0 && (
-            <div className="state-card">
+          {!loadingRequests && !requestError && requests.length === 0 && (
+            <div className="state-card" style={{ padding: '60px', borderStyle: 'dashed' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>✉️</div>
               <strong>You haven't created any event requests yet.</strong>
-              <span>Want something to happen in your area? Request it.</span>
-              <Link className="primary-button" style={{ marginTop: '12px' }} to="/community-requests/new">Request an Event</Link>
+              <span>Want something to happen in your area? Help shape your community.</span>
+              <Link className="secondary-button" style={{ marginTop: '20px' }} to="/community-requests/new">Request an Event</Link>
             </div>
           )}
 
-          {!loading && !error && requests.length > 0 && (
-            <div className="request-grid">
+          {!loadingRequests && !requestError && requests.length > 0 && (
+            <div className="request-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))' }}>
               {requests.map(request => (
                 <EventRequestCard
                   key={request.requestId}
                   request={request}
                   isManagement={true}
-                  onEdit={() => handleEdit(request.requestId)}
-                  onDelete={() => handleDelete(request.requestId)}
+                  onEdit={() => handleEditRequest(request.requestId)}
+                  onDelete={() => handleDeleteRequest(request.requestId)}
                   isDeleting={deletingId === request.requestId}
                 />
               ))}
@@ -120,6 +271,126 @@ export default function ProfilePage() {
           )}
         </section>
       </div>
+
+      {/* EDIT PROFILE MODAL */}
+      {isEditing && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'grid',
+          placeItems: 'center',
+          zIndex: 100,
+          padding: '20px',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: 'white',
+            padding: '32px',
+            borderRadius: 'var(--radius-lg)',
+            width: 'min(100%, 600px)',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
+          }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0 }}>Edit Profile</h2>
+              <button
+                onClick={() => setIsEditMode(false)}
+                style={{ background: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                &times;
+              </button>
+            </header>
+
+            <form onSubmit={handleUpdateProfile} style={{ display: 'grid', gap: '20px' }}>
+              <div className="form-field">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={e => setEditForm({...editForm, name: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="form-field">
+                  <label>Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={e => setEditForm({...editForm, phone: e.target.value})}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Pincode</label>
+                  <input
+                    type="text"
+                    value={editForm.pincode}
+                    onChange={e => setEditForm({...editForm, pincode: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="form-field">
+                  <label>Country</label>
+                  <input
+                    type="text"
+                    value={editForm.country}
+                    onChange={e => setEditForm({...editForm, country: e.target.value})}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>State</label>
+                  <input
+                    type="text"
+                    value={editForm.state}
+                    onChange={e => setEditForm({...editForm, state: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label>City</label>
+                <input
+                  type="text"
+                  value={editForm.city}
+                  onChange={e => setEditForm({...editForm, city: e.target.value})}
+                />
+              </div>
+
+              {updateError && (
+                <p className="form-error" style={{ margin: 0 }}>{updateError}</p>
+              )}
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setIsEditMode(false)}
+                  disabled={updateStatus === 'saving'}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={updateStatus === 'saving'}
+                >
+                  {updateStatus === 'saving' ? 'Saving Changes...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }

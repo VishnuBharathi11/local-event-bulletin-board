@@ -41,4 +41,11 @@ async function createUser(user) {
   return { ...entity, userId }
 }
 
-module.exports = { USERS_COLLECTION, userIdForEmail, getUserById, getUserByEmail, createUser }
+async function updateUser(userId, updates) {
+  const document = getUserCollection().doc(userId)
+  await document.update(updates)
+  const snapshot = await document.get()
+  return fromFirestoreDocument(snapshot)
+}
+
+module.exports = { USERS_COLLECTION, userIdForEmail, getUserById, getUserByEmail, createUser, updateUser }
