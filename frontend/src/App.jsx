@@ -8,6 +8,7 @@ export default function App() {
       <AuthProvider>
         <AppRouter />
       </AuthProvider>
+      // Cloud Run CI/CD deployment test
     </BrowserRouter>
   )
 }
