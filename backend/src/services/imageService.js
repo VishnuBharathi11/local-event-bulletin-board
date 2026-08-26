@@ -5,7 +5,7 @@ const crypto = require('crypto')
 /**
  * Uploads a base64 encoded image to Google Cloud Storage.
  * @param {string} base64Data The base64 data string (including data:image/xxx;base64, prefix)
- * @returns {Promise<string>} The public URL of the uploaded image.
+ * @returns {Promise<string>} The URL of the uploaded image.
  */
 async function uploadImage(base64Data) {
   if (!base64Data || typeof base64Data !== 'string') {
@@ -28,8 +28,8 @@ async function uploadImage(base64Data) {
 
   const bucketName = process.env.GCS_BUCKET_NAME
   if (!bucketName) {
-    console.error('GCS_BUCKET_NAME is not defined in environment variables.')
-    throw new Error('Image upload failed: Storage not configured.')
+    console.error('CRITICAL ERROR: GCS_BUCKET_NAME is not defined in environment variables.')
+    throw new Error('Image upload failed: Storage bucket not configured in environment.')
   }
 
   const bucket = admin.storage(getFirebaseApp()).bucket(bucketName)
@@ -38,6 +38,8 @@ async function uploadImage(base64Data) {
   const filename = `events/${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${extension}`
   const file = bucket.file(filename)
 
+  console.log(`Uploading image to bucket ${bucketName} as ${filename}...`)
+
   await file.save(buffer, {
     metadata: {
       contentType: `image/${extension}`,
@@ -45,17 +47,25 @@ async function uploadImage(base64Data) {
     resumable: false,
   })
 
-  // In many production environments, we would make the file public.
-  // For stability and presentation, we'll return the standard GCS public URL format.
-  // Note: This assumes the bucket or object has public read permissions.
-  // If not, a signed URL would be required, but public URL is simpler for a hackathon.
+  // If Public Access Prevention is enabled, makePublic() will fail.
+  // We will try to make it public just in case, but rely on signed URLs for guaranteed access.
   try {
     await file.makePublic()
+    console.log(`Image ${filename} made public.`)
+    return `https://storage.googleapis.com/${bucketName}/${filename}`
   } catch (error) {
-    console.warn('Failed to make image public. It might already be public or permissions are restricted.', error.message)
-  }
+    console.warn('Could not make image public (expected if PAP is enabled). Generating signed URL instead.', error.message)
 
-  return `https://storage.googleapis.com/${bucketName}/${filename}`
+    // Generate a long-lived signed URL (e.g., 7 days) for the database.
+    // For a production app with high security, we'd sign on-the-fly during GET,
+    // but for stability/simplicity before a presentation, this works well.
+    const [signedUrl] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    })
+
+    return signedUrl
+  }
 }
 
 module.exports = {
