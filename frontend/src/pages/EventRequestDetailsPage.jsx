@@ -23,6 +23,7 @@ export default function EventRequestDetailsPage() {
   const [request, setRequest] = useState(null)
   const [interested, setInterested] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
   const [action, setAction] = useState(null)
   const [error, setError] = useState(null)
   const [conflicts, setConflicts] = useState([])
@@ -31,13 +32,19 @@ export default function EventRequestDetailsPage() {
     let cancelled = false
     async function load() {
       setLoading(true)
+      setNotFound(false)
       setError(null)
       try {
         const requestData = await getEventRequestById(requestId)
         let interestData = { interested: false }
         if (authenticated) interestData = await getInterestStatus(requestId)
         if (!cancelled) { setRequest(requestData); setInterested(Boolean(interestData.interested)) }
-      } catch (loadError) { if (!cancelled) setError(loadError.message) } finally { if (!cancelled) setLoading(false) }
+      } catch (loadError) {
+        if (!cancelled) {
+          if (loadError.status === 404) setNotFound(true)
+          else setError(loadError.message)
+        }
+      } finally { if (!cancelled) setLoading(false) }
     }
     load()
     return () => { cancelled = true }
@@ -79,6 +86,7 @@ export default function EventRequestDetailsPage() {
   }
 
   if (loading) return <div className="state-card" role="status"><strong>Loading request…</strong><span>Retrieving request details.</span></div>
+  if (notFound) return <div className="state-card" role="alert"><strong>Request not found</strong><span>The requested community event request does not exist.</span><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
   if (error && !request) return <div className="state-card state-card--error" role="alert"><strong>Unable to load request</strong><span>{error}</span><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
   if (!request) return <div className="state-card"><strong>Request not found</strong><Link className="secondary-link" to="/community-requests">Back to Requests</Link></div>
 
