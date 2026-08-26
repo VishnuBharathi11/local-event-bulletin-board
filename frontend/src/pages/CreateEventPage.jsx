@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import EventForm from '../components/events/EventForm.jsx'
 import ConflictReview from '../components/ConflictReview.jsx'
 import { createEvent, continueEventCreation } from '../services/eventService.js'
+import '../styles/createEvent.css'
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
@@ -52,11 +53,14 @@ export default function CreateEventPage() {
   }
 
   return (
-    <section className="event-page event-page--form">
-      <header className="page-header-simple">
+    <section className="event-page create-event-page">
+      <header className="page-header-simple create-event-header">
         <Link className="back-link" to="/">← Back to Event Board</Link>
-        <p className="eyebrow">New event</p>
-        <h1>Create New Event</h1>
+        <div>
+          <p className="eyebrow">New event</p>
+          <h1>Create New Event</h1>
+          <p className="create-event-header__intro">Publish a local event with the date, time, location, category, and description attendees need.</p>
+        </div>
       </header>
       <EventForm onSubmit={handleCreate} submitting={submitting} serverError={serverError} />
       {conflicts.length > 0 && (
