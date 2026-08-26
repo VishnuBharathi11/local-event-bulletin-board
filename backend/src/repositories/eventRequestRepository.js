@@ -3,12 +3,19 @@ const { fromFirestoreDocument, toFirestoreEventRequest } = require('../models/ev
 
 const EVENT_REQUESTS_COLLECTION = 'eventRequests'
 const INTEREST_COLLECTION = 'eventRequestInterest'
+const ACTIVE_REQUEST_STATUSES = Object.freeze(['COLLECTING_DEMAND', 'THRESHOLD_REACHED'])
 
 function getRequestCollection() { return getFirestore().collection(EVENT_REQUESTS_COLLECTION) }
 function getInterestCollection() { return getFirestore().collection(INTEREST_COLLECTION) }
 
+function buildActiveEventRequestQuery(collection) {
+  return collection
+    .where('status', 'in', ACTIVE_REQUEST_STATUSES)
+    .orderBy('createdAt', 'desc')
+}
+
 async function getEventRequests() {
-  const snapshot = await getRequestCollection().where('status', 'in', ['COLLECTING_DEMAND', 'THRESHOLD_REACHED']).orderBy('createdAt', 'desc').get()
+  const snapshot = await buildActiveEventRequestQuery(getRequestCollection()).get()
   return snapshot.docs.map(fromFirestoreDocument)
 }
 
@@ -94,4 +101,16 @@ async function declineEventRequest(requestId) {
   await requestRef.update({ status: 'DECLINED' })
 }
 
-module.exports = { EVENT_REQUESTS_COLLECTION, INTEREST_COLLECTION, getEventRequests, getEventRequestById, createEventRequest, hasUserExpressedInterest, expressInterest, confirmEventRequest, declineEventRequest }
+module.exports = {
+  EVENT_REQUESTS_COLLECTION,
+  INTEREST_COLLECTION,
+  ACTIVE_REQUEST_STATUSES,
+  buildActiveEventRequestQuery,
+  getEventRequests,
+  getEventRequestById,
+  createEventRequest,
+  hasUserExpressedInterest,
+  expressInterest,
+  confirmEventRequest,
+  declineEventRequest,
+}
