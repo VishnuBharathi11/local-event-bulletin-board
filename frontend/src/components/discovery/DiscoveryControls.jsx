@@ -14,8 +14,9 @@ export default function DiscoveryControls({ discovery, cityOptions, neighborhood
         </button>
       </div>
 
+      <CategoryFilter value={discovery.selectedCategory} onChange={actions.updateCategory} />
+
       <div className="discovery-controls__filters">
-        <CategoryFilter value={discovery.selectedCategory} onChange={actions.updateCategory} />
         <LocationFilters
           city={discovery.selectedCity}
           neighborhood={discovery.selectedNeighborhood}
