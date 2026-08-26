@@ -26,7 +26,7 @@ export function useEventRequests() {
           })),
         )
         existingInterestIds = new Set(
-          interestResults.filter((result) => result.interested === true).map((result) => result.requestId),
+          interestResults.filter((result) => Boolean(result.interested?.interested)).map((result) => result.requestId),
         )
       }
 
