@@ -7,6 +7,7 @@ import CalendarPage from '../pages/CalendarPage.jsx'
 import CommunityRequestsPage from '../pages/CommunityRequestsPage.jsx'
 import CreateEventRequestPage from '../pages/CreateEventRequestPage.jsx'
 import EventRequestDetailsPage from '../pages/EventRequestDetailsPage.jsx'
+import ProfilePage from '../pages/ProfilePage.jsx'
 import LoginPage from '../pages/LoginPage.jsx'
 import RegisterPage from '../pages/RegisterPage.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
@@ -32,6 +33,7 @@ export default function AppRouter() {
         <Route path="/community-requests" element={<CommunityRequestsPage />} />
         <Route path="/community-requests/new" element={<ProtectedRoute><CreateEventRequestPage /></ProtectedRoute>} />
         <Route path="/community-requests/:requestId" element={<EventRequestDetailsPage />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

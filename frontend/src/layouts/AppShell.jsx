@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useBackendHealth } from '../hooks/useBackendHealth.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import logo from '../assets/logo.jpeg'
 
 const navigation = [
   { to: '/', label: 'Event Board', end: true },
@@ -9,7 +9,6 @@ const navigation = [
 ]
 
 export default function AppShell() {
-  const { status: backendStatus } = useBackendHealth()
   const { loading, authenticated, currentUser, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -27,7 +26,7 @@ export default function AppShell() {
       <header className="app-header">
         <div className="app-header__inner container">
           <NavLink className="brand" to="/" aria-label="EventHive home">
-            <span className="brand__mark" aria-hidden="true">EH</span>
+            <img src={logo} alt="" className="brand__logo" />
             <span>
               <strong>EventHive</strong>
               <small>Local Event Bulletin Board</small>
@@ -50,8 +49,30 @@ export default function AppShell() {
               <span className="auth-nav__state">Checking account…</span>
             ) : authenticated ? (
               <>
-                <span className="auth-nav__user" title={currentUser?.email}>{currentUser?.name}</span>
-                <button className="secondary-button auth-nav__logout" type="button" onClick={handleLogout}>Logout</button>
+                <NavLink
+                  className={({ isActive }) => isActive ? 'auth-nav__user nav-link--active' : 'auth-nav__user'}
+                  to="/profile"
+                  title={currentUser?.email}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  {currentUser?.name}
+                </NavLink>
+                <button
+                  className="auth-nav__logout"
+                  type="button"
+                  onClick={handleLogout}
+                  aria-label="Logout"
+                  title="Logout"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                </button>
               </>
             ) : (
               <>
@@ -59,10 +80,6 @@ export default function AppShell() {
                 <NavLink className="primary-button auth-nav__register" to="/register">Register</NavLink>
               </>
             )}
-            <span className={`health-indicator health-indicator--${backendStatus}`}>
-              <span aria-hidden="true" />
-              Backend {backendStatus}
-            </span>
           </div>
         </div>
       </header>
