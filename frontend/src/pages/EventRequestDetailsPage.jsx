@@ -97,7 +97,8 @@ export default function EventRequestDetailsPage() {
   const demandMessage = getDemandMessage(request)
   const demandState = getDemandStateLabel(request.status)
   const isOrganizer = authenticated && currentUser?.userId === request.organizerId
-  const canReview = isOrganizer && request.status === 'THRESHOLD_REACHED'
+  const hasReachedThreshold = demandCount >= demandThreshold && demandThreshold > 0
+  const canReview = isOrganizer && (request.status === 'THRESHOLD_REACHED' || hasReachedThreshold) && (request.status === 'COLLECTING_DEMAND' || request.status === 'THRESHOLD_REACHED')
 
   return (
     <section className="request-details">
@@ -107,6 +108,12 @@ export default function EventRequestDetailsPage() {
         <span className="request-card__category">{request.category}</span>
         <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>{statusLabels[request.status] || request.status}</span>
       </div>
+
+      {request.imageUrl && (
+        <div className="request-details__image-wrap" style={{ margin: '20px 0', borderRadius: '12px', overflow: 'hidden', height: '300px' }}>
+          <img src={request.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      )}
 
       <h1>{request.title}</h1>
       <p className="request-details__description">{request.description}</p>
@@ -127,7 +134,7 @@ export default function EventRequestDetailsPage() {
           <div><p className="eyebrow">Demand intelligence</p><h2>Community Demand</h2></div>
           <strong>{Math.round(demandPercentage)}%</strong>
         </div>
-        <p className="request-details__demand-count"><strong>{demandCount} / {demandThreshold}</strong> people interested</p>
+        <p className="request-details__demand-count"><strong>{demandCount} / {demandThreshold}</strong> showed interest</p>
         <div className="demand-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} aria-label="Community demand progress"><span style={{ width: `${progress * 100}%` }} /></div>
         <div className="request-details__demand-state"><strong>{demandState}</strong><span>{demandMessage}</span></div>
         <div className="request-details__actions">

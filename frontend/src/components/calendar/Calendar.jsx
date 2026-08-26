@@ -1,5 +1,5 @@
 import EventCard from '../events/EventCard.jsx'
-import { getCalendarCells, formatMonthYear, formatSelectedDate, WEEKDAYS } from '../../utils/calendar.js'
+import { getCalendarCells, formatMonthYear, formatSelectedDate, WEEKDAYS, isExpired } from '../../utils/calendar.js'
 
 export default function Calendar({
   currentMonth,
@@ -12,6 +12,7 @@ export default function Calendar({
   onDateSelected,
 }) {
   const { cells } = getCalendarCells(currentMonth)
+  const now = Date.now()
 
   return (
     <section className="calendar" aria-label="Community Calendar">
@@ -71,7 +72,6 @@ export default function Calendar({
               onClick={() => onDateSelected(cell.date)}
             >
               <span>{cell.day}</span>
-              {hasEvents && <span className="calendar__event-dot" aria-hidden="true" />}
             </button>
           )
         })}
@@ -90,12 +90,20 @@ export default function Calendar({
 
         {eventsForDate.length === 0 ? (
           <div className="calendar__empty-state">
+            <div className="calendar__empty-icon" aria-hidden="true">⌕</div>
             <strong>No events on this date</strong>
             <span>Try another date to discover local events.</span>
           </div>
         ) : (
           <div className="event-grid">
-            {eventsForDate.map((event) => <EventCard key={event.eventId} event={event} />)}
+            {eventsForDate.map((event) => (
+              <div
+                key={event.eventId}
+                style={{ opacity: isExpired(event, now) ? 0.6 : 1 }}
+              >
+                <EventCard event={event} />
+              </div>
+            ))}
           </div>
         )}
       </section>

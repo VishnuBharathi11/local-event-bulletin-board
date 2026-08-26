@@ -28,6 +28,11 @@ export default function EventRequestCard({ request, isInterested, interestLoadin
 
   return (
     <article className="request-card">
+      {request.imageUrl && (
+        <div className="request-card__image-wrap" style={{ margin: '-20px -20px 16px', height: '160px', overflow: 'hidden', borderTopLeftRadius: 'var(--radius-md)', borderTopRightRadius: 'var(--radius-md)' }}>
+          <img src={request.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      )}
       <div className="request-card__topline">
         <span className="request-card__category">{request.category}</span>
         <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>
@@ -43,7 +48,7 @@ export default function EventRequestCard({ request, isInterested, interestLoadin
       <div className="demand-progress" aria-label={`Demand ${demandCount} of ${demandThreshold}`}>
         <div className="demand-progress__label">
           <strong>{demandCount} / {demandThreshold}</strong>
-          <span>{Math.round(demandPercentage)}% demand</span>
+          <span>{Math.round(demandPercentage)}% showed interest</span>
         </div>
         <div className="demand-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} aria-label="Community demand progress">
           <span style={{ width: `${progress * 100}%` }} />

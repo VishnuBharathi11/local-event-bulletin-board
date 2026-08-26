@@ -29,8 +29,9 @@
 .calendar__events-heading .eyebrow { margin-bottom: 5px; }
 .calendar__events-heading h2 { margin: 0; color: #101828; font-size: clamp(20px, 3vw, 26px); line-height: 1.2; }
 .calendar__event-count { flex: 0 0 auto; color: var(--text-muted); font-size: 13px; font-weight: 700; }
-.calendar__empty-state { display: grid; justify-items: start; gap: 6px; padding: 28px 20px; border: 1px dashed var(--border); border-radius: 12px; background: var(--surface); }
-.calendar__empty-state strong { color: #172033; }
+.calendar__empty-state { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 32px 20px; border: 1px dashed var(--border); border-radius: 12px; background: var(--surface); }
+.calendar__empty-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 10px; background: #f0f4f8; color: var(--brand); font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.calendar__empty-state strong { color: #172033; font-size: 17px; }
 .calendar__empty-state span { color: var(--text-muted); font-size: 14px; }
 
 @media (max-width: 760px) {
