@@ -6,8 +6,11 @@ const imageService = require('./imageService')
 
 async function getEventRequests(currentUserId) {
   const requests = await eventRequestRepository.getEventRequests()
-  if (!currentUserId) return requests
-  return requests.filter(request => request.organizerId !== currentUserId)
+  // Show only requests from other users in the public community list
+  if (currentUserId) {
+    return requests.filter(request => request.organizerId !== currentUserId)
+  }
+  return requests
 }
 
 async function getUserEventRequests(userId) {

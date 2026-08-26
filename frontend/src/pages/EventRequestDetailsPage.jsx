@@ -138,7 +138,14 @@ export default function EventRequestDetailsPage() {
         <div className="demand-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} aria-label="Community demand progress"><span style={{ width: `${progress * 100}%` }} /></div>
         <div className="request-details__demand-state"><strong>{demandState}</strong><span>{demandMessage}</span></div>
         <div className="request-details__actions">
-          {request.status === 'COLLECTING_DEMAND' && authenticated && <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>{action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}</button>}
+          {request.status === 'COLLECTING_DEMAND' && authenticated && !isOrganizer && (
+            <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>
+              {action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}
+            </button>
+          )}
+          {request.status === 'COLLECTING_DEMAND' && authenticated && isOrganizer && (
+            <p className="action-message">You requested this event. Manage it from your profile.</p>
+          )}
           {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span>Sign in to express interest.</span><Link className="primary-button" to="/login">Login</Link></>}
           {request.status === 'THRESHOLD_REACHED' && <strong>Threshold reached — organizer review is now available.</strong>}
           {request.status === 'CONFIRMED' && (

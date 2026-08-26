@@ -111,12 +111,16 @@ export default function EventRequestCard({
             {request.status === 'COLLECTING_DEMAND' && (
               authenticated ? (
                 !isOwner && (
-                  <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>
-                    {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : 'Express Interest'}
-                  </button>
+                  <div className="request-card__action">
+                    <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>
+                      {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : 'Express Interest'}
+                    </button>
+                  </div>
                 )
               ) : (
-                <Link className="primary-button" to="/login">Login to Express Interest</Link>
+                <div className="request-card__action">
+                  <Link className="primary-button" to="/login">Login to Express Interest</Link>
+                </div>
               )
             )}
           </>

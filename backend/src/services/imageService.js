@@ -28,8 +28,8 @@ async function uploadImage(base64Data) {
 
   const bucketName = process.env.GCS_BUCKET_NAME
   if (!bucketName) {
-    console.error('CRITICAL ERROR: GCS_BUCKET_NAME is not defined in environment variables.')
-    throw new Error('Image upload failed: Storage bucket not configured in environment.')
+    console.error('CRITICAL: GCS_BUCKET_NAME is not defined in environment variables.')
+    throw new Error('Image upload failed: Storage not configured in backend environment.')
   }
 
   const bucket = admin.storage(getFirebaseApp()).bucket(bucketName)
@@ -38,7 +38,7 @@ async function uploadImage(base64Data) {
   const filename = `events/${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${extension}`
   const file = bucket.file(filename)
 
-  console.log(`Uploading image to bucket ${bucketName} as ${filename}...`)
+  console.log(`Uploading to bucket: ${bucketName}, file: ${filename}`)
 
   await file.save(buffer, {
     metadata: {

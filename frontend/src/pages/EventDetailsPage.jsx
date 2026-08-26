@@ -108,21 +108,28 @@ export default function EventDetailsPage() {
               <strong>{event.rsvpCount} {event.rsvpCount === 1 ? 'person is' : 'people are'} going</strong>
             </div>
             {rsvp.going && <span className="event-details__rsvp-state">You're on the list!</span>}
+            {authenticated && currentUser?.userId === event.organizerId && <span className="event-details__rsvp-state" style={{ color: 'var(--brand)' }}>You are the organizer</span>}
           </div>
 
           {authenticated ? (
-            <>
-              <EventActions
-                event={event}
-                going={rsvp.going}
-                isBusy={rsvp.isBusy || rsvp.status === 'loading'}
-                onGoing={handleGoing}
-                onNotGoing={handleNotGoing}
-              />
-              {rsvp.status === 'loading' && <p className="action-message" role="status">Checking your RSVP status…</p>}
-              {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
-              {rsvp.action === 'idle' && rsvp.error && rsvp.status === 'ready' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
-            </>
+            currentUser?.userId !== event.organizerId ? (
+              <>
+                <EventActions
+                  event={event}
+                  going={rsvp.going}
+                  isBusy={rsvp.isBusy || rsvp.status === 'loading'}
+                  onGoing={handleGoing}
+                  onNotGoing={handleNotGoing}
+                />
+                {rsvp.status === 'loading' && <p className="action-message" role="status">Checking your RSVP status…</p>}
+                {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
+                {rsvp.action === 'idle' && rsvp.error && rsvp.status === 'ready' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
+              </>
+            ) : (
+              <div className="event-details__actions">
+                <p className="action-message">You are organizing this event. Manage it from your profile.</p>
+              </div>
+            )
           ) : (
             <div className="event-details__login-prompt">
               <div>

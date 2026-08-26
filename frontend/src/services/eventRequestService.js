@@ -8,6 +8,8 @@ export function getMyEventRequests() {
   return apiRequest('/event-requests/mine')
 }
 
+export const getUserEventRequests = getMyEventRequests
+
 export function getEventRequestById(requestId) {
   return apiRequest(`/event-requests/${encodeURIComponent(requestId)}`)
 }

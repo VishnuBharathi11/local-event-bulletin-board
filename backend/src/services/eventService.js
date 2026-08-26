@@ -5,8 +5,11 @@ const imageService = require('./imageService')
 
 async function getEvents(currentUserId) {
   const events = await eventRepository.getActiveEvents()
-  if (!currentUserId) return events
-  return events.filter(event => event.organizerId !== currentUserId)
+  // Hide user's own events from the discovery board
+  if (currentUserId) {
+    return events.filter(event => event.organizerId !== currentUserId)
+  }
+  return events
 }
 
 async function getMyEvents(userId) {
