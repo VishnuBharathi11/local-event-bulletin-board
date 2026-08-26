@@ -6,6 +6,7 @@ import { useEvent } from '../hooks/useEvent.js'
 import { useEventRSVP } from '../hooks/useEventRSVP.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
+import '../styles/eventDetails.css'
 
 export default function EventDetailsPage() {
   const { eventId } = useParams()
