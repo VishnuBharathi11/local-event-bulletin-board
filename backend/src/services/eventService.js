@@ -3,8 +3,14 @@ const { normalizeEvent, validateEventForCreation } = require('../models/eventMod
 const conflictService = require('./conflictService')
 const imageService = require('./imageService')
 
-async function getEvents() {
-  return eventRepository.getActiveEvents()
+async function getEvents(currentUserId) {
+  const events = await eventRepository.getActiveEvents()
+  if (!currentUserId) return events
+  return events.filter(event => event.organizerId !== currentUserId)
+}
+
+async function getMyEvents(userId) {
+  return eventRepository.getUserEvents(userId)
 }
 
 async function getEventById(eventId) {
@@ -59,6 +65,15 @@ async function saveEvent(input, userId) {
     error.statusCode = 403
     throw error
   }
+
+  // Enforce 2-hour rule
+  const twoHoursInMs = 2 * 60 * 60 * 1000
+  if (existing.startTime - Date.now() < twoHoursInMs) {
+    const error = new Error('Events cannot be edited less than 2 hours before the start time.')
+    error.statusCode = 403
+    throw error
+  }
+
   await handleImageUpload(input)
   const event = normalizeEvent({ ...input, organizerId: existing.organizerId })
   return eventRepository.saveEvent(event)
@@ -76,7 +91,16 @@ async function deleteEvent(eventId, userId) {
     error.statusCode = 403
     throw error
   }
+
+  // Enforce 2-hour rule
+  const twoHoursInMs = 2 * 60 * 60 * 1000
+  if (existing.startTime - Date.now() < twoHoursInMs) {
+    const error = new Error('Events cannot be deleted less than 2 hours before the start time.')
+    error.statusCode = 403
+    throw error
+  }
+
   return eventRepository.deleteEvent(eventId)
 }
 
-module.exports = { getEvents, getEventById, createEvent, createEventAnyway, checkEventConflicts, saveEvent, deleteEvent }
+module.exports = { getEvents, getMyEvents, getEventById, createEvent, createEventAnyway, checkEventConflicts, saveEvent, deleteEvent }

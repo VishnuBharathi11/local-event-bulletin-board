@@ -24,6 +24,14 @@ async function getActiveEvents(now = Date.now()) {
   return filterActiveEvents(await getEvents(), now)
 }
 
+async function getUserEvents(userId) {
+  const snapshot = await getEventCollection()
+    .where('organizerId', '==', userId)
+    .orderBy('startTime', 'asc')
+    .get()
+  return snapshot.docs.map(fromFirestoreDocument)
+}
+
 async function getEventById(eventId) {
   const snapshot = await getEventCollection().doc(eventId).get()
   return fromFirestoreDocument(snapshot)
@@ -54,6 +62,7 @@ module.exports = {
   EVENTS_COLLECTION,
   getEvents,
   getActiveEvents,
+  getUserEvents,
   getEventById,
   saveEvent,
   deleteEvent,

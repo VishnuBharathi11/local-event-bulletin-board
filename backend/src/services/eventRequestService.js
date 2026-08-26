@@ -4,8 +4,10 @@ const { normalizeEvent } = require('../models/eventModel')
 const conflictService = require('./conflictService')
 const imageService = require('./imageService')
 
-async function getEventRequests() {
-  return eventRequestRepository.getEventRequests()
+async function getEventRequests(currentUserId) {
+  const requests = await eventRequestRepository.getEventRequests()
+  if (!currentUserId) return requests
+  return requests.filter(request => request.organizerId !== currentUserId)
 }
 
 async function getUserEventRequests(userId) {
@@ -160,8 +162,11 @@ async function declineEventRequest(requestId, userId) {
 
 module.exports = {
   getEventRequests,
+  getUserEventRequests,
   getEventRequestById,
   createEventRequest,
+  updateEventRequest,
+  deleteEventRequest,
   getInterestStatus,
   expressInterest,
   confirmEventRequest,

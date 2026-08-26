@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext.jsx'
 import {
   createDiscoveryState,
   DEFAULT_DISCOVERY_STATE,
@@ -10,8 +11,18 @@ import {
 } from '../utils/eventDiscovery.js'
 
 export function useEventDiscovery(rawEvents = []) {
+  const { currentUser } = useAuth()
   const [discovery, setDiscovery] = useState(() => createDiscoveryState())
   const now = new Date()
+
+  // Initialize city from user profile once
+  const [userCitySet, setUserCitySet] = useState(false)
+  useEffect(() => {
+    if (currentUser?.city && !userCitySet && discovery.selectedCity === 'All') {
+      setDiscovery(current => ({ ...current, selectedCity: currentUser.city }))
+      setUserCitySet(true)
+    }
+  }, [currentUser, userCitySet, discovery.selectedCity])
 
   const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents])
   const cityOptions = useMemo(() => getCityOptions(activeEvents), [activeEvents])

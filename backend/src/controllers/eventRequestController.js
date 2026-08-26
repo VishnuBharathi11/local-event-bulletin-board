@@ -18,8 +18,8 @@ function handleError(res, error, operation = 'Event Request operation') {
   return res.status(500).json({ error: 'Event request operation failed' })
 }
 
-async function getEventRequests(_req, res) {
-  try { return res.json(await eventRequestService.getEventRequests()) } catch (error) { return handleError(res, error, 'GET /api/event-requests') }
+async function getEventRequests(req, res) {
+  try { return res.json(await eventRequestService.getEventRequests(req.user?.userId)) } catch (error) { return handleError(res, error, 'GET /api/event-requests') }
 }
 
 async function getUserEventRequests(req, res) {

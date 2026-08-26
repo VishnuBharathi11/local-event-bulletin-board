@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryBadge from './CategoryBadge.jsx'
 import EventStatusBadge from './EventStatusBadge.jsx'
@@ -5,11 +6,23 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { useEventRSVP } from '../../hooks/useEventRSVP.js'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
 
-export default function EventCard({ event, onRsvpChanged }) {
-  const { authenticated } = useAuth()
+export default function EventCard({
+  event,
+  onRsvpChanged,
+  isManagement = false,
+  onEdit,
+  onDelete,
+  isDeleting = false
+}) {
+  const { authenticated, currentUser } = useAuth()
   const rsvp = useEventRSVP(event.eventId, authenticated)
+  const [imageError, setImageError] = useState(false)
+
   const rsvpLabel = event.rsvpCount === 1 ? '1 person going' : `${event.rsvpCount} people going`
   const locationLabel = [event.location, event.neighborhood, event.city].filter(Boolean).join(', ')
+
+  const isOwner = currentUser?.userId === event.organizerId
+  const canModify = isOwner && (event.startTime - Date.now() > 2 * 60 * 60 * 1000)
 
   async function handleGoing() {
     const success = await rsvp.setGoing()
@@ -23,9 +36,18 @@ export default function EventCard({ event, onRsvpChanged }) {
 
   return (
     <article className="event-card">
-      {event.imageUrl && (
+      {event.imageUrl && !imageError ? (
         <div className="event-card__image-wrap">
-          <img src={event.imageUrl} alt="" className="event-card__image" />
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="event-card__image"
+            onError={() => setImageError(true)}
+          />
+        </div>
+      ) : (
+        <div className="event-card__image-wrap" style={{ background: 'linear-gradient(145deg, #eef3fa, #f8fafc)', display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '40px', opacity: 0.2 }}>EH</div>
         </div>
       )}
       <div className="event-card__badges">
@@ -47,20 +69,44 @@ export default function EventCard({ event, onRsvpChanged }) {
 
       <div className="event-card__footer">
         <span className="event-card__rsvp">{rsvpLabel}</span>
-        {authenticated ? (
-          <div className="event-card__rsvp-action">
-            {rsvp.going ? (
-              <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing}>
-                {rsvp.isBusy ? 'Updating…' : 'Going'}
+        {isManagement ? (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {canModify && (
+              <button className="secondary-button" type="button" onClick={onEdit}>Edit</button>
+            )}
+            {canModify && (
+              <button
+                className="button-danger"
+                type="button"
+                disabled={isDeleting}
+                onClick={onDelete}
+                style={{ minHeight: '38px', padding: '0 12px', fontSize: '13px' }}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
-            ) : (
-              <button className="primary-button" type="button" disabled={rsvp.isBusy} onClick={handleGoing}>
-                {rsvp.isBusy ? 'Updating…' : "I'm Going"}
-              </button>
+            )}
+            {!canModify && (
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Locked</span>
             )}
           </div>
         ) : (
-          <Link className="secondary-link" to="/login">Login to RSVP</Link>
+          authenticated ? (
+            !isOwner && (
+              <div className="event-card__rsvp-action">
+                {rsvp.going ? (
+                  <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing}>
+                    {rsvp.isBusy ? 'Updating…' : 'Going'}
+                  </button>
+                ) : (
+                  <button className="primary-button" type="button" disabled={rsvp.isBusy} onClick={handleGoing}>
+                    {rsvp.isBusy ? 'Updating…' : "I'm Going"}
+                  </button>
+                )}
+              </div>
+            )
+          ) : (
+            <Link className="secondary-link" to="/login">Login to RSVP</Link>
+          )
         )}
       </div>
 

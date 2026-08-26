@@ -1,6 +1,7 @@
 const express = require('express')
 const {
   getEvents,
+  getMyEvents,
   getEventById,
   createEvent,
   checkEventConflicts,
@@ -8,11 +9,12 @@ const {
   updateEvent,
   deleteEvent,
 } = require('../controllers/eventController')
-const { authenticate } = require('../middleware/authMiddleware')
+const { authenticate, attachUser } = require('../middleware/authMiddleware')
 
 const router = express.Router()
 
-router.get('/events', getEvents)
+router.get('/events', attachUser, getEvents)
+router.get('/events/mine', authenticate, getMyEvents)
 router.get('/events/:eventId', getEventById)
 router.post('/events/conflicts/check', authenticate, checkEventConflicts)
 router.post('/events/conflicts/continue', authenticate, createEventAnyway)

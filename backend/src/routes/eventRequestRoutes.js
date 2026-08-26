@@ -12,11 +12,11 @@ const {
   confirmEventRequestAnyway,
   declineEventRequest,
 } = require('../controllers/eventRequestController')
-const { authenticate } = require('../middleware/authMiddleware')
+const { authenticate, attachUser } = require('../middleware/authMiddleware')
 
 const router = express.Router()
 
-router.get('/event-requests', getEventRequests)
+router.get('/event-requests', attachUser, getEventRequests)
 router.get('/event-requests/mine', authenticate, getUserEventRequests)
 router.get('/event-requests/:requestId', getEventRequestById)
 router.post('/event-requests', authenticate, createEventRequest)

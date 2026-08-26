@@ -29,11 +29,17 @@ function initialForm() {
   }
 }
 
-export default function EventForm({ onSubmit, submitting = false, serverError = null }) {
+export default function EventForm({ onSubmit, submitting = false, serverError = null, initialData = null }) {
   const { currentUser } = useAuth()
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(initialData || initialForm)
   const [error, setError] = useState(null)
   const [nowTick, setNowTick] = useState(Date.now())
+
+  useEffect(() => {
+    if (initialData) {
+      setForm(initialData)
+    }
+  }, [initialData])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -297,7 +303,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
 
       <div className="create-event-form__actions">
         <button className="primary-button" type="submit" disabled={submitting} aria-busy={submitting}>
-          {submitting ? 'Creating Event…' : 'Create Event'}
+          {submitting ? (initialData ? 'Updating Event…' : 'Creating Event…') : (initialData ? 'Update Event' : 'Create Event')}
         </button>
       </div>
     </form>

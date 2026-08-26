@@ -26,9 +26,17 @@ function handleError(res, error) {
   })
 }
 
-async function getEvents(_req, res) {
+async function getEvents(req, res) {
   try {
-    return res.json(await eventService.getEvents())
+    return res.json(await eventService.getEvents(req.user?.userId))
+  } catch (error) {
+    return handleError(res, error)
+  }
+}
+
+async function getMyEvents(req, res) {
+  try {
+    return res.json(await eventService.getMyEvents(req.user.userId))
   } catch (error) {
     return handleError(res, error)
   }
@@ -122,6 +130,7 @@ async function deleteEvent(req, res) {
 
 module.exports = {
   getEvents,
+  getMyEvents,
   getEventById,
   createEvent,
   checkEventConflicts,

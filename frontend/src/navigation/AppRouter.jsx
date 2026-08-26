@@ -28,6 +28,7 @@ export default function AppRouter() {
       <Route element={<AppShell />}>
         <Route path="/" element={<EventBoardPage />} />
         <Route path="/events/new" element={<ProtectedRoute><CreateEventPage /></ProtectedRoute>} />
+        <Route path="/events/edit/:eventId" element={<ProtectedRoute><CreateEventPage /></ProtectedRoute>} />
         <Route path="/events/:eventId" element={<EventDetailsPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/community-requests" element={<CommunityRequestsPage />} />

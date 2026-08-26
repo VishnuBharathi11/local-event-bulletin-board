@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { getMyEventRequests, deleteEventRequest } from '../services/eventRequestService.js'
+import { getMyEvents, deleteEvent } from '../services/eventService.js'
 import EventRequestCard from '../components/community/EventRequestCard.jsx'
+import EventCard from '../components/events/EventCard.jsx'
 import '../styles/communityRequests.css'
 
 export default function ProfilePage() {
@@ -13,6 +15,13 @@ export default function ProfilePage() {
   const [loadingRequests, setLoadingRequests] = useState(true)
   const [requestError, setRequestError] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+
+  const [events, setEvents] = useState([])
+  const [loadingEvents, setLoadingEvents] = useState(true)
+  const [eventError, setEventError] = useState(null)
+  const [deletingEventId, setDeletingEventId] = useState(null)
+
+  const [activeTab, setActiveTab] = useState('events')
 
   const [isEditing, setIsEditMode] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -44,6 +53,23 @@ export default function ProfilePage() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        setLoadingEvents(true)
+        const data = await getMyEvents()
+        if (!cancelled) setEvents(data)
+      } catch (err) {
+        if (!cancelled) setEventError(err.message)
+      } finally {
+        if (!cancelled) setLoadingEvents(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
     if (currentUser) {
       setEditForm({
         name: currentUser.name || '',
@@ -57,7 +83,7 @@ export default function ProfilePage() {
   }, [currentUser])
 
   async function handleDeleteRequest(requestId) {
-    if (!window.confirm('Delete this event request? This action cannot be undone.')) return
+    if (!window.confirm('Are you sure you want to delete this event request? This action cannot be undone.')) return
 
     setDeletingId(requestId)
     try {
@@ -70,8 +96,26 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleDeleteEvent(eventId) {
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) return
+
+    setDeletingEventId(eventId)
+    try {
+      await deleteEvent(eventId)
+      setEvents(current => current.filter(e => e.eventId !== eventId))
+    } catch (err) {
+      alert(`Unable to delete event: ${err.message}`)
+    } finally {
+      setDeletingEventId(null)
+    }
+  }
+
   function handleEditRequest(requestId) {
     navigate(`/community-requests/edit/${encodeURIComponent(requestId)}`)
+  }
+
+  function handleEditEvent(eventId) {
+    navigate(`/events/edit/${encodeURIComponent(eventId)}`)
   }
 
   async function handleUpdateProfile(e) {
@@ -225,51 +269,119 @@ export default function ProfilePage() {
           </section>
         </div>
 
+        {/* NAVIGATION TABS */}
+        <div className="profile-tabs" style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '0' }}>
+          <button
+            onClick={() => setActiveTab('events')}
+            className={`nav-link ${activeTab === 'events' ? 'nav-link--active' : ''}`}
+            style={{ borderRadius: '8px 8px 0 0', borderBottom: activeTab === 'events' ? '3px solid var(--brand)' : 'none' }}
+          >
+            Created Events
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`nav-link ${activeTab === 'requests' ? 'nav-link--active' : ''}`}
+            style={{ borderRadius: '8px 8px 0 0', borderBottom: activeTab === 'requests' ? '3px solid var(--brand)' : 'none' }}
+          >
+            Event Requests
+          </button>
+        </div>
+
+        {/* CREATED EVENTS SECTION */}
+        {activeTab === 'events' && (
+          <section id="my-events">
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0 }}>Your Created Events</h2>
+              <Link className="primary-button" to="/events/new">Create Event</Link>
+            </header>
+
+            {loadingEvents && (
+              <div className="state-card" style={{ padding: '60px' }}>
+                <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid var(--brand)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+                <strong>Loading your events...</strong>
+              </div>
+            )}
+
+            {eventError && (
+              <div className="state-card state-card--error">
+                <strong>Unable to load your events</strong>
+                <span>{eventError}</span>
+              </div>
+            )}
+
+            {!loadingEvents && !eventError && events.length === 0 && (
+              <div className="state-card" style={{ padding: '60px', borderStyle: 'dashed' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>📅</div>
+                <strong>You haven't created any events yet.</strong>
+                <span>Organize an event and invite the community!</span>
+                <Link className="secondary-button" style={{ marginTop: '20px' }} to="/events/new">Create an Event</Link>
+              </div>
+            )}
+
+            {!loadingEvents && !eventError && events.length > 0 && (
+              <div className="event-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
+                {events.map(event => (
+                  <EventCard
+                    key={event.eventId}
+                    event={event}
+                    isManagement={true}
+                    onEdit={() => handleEditEvent(event.eventId)}
+                    onDelete={() => handleDeleteEvent(event.eventId)}
+                    isDeleting={deletingEventId === event.eventId}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* MY REQUESTS SECTION */}
-        <section id="my-requests" style={{ marginTop: '12px' }}>
-          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2 style={{ margin: 0 }}>Your Event Requests</h2>
-            <Link className="primary-button" to="/community-requests/new">Request an Event</Link>
-          </header>
+        {activeTab === 'requests' && (
+          <section id="my-requests">
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0 }}>Your Event Requests</h2>
+              <Link className="primary-button" to="/community-requests/new">Request an Event</Link>
+            </header>
 
-          {loadingRequests && (
-            <div className="state-card" style={{ padding: '60px' }}>
-              <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid var(--brand)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
-              <strong>Loading your event requests...</strong>
-            </div>
-          )}
+            {loadingRequests && (
+              <div className="state-card" style={{ padding: '60px' }}>
+                <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid var(--brand)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+                <strong>Loading your event requests...</strong>
+              </div>
+            )}
 
-          {requestError && (
-            <div className="state-card state-card--error">
-              <strong>Unable to load your event requests</strong>
-              <span>{requestError}</span>
-            </div>
-          )}
+            {requestError && (
+              <div className="state-card state-card--error">
+                <strong>Unable to load your event requests</strong>
+                <span>{requestError}</span>
+              </div>
+            )}
 
-          {!loadingRequests && !requestError && requests.length === 0 && (
-            <div className="state-card" style={{ padding: '60px', borderStyle: 'dashed' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>✉️</div>
-              <strong>You haven't created any event requests yet.</strong>
-              <span>Want something to happen in your area? Help shape your community.</span>
-              <Link className="secondary-button" style={{ marginTop: '20px' }} to="/community-requests/new">Request an Event</Link>
-            </div>
-          )}
+            {!loadingRequests && !requestError && requests.length === 0 && (
+              <div className="state-card" style={{ padding: '60px', borderStyle: 'dashed' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.3 }}>✉️</div>
+                <strong>You haven't created any event requests yet.</strong>
+                <span>Want something to happen in your area? Help shape your community.</span>
+                <Link className="secondary-button" style={{ marginTop: '20px' }} to="/community-requests/new">Request an Event</Link>
+              </div>
+            )}
 
-          {!loadingRequests && !requestError && requests.length > 0 && (
-            <div className="request-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))' }}>
-              {requests.map(request => (
-                <EventRequestCard
-                  key={request.requestId}
-                  request={request}
-                  isManagement={true}
-                  onEdit={() => handleEditRequest(request.requestId)}
-                  onDelete={() => handleDeleteRequest(request.requestId)}
-                  isDeleting={deletingId === request.requestId}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+            {!loadingRequests && !requestError && requests.length > 0 && (
+              <div className="request-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))' }}>
+                {requests.map(request => (
+                  <EventRequestCard
+                    key={request.requestId}
+                    request={request}
+                    isManagement={true}
+                    onEdit={() => handleEditRequest(request.requestId)}
+                    onDelete={() => handleDeleteRequest(request.requestId)}
+                    isDeleting={deletingId === request.requestId}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       {/* EDIT PROFILE MODAL */}
