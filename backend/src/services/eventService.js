@@ -3,7 +3,7 @@ const { normalizeEvent, validateEventForCreation } = require('../models/eventMod
 const conflictService = require('./conflictService')
 
 async function getEvents() {
-  return eventRepository.getEvents()
+  return eventRepository.getActiveEvents()
 }
 
 async function getEventById(eventId) {

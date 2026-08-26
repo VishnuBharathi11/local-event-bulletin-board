@@ -52,7 +52,7 @@ export default function EventBoardPage() {
             </div>
           ) : (
             <div className="event-grid" aria-live="polite">
-              {discovery.events.map((event) => <EventCard key={event.eventId} event={event} />)}
+              {discovery.events.map((event) => <EventCard key={event.eventId} event={event} onRsvpChanged={reload} />)}
             </div>
           )}
         </>

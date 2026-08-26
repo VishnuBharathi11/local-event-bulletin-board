@@ -7,9 +7,21 @@ function getEventCollection() {
   return getFirestore().collection(EVENTS_COLLECTION)
 }
 
+function isEventExpired(event, now = Date.now()) {
+  return now >= Number(event.expireAt)
+}
+
+function filterActiveEvents(events = [], now = Date.now()) {
+  return events.filter((event) => !isEventExpired(event, now))
+}
+
 async function getEvents() {
   const snapshot = await getEventCollection().orderBy('startTime', 'asc').get()
   return snapshot.docs.map(fromFirestoreDocument)
+}
+
+async function getActiveEvents(now = Date.now()) {
+  return filterActiveEvents(await getEvents(), now)
 }
 
 async function getEventById(eventId) {
@@ -41,7 +53,10 @@ async function deleteEvent(eventId) {
 module.exports = {
   EVENTS_COLLECTION,
   getEvents,
+  getActiveEvents,
   getEventById,
   saveEvent,
   deleteEvent,
+  isEventExpired,
+  filterActiveEvents,
 }
