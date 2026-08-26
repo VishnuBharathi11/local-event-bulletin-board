@@ -7,31 +7,38 @@ export default function CalendarPage() {
 
   if (calendar.status === 'loading') {
     return (
-      <div className="state-card" role="status">
-        <strong>Loading calendar…</strong>
-        <span>Retrieving community events.</span>
+      <div className="calendar-page calendar-page--state">
+        <div className="state-card state-card--loading" role="status">
+          <span className="state-card__icon" aria-hidden="true">◷</span>
+          <strong>Loading calendar…</strong>
+          <span>Retrieving community events.</span>
+        </div>
       </div>
     )
   }
 
   if (calendar.status === 'error') {
     return (
-      <div className="state-card state-card--error" role="alert">
-        <strong>Unable to load calendar</strong>
-        <span>{calendar.error}</span>
+      <div className="calendar-page calendar-page--state">
+        <div className="state-card state-card--error" role="alert">
+          <span className="state-card__icon" aria-hidden="true">!</span>
+          <strong>Unable to load calendar</strong>
+          <span>Event data could not be retrieved. Please try again later.</span>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="calendar-page">
-      <div className="calendar-page__intro">
+    <main className="calendar-page">
+      <header className="calendar-page__intro">
         <p className="eyebrow">Community events</p>
+        <h1>Calendar</h1>
         <p className="calendar-page__description">
           Browse upcoming local events by date. Select an event to open its existing details page.
         </p>
-      </div>
+      </header>
       <Calendar {...calendar} />
-    </div>
+    </main>
   )
 }
