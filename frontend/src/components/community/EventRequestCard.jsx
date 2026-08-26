@@ -63,6 +63,9 @@ export default function EventRequestCard({ request, isInterested, interestLoadin
 
       <div className="request-card__footer">
         <Link className="request-card__link" to={`/community-requests/${encodeURIComponent(request.requestId)}`}>View Request</Link>
+        {request.status === 'CONFIRMED' && request.eventId && (
+          <Link className="primary-button" to={`/events/${encodeURIComponent(request.eventId)}`}>View Event</Link>
+        )}
         {request.status === 'COLLECTING_DEMAND' && (
           authenticated ? (
             <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>

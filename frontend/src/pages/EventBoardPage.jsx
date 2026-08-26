@@ -49,9 +49,8 @@ export default function EventBoardPage() {
           {rawEvents.length === 0 ? (
             <div className="state-card state-card--empty">
               <div className="state-card__icon" aria-hidden="true">◎</div>
-              <strong>No available upcoming events.</strong>
+              <strong>No upcoming events available.</strong>
               <span>There are currently no events available.</span>
-              <Link className="secondary-link" to="/events/new">Create the first event</Link>
             </div>
           ) : discovery.events.length === 0 ? (
             <div className="state-card state-card--empty">

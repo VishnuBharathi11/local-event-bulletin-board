@@ -63,10 +63,26 @@ async function confirmEventRequest(requestId) {
   const requestRef = getRequestCollection().doc(requestId)
   let createdEvent = null
 
+  // Check if already confirmed outside transaction for optimization
+  const initialSnapshot = await requestRef.get()
+  const initialRequest = fromFirestoreDocument(initialSnapshot)
+  if (initialRequest && initialRequest.status === 'CONFIRMED' && initialRequest.eventId) {
+    const existingEventSnapshot = await firestore.collection('events').doc(initialRequest.eventId).get()
+    if (existingEventSnapshot.exists) {
+      return { ...existingEventSnapshot.data(), eventId: existingEventSnapshot.id }
+    }
+  }
+
   await firestore.runTransaction(async (transaction) => {
     const requestSnapshot = await transaction.get(requestRef)
     const request = fromFirestoreDocument(requestSnapshot)
     if (!request) throw new Error('Event request not found')
+
+    // Double check within transaction
+    if (request.status === 'CONFIRMED' && request.eventId) {
+      return
+    }
+
     if (request.status !== 'THRESHOLD_REACHED') throw new Error('Event request has not reached the demand threshold')
 
     const eventRef = firestore.collection('events').doc()
@@ -90,8 +106,17 @@ async function confirmEventRequest(requestId) {
     }
     const { eventId: _eventId, ...eventFields } = createdEvent
     transaction.set(eventRef, eventFields)
-    transaction.update(requestRef, { status: 'CONFIRMED' })
+    transaction.update(requestRef, {
+      status: 'CONFIRMED',
+      eventId: eventRef.id,
+    })
   })
+
+  if (!createdEvent && initialRequest.eventId) {
+    const finalEventSnapshot = await firestore.collection('events').doc(initialRequest.eventId).get()
+    return { ...finalEventSnapshot.data(), eventId: finalEventSnapshot.id }
+  }
+
   return createdEvent
 }
 

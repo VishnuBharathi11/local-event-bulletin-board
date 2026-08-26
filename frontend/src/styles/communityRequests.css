@@ -335,6 +335,11 @@
   margin-top: 16px;
 }
 
+.request-details__confirmed {
+  display: grid;
+  gap: 12px;
+}
+
 .request-details__organizer {
   margin-top: 28px;
   padding-top: 24px;

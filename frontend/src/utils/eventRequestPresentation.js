@@ -22,6 +22,8 @@ export function getDemandMessage(request) {
   const count = getDemandCount(request)
   const threshold = getDemandThreshold(request)
 
+  if (request?.status === 'CONFIRMED') return 'Event has been created.'
+  if (request?.status === 'DECLINED') return 'This request was declined.'
   if (threshold <= 0) return 'Demand threshold unavailable.'
   if (count >= threshold) return 'Threshold reached.'
   if (count === 0) return 'Demand is being collected.'

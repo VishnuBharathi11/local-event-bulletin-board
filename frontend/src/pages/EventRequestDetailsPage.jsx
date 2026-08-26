@@ -141,7 +141,16 @@ export default function EventRequestDetailsPage() {
           {request.status === 'COLLECTING_DEMAND' && authenticated && <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>{action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}</button>}
           {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span>Sign in to express interest.</span><Link className="primary-button" to="/login">Login</Link></>}
           {request.status === 'THRESHOLD_REACHED' && <strong>Threshold reached — organizer review is now available.</strong>}
-          {request.status === 'CONFIRMED' && <strong>This request has been confirmed and is now a published event.</strong>}
+          {request.status === 'CONFIRMED' && (
+            <div className="request-details__confirmed">
+              <strong>This request has been confirmed and is now a published event.</strong>
+              {request.eventId && (
+                <Link className="primary-button" to={`/events/${encodeURIComponent(request.eventId)}`}>
+                  View Event
+                </Link>
+              )}
+            </div>
+          )}
           {request.status === 'DECLINED' && <strong>This request was declined by the organizer.</strong>}
         </div>
       </section>
