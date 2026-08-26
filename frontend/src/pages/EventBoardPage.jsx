@@ -10,19 +10,28 @@ export default function EventBoardPage() {
 
   return (
     <section className="event-page">
-      <header className="event-page__header">
-        <div>
-          <p className="eyebrow">Community events</p>
-          <h1>Local Events</h1>
+      <header className="event-page__header event-page__hero">
+        <div className="event-page__hero-copy">
+          <p className="eyebrow">EventHive · Local events</p>
+          <h1>Discover what&apos;s happening nearby.</h1>
           <p className="event-page__description">Discover events happening in your local community.</p>
         </div>
-        <Link className="primary-button primary-button--header" to="/events/new">Create Event</Link>
+        <div className="event-page__hero-action">
+          <Link className="primary-button primary-button--header" to="/events/new">Create Event</Link>
+        </div>
       </header>
 
-      {status === 'loading' && <div className="state-card" role="status"><strong>Loading events…</strong><span>Retrieving events from the event service.</span></div>}
+      {status === 'loading' && (
+        <div className="state-card state-card--loading" role="status" aria-live="polite">
+          <div className="state-card__icon" aria-hidden="true">◌</div>
+          <strong>Loading events…</strong>
+          <span>Retrieving events from the event service.</span>
+        </div>
+      )}
 
       {status === 'error' && (
         <div className="state-card state-card--error" role="alert">
+          <div className="state-card__icon" aria-hidden="true">!</div>
           <strong>Unable to load events</strong>
           <span>{error}</span>
           <button className="secondary-button" type="button" onClick={reload}>Try Again</button>
@@ -39,13 +48,15 @@ export default function EventBoardPage() {
           />
 
           {rawEvents.length === 0 ? (
-            <div className="state-card">
+            <div className="state-card state-card--empty">
+              <div className="state-card__icon" aria-hidden="true">◎</div>
               <strong>No events available.</strong>
               <span>There are currently no events available.</span>
               <Link className="secondary-link" to="/events/new">Create the first event</Link>
             </div>
           ) : discovery.events.length === 0 ? (
-            <div className="state-card">
+            <div className="state-card state-card--empty">
+              <div className="state-card__icon" aria-hidden="true">⌕</div>
               <strong>No matching events found.</strong>
               <span>Try changing your search or filters.</span>
               <button className="secondary-button" type="button" onClick={discovery.clearFilters}>Clear All</button>
