@@ -1,6 +1,7 @@
 const eventRepository = require('../repositories/eventRepository')
 const { normalizeEvent, validateEventForCreation } = require('../models/eventModel')
 const conflictService = require('./conflictService')
+const imageService = require('./imageService')
 
 async function getEvents() {
   return eventRepository.getActiveEvents()
@@ -14,13 +15,26 @@ function withAuthenticatedOrganizer(input, userId) {
   return { ...input, organizerId: userId }
 }
 
+async function handleImageUpload(input) {
+  if (input.imageUrl && input.imageUrl.startsWith('data:image')) {
+    try {
+      input.imageUrl = await imageService.uploadImage(input.imageUrl)
+    } catch (error) {
+      console.error('Image upload failed during event operation:', error)
+      throw error
+    }
+  }
+}
+
 async function createEvent(input, userId) {
+  await handleImageUpload(input)
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   await conflictService.checkAndThrow(event)
   return eventRepository.saveEvent(event)
 }
 
 async function createEventAnyway(input, userId) {
+  await handleImageUpload(input)
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   const conflicts = await conflictService.checkConflicts(event)
   const createdEvent = await eventRepository.saveEvent(event)
@@ -45,6 +59,7 @@ async function saveEvent(input, userId) {
     error.statusCode = 403
     throw error
   }
+  await handleImageUpload(input)
   const event = normalizeEvent({ ...input, organizerId: existing.organizerId })
   return eventRepository.saveEvent(event)
 }

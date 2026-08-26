@@ -34,7 +34,7 @@ export function useCalendar() {
   }, [])
 
   const activeEvents = useMemo(
-    () => getCalendarEvents(state.events),
+    () => state.events,
     [state.events],
   )
 
@@ -75,10 +75,9 @@ export function useCalendar() {
     selectedDate,
     eventDays,
     eventsForDate,
-    activeEvents,
-    previousMonth,
-    nextMonth,
-    goToToday,
-    selectDate,
+    onPreviousMonth: previousMonth,
+    onNextMonth: nextMonth,
+    onToday: goToToday,
+    onDateSelected: selectDate,
   }
 }

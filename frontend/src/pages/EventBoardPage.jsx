@@ -43,21 +43,20 @@ export default function EventBoardPage() {
           <DiscoveryControls
             discovery={discovery.discovery}
             cityOptions={discovery.cityOptions}
-            neighborhoodOptions={discovery.neighborhoodOptions}
             actions={discovery}
           />
 
           {rawEvents.length === 0 ? (
             <div className="state-card state-card--empty">
               <div className="state-card__icon" aria-hidden="true">◎</div>
-              <strong>No events available.</strong>
+              <strong>No available upcoming events.</strong>
               <span>There are currently no events available.</span>
               <Link className="secondary-link" to="/events/new">Create the first event</Link>
             </div>
           ) : discovery.events.length === 0 ? (
             <div className="state-card state-card--empty">
               <div className="state-card__icon" aria-hidden="true">⌕</div>
-              <strong>No matching events found.</strong>
+              <strong>No available upcoming events.</strong>
               <span>Try changing your search or filters.</span>
               <button className="secondary-button" type="button" onClick={discovery.clearFilters}>Clear All</button>
             </div>

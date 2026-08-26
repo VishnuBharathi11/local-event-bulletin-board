@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 import { createEventRequest } from '../services/eventRequestService.js'
+import TimePicker from '../components/common/TimePicker.jsx'
 import '../styles/communityRequests.css'
 
 const categories = [
@@ -117,586 +119,10 @@ function getTotalMinutes(
   )
 }
 
-function TimePicker({
-  id,
-  value,
-  onChange,
-  disabled = false,
-  minimumMinutes = 0,
-  label,
-}) {
-  const [open, setOpen] = useState(false)
-
-  const getInitialValues = () => {
-    if (!value) {
-      return {
-        hour: '',
-        minute: '',
-        period: '',
-      }
-    }
-
-    const [
-      hourString,
-      minuteString,
-    ] = value.split(':')
-
-    const hour24 =
-      Number(hourString)
-
-    let hour12 =
-      hour24 % 12
-
-    if (hour12 === 0) {
-      hour12 = 12
-    }
-
-    return {
-      hour: String(hour12),
-      minute: pad(
-        Number(minuteString)
-      ),
-      period:
-        hour24 >= 12
-          ? 'PM'
-          : 'AM',
-    }
-  }
-
-  const initialValues =
-    getInitialValues()
-
-  const [selectedHour, setSelectedHour] =
-    useState(initialValues.hour)
-
-  const [
-    selectedMinute,
-    setSelectedMinute,
-  ] = useState(
-    initialValues.minute
-  )
-
-  const [
-    selectedPeriod,
-    setSelectedPeriod,
-  ] = useState(
-    initialValues.period
-  )
-
-  useEffect(() => {
-    const next =
-      getInitialValues()
-
-    setSelectedHour(
-      next.hour
-    )
-
-    setSelectedMinute(
-      next.minute
-    )
-
-    setSelectedPeriod(
-      next.period
-    )
-  }, [value])
-
-  function isPastTime(
-    hour,
-    minute,
-    period
-  ) {
-    if (
-      !hour ||
-      minute === '' ||
-      !period
-    ) {
-      return true
-    }
-
-    const totalMinutes =
-      getTotalMinutes(
-        hour,
-        minute,
-        period
-      )
-
-    return (
-      totalMinutes <
-      minimumMinutes
-    )
-  }
-
-  function findFirstValidTime() {
-    for (
-      let hour = 1;
-      hour <= 12;
-      hour += 1
-    ) {
-      for (
-        const period of ['AM', 'PM']
-      ) {
-        for (
-          let minute = 0;
-          minute < 60;
-          minute += 1
-        ) {
-          if (
-            !isPastTime(
-              hour,
-              minute,
-              period
-            )
-          ) {
-            return {
-              hour,
-              minute,
-              period,
-            }
-          }
-        }
-      }
-    }
-
-    return null
-  }
-
-  function openPicker() {
-    if (disabled) {
-      return
-    }
-
-    if (!value) {
-      const firstValid =
-        findFirstValidTime()
-
-      if (firstValid) {
-        setSelectedHour(
-          String(
-            firstValid.hour
-          )
-        )
-
-        setSelectedMinute(
-          pad(
-            firstValid.minute
-          )
-        )
-
-        setSelectedPeriod(
-          firstValid.period
-        )
-      }
-    }
-
-    setOpen(
-      (current) => !current
-    )
-  }
-
-  function handleHourChange(
-    event
-  ) {
-    const hour =
-      event.target.value
-
-    setSelectedHour(hour)
-
-    if (!hour) {
-      return
-    }
-
-    if (
-      selectedMinute !== '' &&
-      selectedPeriod &&
-      !isPastTime(
-        Number(hour),
-        Number(selectedMinute),
-        selectedPeriod
-      )
-    ) {
-      return
-    }
-
-    const periods = [
-      'AM',
-      'PM',
-    ]
-
-    for (
-      const period of periods
-    ) {
-      const firstValidMinute =
-        Array.from(
-          { length: 60 },
-          (_, minute) =>
-            minute
-        ).find(
-          (minute) =>
-            !isPastTime(
-              Number(hour),
-              minute,
-              period
-            )
-        )
-
-      if (
-        firstValidMinute !==
-        undefined
-      ) {
-        setSelectedPeriod(
-          period
-        )
-
-        setSelectedMinute(
-          pad(firstValidMinute)
-        )
-
-        return
-      }
-    }
-  }
-
-  function handleMinuteChange(
-    event
-  ) {
-    const minute =
-      Number(event.target.value)
-
-    if (
-      !selectedHour ||
-      !selectedPeriod
-    ) {
-      return
-    }
-
-    if (
-      isPastTime(
-        Number(selectedHour),
-        minute,
-        selectedPeriod
-      )
-    ) {
-      return
-    }
-
-    setSelectedMinute(
-      pad(minute)
-    )
-  }
-
-  function handlePeriodChange(
-    event
-  ) {
-    const period =
-      event.target.value
-
-    if (
-      !selectedHour ||
-      selectedMinute === ''
-    ) {
-      setSelectedPeriod(
-        period
-      )
-
-      return
-    }
-
-    if (
-      isPastTime(
-        Number(selectedHour),
-        Number(selectedMinute),
-        period
-      )
-    ) {
-      return
-    }
-
-    setSelectedPeriod(
-      period
-    )
-  }
-
-  function applyTime() {
-    if (
-      !selectedHour ||
-      selectedMinute === '' ||
-      !selectedPeriod
-    ) {
-      return
-    }
-
-    if (
-      isPastTime(
-        Number(selectedHour),
-        Number(selectedMinute),
-        selectedPeriod
-      )
-    ) {
-      return
-    }
-
-    const converted =
-      convert12To24(
-        selectedHour,
-        selectedMinute,
-        selectedPeriod
-      )
-
-    const time24 =
-      `${pad(converted.hour)}:${pad(
-        converted.minute
-      )}`
-
-    onChange(time24)
-
-    setOpen(false)
-  }
-
-  const displayValue =
-    formatDisplayTime(value)
-
-  const hours = Array.from(
-    { length: 12 },
-    (_, index) =>
-      index + 1
-  )
-
-  const minutes = Array.from(
-    { length: 60 },
-    (_, index) =>
-      index
-  )
-
-  return (
-    <div className="time-picker-wrapper">
-      <div className="time-picker-field">
-        <input
-          id={id}
-          type="text"
-          value={displayValue}
-          placeholder="--:--"
-          readOnly
-          disabled={disabled}
-          onClick={openPicker}
-          aria-label={label}
-        />
-      </div>
-
-      {open && !disabled && (
-        <>
-          <button
-            type="button"
-            className="time-picker-backdrop"
-            aria-label="Close time picker"
-            onClick={() =>
-              setOpen(false)
-            }
-          />
-
-          <div className="time-picker-dropdown">
-            <div className="time-picker-dropdown__header">
-              <div>
-                <span className="time-picker-dropdown__title">
-                  Select time
-                </span>
-
-                <span className="time-picker-dropdown__subtitle">
-                  12-hour format
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="time-picker-close"
-                onClick={() =>
-                  setOpen(false)
-                }
-                aria-label="Close time picker"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="time-picker-dropdown__content">
-
-              {/* HOUR */}
-
-              <div className="time-picker-column">
-                <label
-                  htmlFor={`${id}-hour`}
-                >
-                  Hour
-                </label>
-
-                <select
-                  id={`${id}-hour`}
-                  value={selectedHour}
-                  onChange={
-                    handleHourChange
-                  }
-                >
-                  <option value="">
-                    HH
-                  </option>
-
-                  {hours.map(
-                    (hour) => (
-                      <option
-                        key={hour}
-                        value={hour}
-                      >
-                        {pad(hour)}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <span className="time-picker-colon">
-                :
-              </span>
-
-              {/* MINUTE */}
-
-              <div className="time-picker-column">
-                <label
-                  htmlFor={`${id}-minute`}
-                >
-                  Minute
-                </label>
-
-                <select
-                  id={`${id}-minute`}
-                  value={selectedMinute}
-                  disabled={
-                    !selectedHour
-                  }
-                  onChange={
-                    handleMinuteChange
-                  }
-                >
-                  <option value="">
-                    MM
-                  </option>
-
-                  {minutes.map(
-                    (minute) => (
-                      <option
-                        key={minute}
-                        value={pad(minute)}
-                        disabled={
-                          selectedHour &&
-                          selectedPeriod
-                            ? isPastTime(
-                                Number(
-                                  selectedHour
-                                ),
-                                minute,
-                                selectedPeriod
-                              )
-                            : false
-                        }
-                      >
-                        {pad(minute)}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              {/* AM / PM */}
-
-              <div className="time-picker-column">
-                <label
-                  htmlFor={`${id}-period`}
-                >
-                  Period
-                </label>
-
-                <select
-                  id={`${id}-period`}
-                  value={selectedPeriod}
-                  disabled={
-                    !selectedHour ||
-                    selectedMinute === ''
-                  }
-                  onChange={
-                    handlePeriodChange
-                  }
-                >
-                  <option value="">
-                    AM/PM
-                  </option>
-
-                  <option
-                    value="AM"
-                    disabled={
-                      selectedHour &&
-                      selectedMinute !== ''
-                        ? isPastTime(
-                            Number(
-                              selectedHour
-                            ),
-                            Number(
-                              selectedMinute
-                            ),
-                            'AM'
-                          )
-                        : false
-                    }
-                  >
-                    AM
-                  </option>
-
-                  <option
-                    value="PM"
-                    disabled={
-                      selectedHour &&
-                      selectedMinute !== ''
-                        ? isPastTime(
-                            Number(
-                              selectedHour
-                            ),
-                            Number(
-                              selectedMinute
-                            ),
-                            'PM'
-                          )
-                        : false
-                    }
-                  >
-                    PM
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <p className="time-picker-help">
-              Past times cannot be selected.
-            </p>
-
-            <button
-              type="button"
-              className="time-picker-apply"
-              disabled={
-                !selectedHour ||
-                selectedMinute === '' ||
-                !selectedPeriod
-              }
-              onClick={applyTime}
-            >
-              Done
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
 export default function CreateEventRequestPage() {
   const navigate =
     useNavigate()
+  const { currentUser } = useAuth()
 
   const [form, setForm] =
     useState({
@@ -709,6 +135,8 @@ export default function CreateEventRequestPage() {
       location: '',
       city: '',
       neighborhood: '',
+      demandThreshold: '',
+      imageUrl: null,
     })
 
   const [status, setStatus] =
@@ -747,6 +175,21 @@ export default function CreateEventRequestPage() {
         [field]: value,
       })
     )
+  }
+
+  function handleImageChange(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      update('imageUrl', reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function clearImage() {
+    update('imageUrl', null)
   }
 
   const today = useMemo(
@@ -858,6 +301,12 @@ export default function CreateEventRequestPage() {
       return
     }
 
+    const threshold = parseInt(form.demandThreshold, 10)
+    if (!Number.isInteger(threshold) || threshold <= 0) {
+      setError('Please enter a valid positive number for minimum required participants.')
+      return
+    }
+
     if (!form.date) {
       setError(
         'Please select a suggested date.'
@@ -964,6 +413,11 @@ export default function CreateEventRequestPage() {
 
           endTime:
             endTimestamp,
+
+          demandThreshold:
+            parseInt(form.demandThreshold, 10) || 0,
+
+          imageUrl: form.imageUrl,
         })
 
       navigate(
@@ -1012,9 +466,37 @@ export default function CreateEventRequestPage() {
         className="event-form"
         onSubmit={handleSubmit}
       >
+        <div className="form-grid">
+          <div className="form-field">
+            <label htmlFor="user-name">
+              Name
+            </label>
+
+            <input
+              id="user-name"
+              value={currentUser?.name || ''}
+              readOnly
+              className="input--readonly"
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="user-email">
+              Email
+            </label>
+
+            <input
+              id="user-email"
+              value={currentUser?.email || ''}
+              readOnly
+              className="input--readonly"
+            />
+          </div>
+        </div>
+
         <div className="form-field">
           <label htmlFor="request-title">
-            Proposed title
+            Proposed title <span className="required-star">*</span>
           </label>
 
           <input
@@ -1031,7 +513,7 @@ export default function CreateEventRequestPage() {
 
         <div className="form-field">
           <label htmlFor="request-description">
-            Description
+            Description <span className="required-star">*</span>
           </label>
 
           <textarea
@@ -1050,7 +532,7 @@ export default function CreateEventRequestPage() {
 
         <div className="form-field">
           <label htmlFor="request-category">
-            Category
+            Category <span className="required-star">*</span>
           </label>
 
           <select
@@ -1080,10 +562,30 @@ export default function CreateEventRequestPage() {
           </select>
         </div>
 
+        <div className="form-field">
+          <label htmlFor="request-min-participants">
+            Minimum required participants <span className="required-star">*</span>
+          </label>
+
+          <input
+            id="request-min-participants"
+            type="number"
+            min="1"
+            value={form.demandThreshold}
+            onChange={(event) =>
+              update(
+                'demandThreshold',
+                event.target.value
+              )
+            }
+            placeholder="Enter minimum number of people"
+          />
+        </div>
+
         <div className="form-grid form-grid--date-time">
           <div className="form-field">
             <label htmlFor="request-date">
-              Suggested date
+              Suggested date <span className="required-star">*</span>
             </label>
 
             <input
@@ -1099,7 +601,7 @@ export default function CreateEventRequestPage() {
 
           <div className="form-field">
             <label htmlFor="request-start">
-              Start time
+              Start time <span className="required-star">*</span>
             </label>
 
             <TimePicker
@@ -1125,7 +627,7 @@ export default function CreateEventRequestPage() {
 
           <div className="form-field">
             <label htmlFor="request-end">
-              End time
+              End time <span className="required-star">*</span>
             </label>
 
             <TimePicker
@@ -1147,13 +649,61 @@ export default function CreateEventRequestPage() {
                 !form.date ||
                 !form.startTime
               }
+              align="right"
             />
           </div>
         </div>
 
         <div className="form-field">
+          <label htmlFor="request-image">
+            Event Image <span className="required-star">*</span>
+          </label>
+
+          <div className="image-upload">
+            {!form.imageUrl ? (
+              <label htmlFor="request-image" className="image-upload__label">
+                <input
+                  id="request-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="image-upload__input"
+                />
+                <div className="image-upload__icon" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <div className="image-upload__text">
+                  <strong>Click to upload image</strong>
+                  <span>PNG, JPG or JPEG (max. 5MB)</span>
+                </div>
+              </label>
+            ) : (
+              <div className="image-upload__preview-wrap">
+                <img src={form.imageUrl} alt="Preview" className="image-upload__preview" />
+                <button
+                  type="button"
+                  className="image-upload__clear"
+                  onClick={clearImage}
+                  title="Remove image"
+                  aria-label="Remove image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="form-field">
           <label htmlFor="request-location">
-            Suggested venue
+            Suggested venue <span className="required-star">*</span>
           </label>
 
           <input
@@ -1173,7 +723,7 @@ export default function CreateEventRequestPage() {
         <div className="form-grid form-grid--location">
           <div className="form-field">
             <label htmlFor="request-city">
-              City
+              City <span className="required-star">*</span>
             </label>
 
             <input
@@ -1190,7 +740,7 @@ export default function CreateEventRequestPage() {
 
           <div className="form-field">
             <label htmlFor="request-neighborhood">
-              Neighborhood
+              Neighborhood <span className="required-star">*</span>
             </label>
 
             <input

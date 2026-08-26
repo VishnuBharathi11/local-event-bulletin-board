@@ -83,6 +83,7 @@ export default function TimePicker({
   disabled = false,
   minimumMinutes = 0,
   label,
+  align = 'left',
 }) {
   const [open, setOpen] = useState(false)
 
@@ -452,7 +453,7 @@ export default function TimePicker({
             }
           />
 
-          <div className="time-picker-dropdown">
+          <div className={`time-picker-dropdown time-picker-dropdown--${align}`}>
             <div className="time-picker-dropdown__header">
               <div>
                 <span className="time-picker-dropdown__title">

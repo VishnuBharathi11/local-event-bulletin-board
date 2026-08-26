@@ -49,15 +49,6 @@ export function getCityOptions(events = []) {
   })
 }
 
-export function getNeighborhoodOptions(events = [], selectedCity = 'All') {
-  const cityEvents = selectedCity === 'All' ? events : events.filter((event) => event.city === selectedCity)
-  return ['All', ...new Set(cityEvents.map((event) => event.neighborhood).filter(Boolean))].sort((a, b) => {
-    if (a === 'All') return -1
-    if (b === 'All') return 1
-    return a.localeCompare(b)
-  })
-}
-
 export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date()) {
   const activeEvents = getActiveEvents(events, now)
   const query = discovery.searchQuery.trim().toLowerCase()
@@ -74,10 +65,9 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
 
       const matchesCategory = discovery.selectedCategory === 'All' || event.category === discovery.selectedCategory
       const matchesCity = discovery.selectedCity === 'All' || event.city === discovery.selectedCity
-      const matchesNeighborhood = discovery.selectedNeighborhood === 'All' || event.neighborhood === discovery.selectedNeighborhood
       const matchesDate = matchesDateFilter(event.startTime, discovery.selectedDateFilter, now)
 
-      return matchesSearch && matchesCategory && matchesCity && matchesNeighborhood && matchesDate
+      return matchesSearch && matchesCategory && matchesCity && matchesDate
     })
     .sort((a, b) => discovery.selectedSortOrder === 'Soonest First'
       ? Number(a.startTime) - Number(b.startTime)

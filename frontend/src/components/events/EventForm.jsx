@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../../context/AuthContext.jsx'
+import TimePicker from '../common/TimePicker.jsx'
 import '../../styles/createEvent.css'
 
 const CATEGORIES = [
@@ -23,31 +25,74 @@ function initialForm() {
     location: '',
     city: '',
     neighborhood: '',
+    imageUrl: null,
   }
 }
 
-function localTimestamp(date, time) {
-  const [year, month, day] = date.split('-').map(Number)
-  const [hours, minutes] = time.split(':').map(Number)
-  const value = new Date(year, month - 1, day, hours, minutes, 0, 0).getTime()
-  return Number.isFinite(value) ? value : NaN
-}
-
 export default function EventForm({ onSubmit, submitting = false, serverError = null }) {
+  const { currentUser } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [error, setError] = useState(null)
+  const [nowTick, setNowTick] = useState(Date.now())
 
-  const minDate = useMemo(() => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowTick(Date.now())
+    }, 30000)
+    return () => window.clearInterval(timer)
   }, [])
+
+  const today = useMemo(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  }, [nowTick])
+
+  const getCurrentMinutes = () => {
+    const now = new Date()
+    return now.getHours() * 60 + now.getMinutes()
+  }
+
+  const startMinimumMinutes = useMemo(() => {
+    if (!form.date) return 0
+    if (form.date === today) return getCurrentMinutes()
+    return 0
+  }, [form.date, today, nowTick])
+
+  const endMinimumMinutes = useMemo(() => {
+    let minimum = 0
+    if (form.date === today) minimum = getCurrentMinutes()
+    if (form.startTime) {
+      const [hour, minute] = form.startTime.split(':').map(Number)
+      if (Number.isFinite(hour) && Number.isFinite(minute)) {
+        minimum = Math.max(minimum, hour * 60 + minute + 1)
+      }
+    }
+    return minimum
+  }, [form.date, form.startTime, today, nowTick])
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
     setError(null)
+  }
+
+  function handleImageChange(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image file is too large. Max size is 5MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      update('imageUrl', reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function clearImage() {
+    update('imageUrl', null)
   }
 
   function validate() {
@@ -57,13 +102,18 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
     if (!/^\d{2}:\d{2}$/.test(form.startTime)) return 'Please select a valid start time.'
     if (!/^\d{2}:\d{2}$/.test(form.endTime)) return 'Please select a valid end time.'
 
-    const startTime = localTimestamp(form.date, form.startTime)
-    const endTime = localTimestamp(form.date, form.endTime)
+    const [year, month, day] = form.date.split('-').map(Number)
+    const [startHour, startMin] = form.startTime.split(':').map(Number)
+    const [endHour, endMin] = form.endTime.split(':').map(Number)
+
+    const startTime = new Date(year, month - 1, day, startHour, startMin, 0, 0).getTime()
+    const endTime = new Date(year, month - 1, day, endHour, endMin, 0, 0).getTime()
     const now = Date.now()
 
     if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) return 'Please select a valid event date and time.'
+    if (startTime <= now) return 'Start time must be in the future.'
     if (endTime <= startTime) return 'End time must be after start time.'
-    if (endTime <= now) return 'Event must end in the future.'
+    if (endTime <= now) return 'End time must be in the future.'
 
     return null
   }
@@ -76,8 +126,14 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
       return
     }
 
-    const startTime = localTimestamp(form.date, form.startTime)
-    const endTime = localTimestamp(form.date, form.endTime)
+    // Convert local date/time strings to UTC timestamps for the API
+    const [year, month, day] = form.date.split('-').map(Number)
+    const [startHour, startMin] = form.startTime.split(':').map(Number)
+    const [endHour, endMin] = form.endTime.split(':').map(Number)
+
+    const startTime = new Date(year, month - 1, day, startHour, startMin, 0, 0).getTime()
+    const endTime = new Date(year, month - 1, day, endHour, endMin, 0, 0).getTime()
+
     await onSubmit({
       title: form.title.trim(),
       description: form.description.trim(),
@@ -90,6 +146,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
       status: 'PUBLISHED',
       createdAt: Date.now(),
       expireAt: endTime,
+      imageUrl: form.imageUrl,
     })
   }
 
@@ -101,22 +158,78 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
           <p className="create-event-form__section-description">Add the essential details people need to understand your event.</p>
         </div>
         <div className="create-event-form__fields">
+          <div className="form-grid">
+            <div className="form-field">
+              <label htmlFor="user-name">Name</label>
+              <input id="user-name" value={currentUser?.name || ''} readOnly className="input--readonly" />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="user-email">Email</label>
+              <input id="user-email" value={currentUser?.email || ''} readOnly className="input--readonly" />
+            </div>
+          </div>
+
           <div className="form-field">
-            <label htmlFor="event-title">Event Title</label>
+            <label htmlFor="event-title">Event Title <span className="required-star">*</span></label>
             <input id="event-title" value={form.title} onChange={(event) => update('title', event.target.value)} />
           </div>
 
           <div className="form-field">
-            <label htmlFor="event-description">Description</label>
+            <label htmlFor="event-description">Description <span className="required-star">*</span></label>
             <textarea id="event-description" rows="6" value={form.description} onChange={(event) => update('description', event.target.value)} />
           </div>
 
           <div className="form-field">
-            <label htmlFor="event-category">Category</label>
+            <label htmlFor="event-category">Category <span className="required-star">*</span></label>
             <select id="event-category" value={form.category} onChange={(event) => update('category', event.target.value)}>
               <option value="">Select category</option>
               {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="event-image">Event Image <span className="required-star">*</span></label>
+            <div className="image-upload">
+              {!form.imageUrl ? (
+                <label htmlFor="event-image" className="image-upload__label">
+                  <input
+                    id="event-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="image-upload__input"
+                  />
+                  <div className="image-upload__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                  <div className="image-upload__text">
+                    <strong>Click to upload event image</strong>
+                    <span>PNG, JPG or JPEG (max. 5MB)</span>
+                  </div>
+                </label>
+              ) : (
+                <div className="image-upload__preview-wrap">
+                  <img src={form.imageUrl} alt="Preview" className="image-upload__preview" />
+                  <button
+                    type="button"
+                    className="image-upload__clear"
+                    onClick={clearImage}
+                    title="Remove image"
+                    aria-label="Remove image"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </fieldset>
@@ -128,16 +241,31 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
         </div>
         <div className="create-event-form__fields create-event-form__fields--date-time">
           <div className="form-field">
-            <label htmlFor="event-date">Event Date</label>
-            <input id="event-date" type="date" min={minDate} value={form.date} onChange={(event) => update('date', event.target.value)} />
+            <label htmlFor="event-date">Event Date <span className="required-star">*</span></label>
+            <input id="event-date" type="date" min={today} value={form.date} onChange={(event) => update('date', event.target.value)} />
           </div>
           <div className="form-field">
-            <label htmlFor="event-start">Start Time</label>
-            <input id="event-start" type="time" value={form.startTime} onChange={(event) => update('startTime', event.target.value)} />
+            <label htmlFor="event-start">Start Time <span className="required-star">*</span></label>
+            <TimePicker
+              id="event-start"
+              label="start time"
+              value={form.startTime}
+              onChange={(value) => update('startTime', value)}
+              minimumMinutes={startMinimumMinutes}
+              disabled={!form.date}
+            />
           </div>
           <div className="form-field">
-            <label htmlFor="event-end">End Time</label>
-            <input id="event-end" type="time" value={form.endTime} onChange={(event) => update('endTime', event.target.value)} />
+            <label htmlFor="event-end">End Time <span className="required-star">*</span></label>
+            <TimePicker
+              id="event-end"
+              label="end time"
+              value={form.endTime}
+              onChange={(value) => update('endTime', value)}
+              minimumMinutes={endMinimumMinutes}
+              disabled={!form.date || !form.startTime}
+              align="right"
+            />
           </div>
         </div>
       </fieldset>
@@ -149,17 +277,17 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
         </div>
         <div className="create-event-form__fields">
           <div className="form-field">
-            <label htmlFor="event-location">Venue / Exact Location</label>
+            <label htmlFor="event-location">Venue / Exact Location <span className="required-star">*</span></label>
             <input id="event-location" value={form.location} onChange={(event) => update('location', event.target.value)} />
           </div>
         </div>
         <div className="create-event-form__fields create-event-form__fields--location">
           <div className="form-field">
-            <label htmlFor="event-city">City</label>
+            <label htmlFor="event-city">City <span className="required-star">*</span></label>
             <input id="event-city" value={form.city} onChange={(event) => update('city', event.target.value)} />
           </div>
           <div className="form-field">
-            <label htmlFor="event-neighborhood">Neighborhood</label>
+            <label htmlFor="event-neighborhood">Neighborhood <span className="required-star">*</span></label>
             <input id="event-neighborhood" value={form.neighborhood} onChange={(event) => update('neighborhood', event.target.value)} />
           </div>
         </div>

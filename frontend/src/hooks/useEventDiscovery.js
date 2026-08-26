@@ -7,7 +7,6 @@ import {
   filterAndSortEvents,
   getActiveEvents,
   getCityOptions,
-  getNeighborhoodOptions,
 } from '../utils/eventDiscovery.js'
 
 export function useEventDiscovery(rawEvents = []) {
@@ -16,10 +15,6 @@ export function useEventDiscovery(rawEvents = []) {
 
   const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents])
   const cityOptions = useMemo(() => getCityOptions(activeEvents), [activeEvents])
-  const neighborhoodOptions = useMemo(
-    () => getNeighborhoodOptions(activeEvents, discovery.selectedCity),
-    [activeEvents, discovery.selectedCity],
-  )
   const events = useMemo(
     () => filterAndSortEvents(rawEvents, discovery, now),
     [rawEvents, discovery],
@@ -34,11 +29,7 @@ export function useEventDiscovery(rawEvents = []) {
   }, [])
 
   const updateCity = useCallback((selectedCity) => {
-    setDiscovery((current) => ({ ...current, selectedCity, selectedNeighborhood: 'All' }))
-  }, [])
-
-  const updateNeighborhood = useCallback((selectedNeighborhood) => {
-    setDiscovery((current) => ({ ...current, selectedNeighborhood }))
+    setDiscovery((current) => ({ ...current, selectedCity }))
   }, [])
 
   const updateDateFilter = useCallback((selectedDateFilter) => {
@@ -58,11 +49,9 @@ export function useEventDiscovery(rawEvents = []) {
     events,
     activeEvents,
     cityOptions,
-    neighborhoodOptions,
     updateSearchQuery,
     updateCategory,
     updateCity,
-    updateNeighborhood,
     updateDateFilter,
     updateSortOrder,
     clearFilters,

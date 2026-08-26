@@ -24,7 +24,6 @@ export const DEFAULT_DISCOVERY_STATE = Object.freeze({
   searchQuery: '',
   selectedCategory: 'All',
   selectedCity: 'All',
-  selectedNeighborhood: 'All',
   selectedDateFilter: 'All Upcoming',
   selectedSortOrder: 'Soonest First',
 })

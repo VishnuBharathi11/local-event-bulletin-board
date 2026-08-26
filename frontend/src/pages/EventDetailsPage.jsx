@@ -60,12 +60,20 @@ export default function EventDetailsPage() {
     <article className="event-details">
       <Link className="back-link" to="/">← Back to Event Board</Link>
 
-      <div className="event-details__layout">
-        <div className="event-details__visual" aria-label="Event visual placeholder">
-          <div className="event-details__visual-mark" aria-hidden="true">EH</div>
-          <span>Local event</span>
-          <strong>{event.category}</strong>
+      {event.imageUrl && (
+        <div className="event-details__hero-image-wrap">
+          <img src={event.imageUrl} alt={event.title} className="event-details__hero-image" />
         </div>
+      )}
+
+      <div className={event.imageUrl ? 'event-details__layout event-details__layout--with-image' : 'event-details__layout'}>
+        {!event.imageUrl && (
+          <div className="event-details__visual" aria-label="Event visual placeholder">
+            <div className="event-details__visual-mark" aria-hidden="true">EH</div>
+            <span>Local event</span>
+            <strong>{event.category}</strong>
+          </div>
+        )}
 
         <div className="event-details__main">
           <div className="event-details__badges">

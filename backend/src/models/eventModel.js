@@ -13,6 +13,7 @@ const EVENT_CATEGORIES = Object.freeze([
 const DEFAULT_EVENT = Object.freeze({
   eventId: '', title: '', description: '', category: '', city: '', neighborhood: '', location: '',
   startTime: 0, endTime: 0, status: 'DRAFT', rsvpCount: 0, organizerId: '', createdAt: 0, expireAt: 0, conflictStatus: 'NONE',
+  imageUrl: '',
 })
 
 function isSafeInteger(value) {
@@ -26,9 +27,10 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
     location: input.location ?? DEFAULT_EVENT.location, startTime: input.startTime ?? DEFAULT_EVENT.startTime, endTime: input.endTime ?? DEFAULT_EVENT.endTime,
     status: input.status ?? DEFAULT_EVENT.status, rsvpCount: input.rsvpCount ?? DEFAULT_EVENT.rsvpCount, organizerId: input.organizerId ?? DEFAULT_EVENT.organizerId,
     createdAt: input.createdAt ?? DEFAULT_EVENT.createdAt, expireAt: input.expireAt ?? DEFAULT_EVENT.expireAt, conflictStatus: input.conflictStatus ?? DEFAULT_EVENT.conflictStatus,
+    imageUrl: input.imageUrl ?? DEFAULT_EVENT.imageUrl,
   }
 
-  const stringFields = ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'conflictStatus']
+  const stringFields = ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'conflictStatus', 'imageUrl']
   for (const field of stringFields) if (typeof event[field] !== 'string') throw new TypeError(`${field} must be a string`)
   for (const field of ['startTime', 'endTime', 'createdAt', 'expireAt']) if (!isSafeInteger(event[field])) throw new TypeError(`${field} must be a safe integer`)
   if (!Number.isInteger(event.rsvpCount)) throw new TypeError('rsvpCount must be an integer')

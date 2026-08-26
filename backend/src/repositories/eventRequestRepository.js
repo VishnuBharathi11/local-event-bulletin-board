@@ -86,6 +86,7 @@ async function confirmEventRequest(requestId) {
       createdAt: Date.now(),
       expireAt: request.endTime,
       conflictStatus: 'NONE',
+      imageUrl: request.imageUrl || '',
     }
     const { eventId: _eventId, ...eventFields } = createdEvent
     transaction.set(eventRef, eventFields)

@@ -4,7 +4,7 @@ import LocationFilters from './LocationFilters.jsx'
 import DateFilter from './DateFilter.jsx'
 import SortFilter from './SortFilter.jsx'
 
-export default function DiscoveryControls({ discovery, cityOptions, neighborhoodOptions, actions }) {
+export default function DiscoveryControls({ discovery, cityOptions, actions }) {
   return (
     <section className="discovery-controls" aria-label="Event discovery controls">
       <div className="discovery-controls__top">
@@ -19,11 +19,8 @@ export default function DiscoveryControls({ discovery, cityOptions, neighborhood
       <div className="discovery-controls__filters">
         <LocationFilters
           city={discovery.selectedCity}
-          neighborhood={discovery.selectedNeighborhood}
           cities={cityOptions}
-          neighborhoods={neighborhoodOptions}
           onCityChange={actions.updateCity}
-          onNeighborhoodChange={actions.updateNeighborhood}
         />
         <DateFilter value={discovery.selectedDateFilter} onChange={actions.updateDateFilter} />
         <SortFilter value={discovery.selectedSortOrder} onChange={actions.updateSortOrder} />

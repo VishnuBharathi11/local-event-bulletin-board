@@ -5,7 +5,7 @@ export function getDemandCount(request) {
 
 export function getDemandThreshold(request) {
   const threshold = Number(request?.demandThreshold)
-  return Number.isFinite(threshold) && threshold > 0 ? threshold : 0
+  return (Number.isFinite(threshold) && threshold > 0) ? threshold : 20
 }
 
 export function getDemandPercentage(request) {
@@ -27,9 +27,9 @@ export function getDemandMessage(request) {
   if (count === 0) return 'Demand is being collected.'
 
   const remaining = threshold - count
-  if (remaining === 1) return '1 more person needed.'
+  if (remaining === 1) return '1 more person to show interest.'
   if (remaining <= 2) return 'Almost there.'
-  return `${remaining} more people needed.`
+  return `${remaining} more people to show interest.`
 }
 
 export function getDemandStateLabel(status) {

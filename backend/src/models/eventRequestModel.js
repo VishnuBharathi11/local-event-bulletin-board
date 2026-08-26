@@ -30,9 +30,10 @@ function normalizeEventRequest(input = {}, requestId = input.requestId || '') {
     status: input.status ?? 'COLLECTING_DEMAND',
     createdAt: Number(input.createdAt ?? 0),
     organizerId: input.organizerId ?? '',
+    imageUrl: input.imageUrl ?? '',
   }
 
-  for (const field of ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId']) {
+  for (const field of ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'imageUrl']) {
     if (typeof request[field] !== 'string') throw new TypeError(`${field} must be a string`)
   }
 

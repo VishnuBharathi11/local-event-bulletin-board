@@ -23,6 +23,11 @@ export default function EventCard({ event, onRsvpChanged }) {
 
   return (
     <article className="event-card">
+      {event.imageUrl && (
+        <div className="event-card__image-wrap">
+          <img src={event.imageUrl} alt="" className="event-card__image" />
+        </div>
+      )}
       <div className="event-card__badges">
         <CategoryBadge category={event.category} />
         <EventStatusBadge status={event.status} />

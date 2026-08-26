@@ -2,6 +2,7 @@ const eventRequestRepository = require('../repositories/eventRequestRepository')
 const { validateEventRequestForCreation } = require('../models/eventRequestModel')
 const { normalizeEvent } = require('../models/eventModel')
 const conflictService = require('./conflictService')
+const imageService = require('./imageService')
 
 async function getEventRequests() {
   return eventRequestRepository.getEventRequests()
@@ -12,7 +13,14 @@ async function getEventRequestById(requestId) {
 }
 
 async function createEventRequest(input, userId) {
-  console.log('Creating event request with input:', { ...input, imageUrl: input.imageUrl ? 'present' : 'none' })
+  if (input.imageUrl && input.imageUrl.startsWith('data:image')) {
+    try {
+      input.imageUrl = await imageService.uploadImage(input.imageUrl)
+    } catch (error) {
+      console.error('Image upload failed during event request creation:', error)
+      throw error
+    }
+  }
   const request = validateEventRequestForCreation(input, userId)
   return eventRequestRepository.createEventRequest(request)
 }
@@ -57,6 +65,7 @@ function requestToConflictEvent(request) {
     createdAt: request.createdAt,
     expireAt: request.endTime,
     conflictStatus: 'NONE',
+    imageUrl: request.imageUrl || '',
   })
 }
 
