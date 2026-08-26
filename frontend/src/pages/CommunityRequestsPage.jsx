@@ -4,7 +4,7 @@ import { useEventRequests } from '../hooks/useEventRequests.js'
 import '../styles/communityRequests.css'
 
 export default function CommunityRequestsPage() {
-  const { status, requests, error, reload, interestedIds, interestLoadingId, addInterest } = useEventRequests()
+  const { status, requests, error, reload, interestedIds, interestLoadingId, interestError, addInterest } = useEventRequests()
 
   return (
     <section className="community-requests-page">
@@ -30,6 +30,7 @@ export default function CommunityRequestsPage() {
               request={request}
               isInterested={interestedIds.has(request.requestId)}
               interestLoading={interestLoadingId === request.requestId}
+              interestError={interestError?.requestId === request.requestId ? interestError.message : null}
               onInterest={() => addInterest(request.requestId)}
             />
           ))}
