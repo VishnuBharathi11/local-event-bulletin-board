@@ -3,6 +3,7 @@ import EventRequestCard from '../components/community/EventRequestCard.jsx'
 import { useEventRequests } from '../hooks/useEventRequests.js'
 import '../styles/communityRequests.css'
 import '../styles/communityRequestsUi06.css'
+import '../styles/eventRequestUi07.css'
 
 export default function CommunityRequestsPage() {
   const { status, requests, error, reload, interestedIds, interestLoadingId, interestError, addInterest } = useEventRequests()
