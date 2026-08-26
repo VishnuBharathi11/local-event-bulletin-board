@@ -5,24 +5,30 @@ let firebaseApp
 function getFirebaseApp() {
   if (firebaseApp) return firebaseApp
 
-  if (admin.apps.length > 0) {
+  try {
     firebaseApp = admin.app()
     return firebaseApp
+  } catch (_) {
+    // Firebase app is not initialized yet.
   }
 
-  const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'genial-core-506613-t3'
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY
 
-  if (FIREBASE_PROJECT_ID && FIREBASE_CLIENT_EMAIL && FIREBASE_PRIVATE_KEY) {
+  if (clientEmail && privateKey) {
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: FIREBASE_PROJECT_ID,
-        clientEmail: FIREBASE_CLIENT_EMAIL,
-        privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        projectId,
+        clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
+      projectId,
     })
   } else {
     firebaseApp = admin.initializeApp({
       credential: admin.credential.applicationDefault(),
+      projectId,
     })
   }
 
@@ -30,7 +36,12 @@ function getFirebaseApp() {
 }
 
 function getFirestore() {
-  return getFirebaseApp().firestore()
+  const app = getFirebaseApp()
+
+  return admin.firestore(app)
 }
 
-module.exports = { getFirebaseApp, getFirestore }
+module.exports = {
+  getFirebaseApp,
+  getFirestore,
+}
