@@ -14,6 +14,7 @@ import {
 } from '../utils/eventRequestPresentation.js'
 import '../styles/communityRequests.css'
 import '../styles/communityRequestsUi06.css'
+import '../styles/eventRequestUi07.css'
 
 const statusLabels = { COLLECTING_DEMAND: 'Collecting Demand', THRESHOLD_REACHED: 'Threshold Reached', CONFIRMED: 'Confirmed', DECLINED: 'Declined' }
 
@@ -102,11 +103,11 @@ export default function EventRequestDetailsPage() {
   const isThresholdReached = request.status === 'THRESHOLD_REACHED'
 
   return (
-    <section className="request-details request-details--ui06">
+    <section className="request-details request-details--ui06 request-details--ui07">
       <Link className="back-link" to="/community-requests">← Community Requests</Link>
 
-      <header className="request-details__header--ui06">
-        <div className="request-details__status-row">
+      <header className="request-details__header--ui06 request-details__header--ui07">
+        <div className="request-details__status-row request-details__status-row--ui07">
           <span className="request-card__category">{request.category}</span>
           <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>
             {statusLabels[request.status] || request.status}
@@ -116,7 +117,7 @@ export default function EventRequestDetailsPage() {
         <p className="request-details__description">{request.description}</p>
       </header>
 
-      <dl className="request-details__facts request-details__facts--ui06">
+      <dl className="request-details__facts request-details__facts--ui06 request-details__facts--ui07">
         <div><dt>Category</dt><dd>{request.category}</dd></div>
         <div><dt>City</dt><dd>{request.city}</dd></div>
         <div><dt>Neighborhood</dt><dd>{request.neighborhood || 'Not specified'}</dd></div>
@@ -127,12 +128,16 @@ export default function EventRequestDetailsPage() {
         {request.organizerId && <div><dt>Organizer</dt><dd>Request organizer</dd></div>}
       </dl>
 
-      <section className={`request-details__demand request-details__demand--ui06 ${isThresholdReached ? 'request-details__demand--threshold' : ''}`} aria-label="Community demand">
+      <section className={`request-details__demand request-details__demand--ui06 request-details__demand--ui07 ${isThresholdReached ? 'request-details__demand--threshold' : ''}`} aria-label="Community demand">
         <div className="request-details__demand-heading">
-          <div><p className="eyebrow">Demand intelligence</p><h2>Community Demand</h2><p>Progress is based on the configured demand threshold.</p></div>
+          <div>
+            <p className="eyebrow">Demand intelligence</p>
+            <h2>Community Demand</h2>
+            <p className="request-details__demand-heading__support">Progress is based on the configured demand threshold.</p>
+          </div>
           <strong>{Math.round(demandPercentage)}%</strong>
         </div>
-        <div className="request-details__demand-count"><strong>{demandCount} / {demandThreshold}</strong><span>people interested</span></div>
+        <div className="request-details__demand-count request-details__demand-count--ui07"><strong>{demandCount} / {demandThreshold}</strong><span>people interested</span></div>
         <div
           className="demand-progress__track"
           role="progressbar"
@@ -144,28 +149,30 @@ export default function EventRequestDetailsPage() {
         >
           <span style={{ width: `${progress * 100}%` }} />
         </div>
-        <div className="request-details__demand-state"><strong>{demandState}</strong><span>{demandMessage}</span></div>
-        <div className="request-details__actions request-details__actions--ui06">
+        <div className="request-details__demand-state request-details__demand-state--ui07"><strong>{demandState}</strong><span>{demandMessage}</span></div>
+        <div className="request-details__actions request-details__actions--ui06 request-details__actions--ui07">
           {request.status === 'COLLECTING_DEMAND' && authenticated && <button className="primary-button" type="button" disabled={interested || action === 'interest'} onClick={handleInterest}>{action === 'interest' ? 'Saving…' : interested ? 'Interested ✓' : 'Express Interest'}</button>}
-          {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span>Sign in to express interest.</span><Link className="primary-button" to="/login">Login to Express Interest</Link></>}
-          {request.status === 'THRESHOLD_REACHED' && <strong className="request-details__threshold-state"><span aria-hidden="true">✓</span> Threshold Reached — organizer review is available.</strong>}
-          {request.status === 'CONFIRMED' && <strong>This request has been confirmed and is now a published event.</strong>}
-          {request.status === 'DECLINED' && <strong>This request was declined by the organizer.</strong>}
+          {request.status === 'COLLECTING_DEMAND' && !authenticated && <><span className="request-details__interest-note">Sign in to express interest.</span><Link className="primary-button" to="/login">Login to Express Interest</Link></>}
+          {request.status === 'THRESHOLD_REACHED' && <strong className="request-details__threshold-state request-details__threshold-state--ui07"><span aria-hidden="true">✓</span> Threshold Reached — organizer review is available.</strong>}
+          {request.status === 'CONFIRMED' && <strong className="request-details__terminal-state request-details__terminal-state--ui07">This request has been confirmed and is now a published event.</strong>}
+          {request.status === 'DECLINED' && <strong className="request-details__terminal-state request-details__terminal-state--ui07">This request was declined by the organizer.</strong>}
         </div>
       </section>
 
-      {error && <p className="form-error request-details__action-error" role="alert">{error}</p>}
+      {error && <p className="form-error request-details__action-error request-details__action-error--ui07" role="alert">{error}</p>}
 
       {canReview && (
-        <section className="request-details__organizer request-details__organizer--ui06">
-          <div>
+        <section className="request-details__organizer request-details__organizer--ui06 request-details__organizer--ui07">
+          <div className="request-details__organizer-copy--ui07">
             <p className="eyebrow">Organizer action</p>
             <h2>Review this request</h2>
             <p>Demand has reached the configured threshold. Confirming creates the existing Event model as a published event; declining closes the request.</p>
           </div>
-          <div className="request-details__actions">
-            <button className="primary-button" type="button" disabled={action !== null} onClick={handleConfirm}>{action === 'confirm' ? 'Checking…' : 'Confirm Event'}</button>
-            <button className="button-danger" type="button" disabled={action !== null} onClick={handleDecline}>{action === 'decline' ? 'Declining…' : 'Decline'}</button>
+          <div className="request-details__organizer-actions--ui07">
+            <div className="request-details__actions">
+              <button className="primary-button" type="button" disabled={action !== null} onClick={handleConfirm}>{action === 'confirm' ? 'Checking…' : 'Confirm Event'}</button>
+              <button className="button-danger" type="button" disabled={action !== null} onClick={handleDecline}>{action === 'decline' ? 'Declining…' : 'Decline'}</button>
+            </div>
           </div>
         </section>
       )}
