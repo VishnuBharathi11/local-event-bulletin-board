@@ -45,9 +45,9 @@ export default function AppShell() {
               </NavLink>
             ))}
           </nav>
-          <div className="auth-nav">
+          <div className="auth-nav" aria-label="Account navigation">
             {loading ? (
-              <span className="auth-nav__state">Checking account…</span>
+              <span className="auth-nav__state" role="status" aria-live="polite">Checking account…</span>
             ) : authenticated ? (
               <>
                 <span className="auth-nav__user" title={currentUser?.email}>{currentUser?.name}</span>
@@ -59,7 +59,7 @@ export default function AppShell() {
                 <NavLink className="primary-button auth-nav__register" to="/register">Register</NavLink>
               </>
             )}
-            <span className={`health-indicator health-indicator--${backendStatus}`}>
+            <span className={`health-indicator health-indicator--${backendStatus}`} role="status" aria-live="polite">
               <span aria-hidden="true" />
               Backend {backendStatus}
             </span>
