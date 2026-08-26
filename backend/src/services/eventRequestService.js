@@ -12,6 +12,7 @@ async function getEventRequestById(requestId) {
 }
 
 async function createEventRequest(input, userId) {
+  console.log('Creating event request with input:', { ...input, imageUrl: input.imageUrl ? 'present' : 'none' })
   const request = validateEventRequestForCreation(input, userId)
   return eventRequestRepository.createEventRequest(request)
 }
