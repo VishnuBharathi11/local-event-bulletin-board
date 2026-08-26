@@ -27,7 +27,7 @@ export default function Calendar({
         </button>
 
         <div className="calendar__month-heading">
-          <h1>{formatMonthYear(currentMonth)}</h1>
+          <h2>{formatMonthYear(currentMonth)}</h2>
           <button className="calendar__today-button" type="button" onClick={onToday}>
             Today
           </button>
@@ -68,9 +68,10 @@ export default function Calendar({
                 weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
               })}${hasEvents ? ', has events' : ''}`}
               aria-pressed={selected}
+              aria-current={cell.isToday ? 'date' : undefined}
               onClick={() => onDateSelected(cell.date)}
             >
-              <span>{cell.day}</span>
+              <span className="calendar__day-number">{cell.day}</span>
               {hasEvents && <span className="calendar__event-dot" aria-hidden="true" />}
             </button>
           )
@@ -79,9 +80,14 @@ export default function Calendar({
 
       <section className="calendar__events" aria-labelledby="selected-date-heading">
         <div className="calendar__events-heading">
-          <div>
+          <div className="calendar__events-title">
             <p className="eyebrow">Selected date</p>
             <h2 id="selected-date-heading">{formatSelectedDate(selectedDate)}</h2>
+            <p className="calendar__events-summary">
+              {eventsForDate.length === 0
+                ? 'No scheduled events for this date.'
+                : 'Events scheduled for this date.'}
+            </p>
           </div>
           <span className="calendar__event-count">
             {eventsForDate.length} {eventsForDate.length === 1 ? 'Event' : 'Events'}
@@ -90,11 +96,12 @@ export default function Calendar({
 
         {eventsForDate.length === 0 ? (
           <div className="calendar__empty-state">
+            <span className="calendar__empty-state-icon" aria-hidden="true">○</span>
             <strong>No events on this date</strong>
             <span>Try another date to discover local events.</span>
           </div>
         ) : (
-          <div className="event-grid">
+          <div className="calendar__event-grid">
             {eventsForDate.map((event) => <EventCard key={event.eventId} event={event} />)}
           </div>
         )}
