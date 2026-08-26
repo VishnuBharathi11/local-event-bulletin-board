@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
 import {
   getDemandCount,
@@ -16,7 +17,8 @@ const statusLabels = {
   DECLINED: 'Declined',
 }
 
-export default function EventRequestCard({ request, isInterested, interestLoading, onInterest }) {
+export default function EventRequestCard({ request, isInterested, interestLoading, interestError, onInterest }) {
+  const { authenticated } = useAuth()
   const demandCount = getDemandCount(request)
   const demandThreshold = getDemandThreshold(request)
   const demandPercentage = getDemandPercentage(request)
@@ -57,11 +59,16 @@ export default function EventRequestCard({ request, isInterested, interestLoadin
       <div className="request-card__footer">
         <Link className="request-card__link" to={`/community-requests/${encodeURIComponent(request.requestId)}`}>View Request</Link>
         {request.status === 'COLLECTING_DEMAND' && (
-          <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>
-            {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : 'Express Interest'}
-          </button>
+          authenticated ? (
+            <button className="primary-button" type="button" disabled={isInterested || interestLoading} onClick={onInterest}>
+              {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : 'Express Interest'}
+            </button>
+          ) : (
+            <Link className="primary-button" to="/login">Login to Express Interest</Link>
+          )
         )}
       </div>
+      {interestError && <p className="form-error" role="alert">{interestError}</p>}
     </article>
   )
 }
