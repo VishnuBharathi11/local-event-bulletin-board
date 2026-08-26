@@ -1,0 +1,462 @@
+/* UI-09: final visual consistency and polish. Presentation only. */
+
+/* Shared visual hierarchy: reuse UI-01 tokens rather than introducing a second system. */
+.event-page__hero,
+.community-requests-header--ui06,
+.page-placeholder {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.event-page__hero {
+  border-color: var(--border);
+}
+
+.event-page__hero h1,
+.community-requests-header--ui06 h1,
+.calendar-page__intro h1,
+.request-form__intro h1,
+.request-details--ui07 .request-details__header--ui07 h1,
+.event-details__main h1,
+.auth-card h1,
+.create-event-header h1 {
+  color: var(--text-strong);
+  font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -.025em;
+}
+
+.event-page__hero h1 {
+  max-width: 720px;
+  font-size: clamp(32px, 5vw, 44px);
+}
+
+.community-requests-header--ui06 h1 {
+  font-size: clamp(32px, 5vw, 44px);
+}
+
+.request-details--ui07 .request-details__header--ui07 h1,
+.event-details__main h1 {
+  font-size: clamp(30px, 5vw, 44px);
+}
+
+.calendar-page__intro,
+.create-event-header,
+.request-form__intro {
+  margin-bottom: 24px;
+}
+
+/* Normalize the shared button family. */
+.primary-button,
+.secondary-button,
+.secondary-link,
+.button-danger {
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.primary-button,
+.secondary-button,
+.button-danger {
+  padding: 10px 15px;
+}
+
+.primary-button {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+.primary-button:hover:not(:disabled) {
+  border-color: var(--brand-dark);
+  background: var(--brand-dark);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.button-danger:disabled {
+  border-color: var(--border);
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.secondary-button,
+.secondary-link {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--brand-dark);
+}
+
+.secondary-button:hover:not(:disabled),
+.secondary-link:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
+}
+
+.button-danger {
+  border-color: #e6bdb8;
+  background: var(--surface);
+  color: var(--danger);
+}
+
+.button-danger:hover:not(:disabled) {
+  border-color: #d99d96;
+  background: #fff5f4;
+}
+
+/* Preserve UI-08's visible keyboard focus while making the state consistent. */
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Cards and containers share the established border/radius/shadow language. */
+.event-card,
+.request-card,
+.auth-card,
+.event-details,
+.request-details,
+.create-event-form,
+.event-form,
+.discovery-controls,
+.calendar,
+.request-details__organizer--ui06,
+.request-details__organizer--ui07,
+.event-details__visual {
+  border-color: var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.event-card,
+.request-card {
+  padding: 20px;
+}
+
+.event-card:hover,
+.request-card--ui06:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.event-details,
+.request-details--ui06,
+.request-details--ui07 {
+  padding: clamp(22px, 4vw, 32px);
+}
+
+.auth-card {
+  box-shadow: var(--shadow-md);
+}
+
+.event-details__visual {
+  border-radius: var(--radius-md);
+}
+
+.event-details__visual-mark {
+  border-radius: var(--radius-md);
+}
+
+/* Status and category badges share one compact geometry. */
+.event-badge,
+.event-status,
+.request-card__category,
+.request-card__status,
+.request-details__threshold-state--ui07,
+.request-details__terminal-state--ui07,
+.request-card__threshold-state,
+.calendar__event-count,
+.health-indicator {
+  border-radius: 999px;
+}
+
+.event-badge,
+.event-status,
+.request-card__category,
+.request-card__status {
+  min-height: 28px;
+  padding: 5px 10px;
+  line-height: 1.2;
+}
+
+/* Normalize status containers without changing status meaning. */
+.request-card__status--collecting_demand {
+  background: #eef2f7;
+  color: #475467;
+}
+
+.request-card__status--threshold_reached {
+  background: #e9eff8;
+  color: var(--brand-dark);
+}
+
+.request-card__status--confirmed {
+  background: #e8f4ed;
+  color: var(--success);
+}
+
+.request-card__status--declined {
+  background: #fcebea;
+  color: var(--danger);
+}
+
+/* Demand presentation remains state-driven but visually matches the application. */
+.demand-progress--ui06,
+.request-details__demand--ui06,
+.request-details__demand--ui07 {
+  border-radius: var(--radius-md);
+}
+
+.demand-progress__track,
+.request-details__demand--ui06 .demand-progress__track,
+.request-details__demand--ui07 .demand-progress__track {
+  border-radius: 999px;
+}
+
+/* Form controls use one height, radius, border, and focus treatment. */
+.auth-form input,
+.create-event-form input,
+.create-event-form textarea,
+.create-event-form select,
+.event-form input,
+.event-form textarea,
+.event-form select,
+.discovery-search input,
+.discovery-field select,
+.time-picker-field input,
+.time-picker-column select {
+  border-radius: var(--radius-sm);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.auth-form input,
+.create-event-form input,
+.create-event-form select,
+.event-form input,
+.event-form select,
+.discovery-search input,
+.discovery-field select,
+.time-picker-field input {
+  min-height: 46px;
+}
+
+.auth-form input:focus,
+.create-event-form input:focus,
+.create-event-form textarea:focus,
+.create-event-form select:focus,
+.event-form input:focus,
+.event-form textarea:focus,
+.event-form select:focus,
+.discovery-search input:focus,
+.discovery-field select:focus,
+.time-picker-field input:focus,
+.time-picker-column select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--focus);
+  outline: none;
+}
+
+.form-field label,
+.auth-form .form-field span,
+.discovery-search label,
+.discovery-field span,
+.create-event-form .form-field label,
+.event-form .form-field label {
+  color: #344054;
+  font-weight: 700;
+}
+
+/* Validation/error surfaces use the same restrained treatment. */
+.form-error,
+.create-event-form__error {
+  border-color: #efc7c3;
+  border-radius: var(--radius-sm);
+  background: #fff6f5;
+  color: var(--danger);
+}
+
+.action-message--error,
+.request-card__interest-error,
+.request-details__action-error {
+  color: var(--danger);
+}
+
+/* Loading, empty, and error states are intentionally quiet and structurally similar. */
+.state-card,
+.community-request-state,
+.calendar-page--state {
+  border-radius: var(--radius-lg);
+}
+
+.state-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.state-card--loading .state-card__icon,
+.state-card--empty .state-card__icon,
+.community-request-state__icon,
+.calendar__empty-state-icon {
+  border-radius: var(--radius-md);
+}
+
+.state-card strong,
+.community-request-state strong,
+.calendar__empty-state strong {
+  color: var(--text-strong);
+}
+
+/* Calendar is a primary application surface, so its shell matches cards/forms. */
+.calendar__header {
+  background: #fbfcfe;
+}
+
+.calendar__events {
+  background: #f8fafc;
+}
+
+.calendar__event-grid .event-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar__nav-button,
+.calendar__today-button {
+  border-radius: var(--radius-sm);
+}
+
+.calendar__day--selected {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Time picker belongs to the form system; remove its isolated visual language. */
+.time-picker-dropdown {
+  border-color: var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.time-picker-close {
+  border-radius: 50%;
+}
+
+.time-picker-apply {
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+}
+
+/* Conflict dialog follows the same container and action hierarchy. */
+.conflict-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.conflict-card {
+  border-color: var(--border);
+  border-radius: var(--radius-md);
+  background: #fbfcfe;
+}
+
+.conflict-dialog__actions {
+  gap: 10px;
+}
+
+/* Navigation and back links use one understated treatment. */
+.back-link {
+  color: var(--brand-dark);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.back-link:hover {
+  color: var(--brand);
+}
+
+.nav-link--active {
+  background: #e9eff8;
+  color: var(--brand-dark);
+}
+
+/* Restrained hover motion; no new interaction behavior. */
+.event-card,
+.request-card--ui06,
+.calendar__day,
+.primary-button,
+.secondary-button,
+.secondary-link,
+.button-danger {
+  transition-duration: .15s;
+}
+
+/* Final responsive visual alignment. UI-08 breakpoints remain the breakpoint architecture. */
+@media (max-width: 760px) {
+  .event-page__hero h1,
+  .community-requests-header--ui06 h1,
+  .calendar-page__intro h1,
+  .request-form__intro h1,
+  .request-details--ui07 .request-details__header--ui07 h1,
+  .event-details__main h1,
+  .auth-card h1,
+  .create-event-header h1 {
+    font-size: clamp(29px, 9vw, 40px);
+  }
+
+  .event-card,
+  .request-card {
+    padding: 18px;
+  }
+
+  .event-details,
+  .request-details--ui06,
+  .request-details--ui07,
+  .auth-card {
+    border-radius: var(--radius-md);
+  }
+
+  .event-details__visual,
+  .event-details__visual-mark {
+    border-radius: var(--radius-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .event-card,
+  .request-card {
+    padding: 16px;
+  }
+
+  .create-event-form__section,
+  .event-form,
+  .auth-card {
+    padding-inline: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .primary-button,
+  .secondary-button,
+  .secondary-link,
+  .button-danger {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-card,
+  .request-card--ui06,
+  .calendar__day,
+  .primary-button,
+  .secondary-button,
+  .secondary-link,
+  .button-danger {
+    transition: none;
+  }
+}
