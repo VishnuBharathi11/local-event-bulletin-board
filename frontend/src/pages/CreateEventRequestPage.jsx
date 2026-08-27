@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { createEventRequest, getEventRequestById, updateEventRequest } from '../services/eventRequestService.js'
 import TimePicker from '../components/common/TimePicker.jsx'
+import EventMapPicker from '../components/map/EventMapPicker.jsx'
 import '../styles/communityRequests.css'
 
 const categories = [
@@ -139,6 +140,8 @@ export default function CreateEventRequestPage() {
       neighborhood: '',
       demandThreshold: '',
       imageUrl: null,
+      latitude: null,
+      longitude: null,
     })
 
   const [status, setStatus] =
@@ -183,6 +186,8 @@ export default function CreateEventRequestPage() {
           neighborhood: data.neighborhood,
           demandThreshold: String(data.demandThreshold),
           imageUrl: data.imageUrl,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
         })
         setStatus('idle')
       } catch (err) {
@@ -462,6 +467,9 @@ export default function CreateEventRequestPage() {
           parseInt(form.demandThreshold, 10) || 0,
 
         imageUrl: form.imageUrl,
+
+        latitude: form.latitude,
+        longitude: form.longitude,
       }
 
       let result
@@ -815,6 +823,25 @@ export default function CreateEventRequestPage() {
               }
             />
           </div>
+        </div>
+
+        <div className="form-field" style={{ marginTop: '16px' }}>
+          <label>Suggested Location on Map</label>
+          <EventMapPicker
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onLocationChange={(lat, lng) => {
+              update('latitude', lat);
+              update('longitude', lng);
+            }}
+            initialCenter={form.latitude && form.longitude ? [form.latitude, form.longitude] : undefined}
+            initialZoom={form.latitude && form.longitude ? 15 : undefined}
+          />
+          {!form.latitude && (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
+              Selecting a map location helps others find your request.
+            </p>
+          )}
         </div>
 
         {error && (

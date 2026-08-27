@@ -6,6 +6,7 @@ import { useEvent } from '../hooks/useEvent.js'
 import { useEventRSVP } from '../hooks/useEventRSVP.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
+import EventMap from '../components/map/EventMap.jsx'
 import '../styles/eventDetails.css'
 
 export default function EventDetailsPage() {
@@ -101,6 +102,26 @@ export default function EventDetailsPage() {
               </div>
             </div>
           </div>
+
+          {event.latitude && event.longitude && (
+            <div className="event-details-map-section">
+              <h3 className="eyebrow">Location Map</h3>
+              <EventMap
+                events={[event]}
+                center={[event.latitude, event.longitude]}
+                zoom={15}
+                height="300px"
+              />
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="secondary-button directions-button"
+              >
+                Get Directions
+              </a>
+            </div>
+          )}
 
           <div className="event-details__rsvp" aria-label="RSVP count">
             <div>

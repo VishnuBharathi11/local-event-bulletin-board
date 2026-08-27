@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import TimePicker from '../common/TimePicker.jsx'
+import EventMapPicker from '../map/EventMapPicker.jsx'
 import '../../styles/createEvent.css'
 
 const CATEGORIES = [
@@ -26,6 +27,8 @@ function initialForm() {
     city: '',
     neighborhood: '',
     imageUrl: null,
+    latitude: null,
+    longitude: null,
   }
 }
 
@@ -147,6 +150,8 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
       location: form.location.trim(),
       city: form.city.trim(),
       neighborhood: form.neighborhood.trim(),
+      latitude: form.latitude,
+      longitude: form.longitude,
       startTime,
       endTime,
       status: 'PUBLISHED',
@@ -296,6 +301,25 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
             <label htmlFor="event-neighborhood">Neighborhood <span className="required-star">*</span></label>
             <input id="event-neighborhood" value={form.neighborhood} onChange={(event) => update('neighborhood', event.target.value)} />
           </div>
+        </div>
+
+        <div className="form-field" style={{ marginTop: '16px' }}>
+          <label>Event Location on Map</label>
+          <EventMapPicker
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onLocationChange={(lat, lng) => {
+              update('latitude', lat);
+              update('longitude', lng);
+            }}
+            initialCenter={form.latitude && form.longitude ? [form.latitude, form.longitude] : undefined}
+            initialZoom={form.latitude && form.longitude ? 15 : undefined}
+          />
+          {!form.latitude && (
+            <p style={{ fontSize: '13px', color: 'var(--warning)', marginTop: '8px' }}>
+              Select the event location on the map for better discovery.
+            </p>
+          )}
         </div>
       </fieldset>
 
