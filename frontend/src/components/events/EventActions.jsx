@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CalendarCheck, Share2 } from 'lucide-react'
 import { shareEvent } from '../../utils/eventShare.js'
 import '../../styles/eventActions.css'
 
@@ -23,15 +24,18 @@ export default function EventActions({ event, going, isBusy, onGoing, onNotGoing
     <div className="event-details__actions">
       <div className="event-details__action-row">
         {going ? (
-          <button className="secondary-button" type="button" disabled={isBusy} onClick={onNotGoing}>
+          <button className="secondary-button" type="button" disabled={isBusy} onClick={onNotGoing} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <CalendarCheck size={16} />
             {isBusy ? 'Updating…' : 'Going'}
           </button>
         ) : (
-          <button className="primary-button" type="button" disabled={isBusy} onClick={onGoing}>
+          <button className="primary-button" type="button" disabled={isBusy} onClick={onGoing} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <CalendarCheck size={16} />
             {isBusy ? 'Updating…' : "I'm Going"}
           </button>
         )}
-        <button className="secondary-button" type="button" disabled={shareState.status === 'sharing'} onClick={handleShare}>
+        <button className="secondary-button" type="button" disabled={shareState.status === 'sharing'} onClick={handleShare} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <Share2 size={16} />
           {shareState.status === 'sharing' ? 'Sharing…' : 'Share Event'}
         </button>
       </div>

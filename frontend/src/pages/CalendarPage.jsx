@@ -34,7 +34,7 @@ export default function CalendarPage() {
 
   return (
     <main className="calendar-page">
-      <header className="calendar-page__intro page-hero-layout">
+      <header className="calendar-page__intro page-hero-layout calendar-hero">
         <div className="page-hero-layout__copy">
           <p className="eyebrow">COMMUNITY EVENTS</p>
           <h1>Event Calendar</h1>

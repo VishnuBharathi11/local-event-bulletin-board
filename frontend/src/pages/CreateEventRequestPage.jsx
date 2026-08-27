@@ -1,6 +1,7 @@
 import eventPlanningHero from '../assets/event-planning-hero.jpeg'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { createEventRequest, getEventRequestById, updateEventRequest } from '../services/eventRequestService.js'
 import TimePicker from '../components/common/TimePicker.jsx'
@@ -513,9 +514,9 @@ export default function CreateEventRequestPage() {
             <Link
               className="back-link"
               to={isEdit ? '/profile' : '/community-requests'}
-              style={{ display: 'inline-block', marginBottom: '12px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}
             >
-              ← {isEdit ? 'Back to Profile' : 'Community Requests'}
+              <ArrowLeft size={16} /> {isEdit ? 'Back to Profile' : 'Community Requests'}
             </Link>
             <div className="create-request-visual__content" style={{ marginTop: '24px' }}>
               <p className="eyebrow">

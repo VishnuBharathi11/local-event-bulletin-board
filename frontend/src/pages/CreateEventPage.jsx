@@ -1,6 +1,7 @@
 import createEventHero from '../assets/create-event-hero.jpeg'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import EventForm from '../components/events/EventForm.jsx'
 import ConflictReview from '../components/ConflictReview.jsx'
 import { createEvent, continueEventCreation, getEventById, saveEvent } from '../services/eventService.js'
@@ -188,7 +189,9 @@ export default function CreateEventPage() {
         {/* LEFT COLUMN: VISUAL INTRO */}
         <div className="create-event-layout__visual">
           <div className="create-event-visual__top">
-            <Link className="back-link" to="/">← Back to Event Board</Link>
+            <Link className="back-link" to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <ArrowLeft size={16} /> Back to Event Board
+            </Link>
             <div className="create-event-visual__content" style={{ marginTop: '24px' }}>
               <p className="eyebrow">{isEdit ? 'Edit event' : 'New event'}</p>
               <h1 style={{ marginTop: '8px' }}>{isEdit ? 'Edit Event' : 'Create New Event'}</h1>

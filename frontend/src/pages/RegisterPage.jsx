@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/logo.jpeg'
 
+import Magnet from '../components/common/Magnet.jsx'
+import ClickSpark from '../components/common/ClickSpark.jsx'
+
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -53,7 +56,13 @@ export default function RegisterPage() {
             <input type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
           </label>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Register'}</button>
+          <ClickSpark>
+            <Magnet strength={0.08} range={35}>
+              <button className="primary-button" type="submit" disabled={submitting}>
+                {submitting ? 'Creating account…' : 'Register'}
+              </button>
+            </Magnet>
+          </ClickSpark>
         </form>
         <p className="auth-card__footer">Already registered? <Link to="/login">Login</Link></p>
       </div>
