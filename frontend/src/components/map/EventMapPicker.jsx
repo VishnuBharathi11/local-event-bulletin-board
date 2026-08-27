@@ -1,39 +1,16 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useState, useCallback, useEffect } from 'react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import '../../styles/eventMap.css';
 
-// Fix for default marker icon issues in Leaflet with Vite
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
+};
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-});
-
-function MapEvents({ onLocationSelect }) {
-  useMapEvents({
-    click(e) {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
-
-function ChangeView({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.setView(center, zoom);
-    }
-  }, [center, zoom, map]);
-  return null;
-}
+const DEFAULT_CENTER = {
+  lat: 20.5937,
+  lng: 78.9629
+};
 
 export default function EventMapPicker({
   latitude,
@@ -42,22 +19,40 @@ export default function EventMapPicker({
   initialCenter = [20.5937, 78.9629],
   initialZoom = 5
 }) {
-  const [mapCenter, setMapCenter] = useState(initialCenter);
-  const [mapZoom, setMapZoom] = useState(initialZoom);
+  const [map, setMap] = useState(null);
+  const [center, setCenter] = useState({
+    lat: initialCenter[0],
+    lng: initialCenter[1]
+  });
+  const [zoom, setZoom] = useState(initialZoom);
 
-  const handleLocationSelect = (lat, lng) => {
-    onLocationChange(lat, lng);
-  };
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
+  });
+
+  const onLoad = useCallback(function callback(map) {
+    setMap(map);
+  }, []);
+
+  const onUnmount = useCallback(function callback(map) {
+    setMap(null);
+  }, []);
+
+  const onMapClick = useCallback((e) => {
+    onLocationChange(e.latLng.lat(), e.latLng.lng());
+  }, [onLocationChange]);
 
   const useMyLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude: lat, longitude: lng } = position.coords;
-          setMapCenter([lat, lng]);
-          setMapZoom(13);
-          // Optional: automatically select the user's location as event location
-          // handleLocationSelect(lat, lng);
+          const loc = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setCenter(loc);
+          setZoom(13);
         },
         (error) => {
           console.error("Error getting location: ", error);
@@ -73,33 +68,35 @@ export default function EventMapPicker({
     onLocationChange(null, null);
   };
 
+  const onMarkerDragEnd = (e) => {
+    onLocationChange(e.latLng.lat(), e.latLng.lng());
+  };
+
+  if (!isLoaded) return <div className="state-card">Loading map picker...</div>;
+
   return (
     <div className="map-picker-container">
       <div className="map-container" style={{ height: '350px' }}>
-        <MapContainer
-          center={mapCenter}
-          zoom={mapZoom}
-          scrollWheelZoom={true}
-          style={{ height: '100%', width: '100%' }}
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={zoom}
+          onClick={onMapClick}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+          options={{
+            streetViewControl: false,
+            mapTypeControl: false,
+          }}
         >
-          <ChangeView center={mapCenter} zoom={mapZoom} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <MapEvents onLocationSelect={handleLocationSelect} />
           {latitude !== null && longitude !== null && (
-            <Marker position={[latitude, longitude]} draggable={true}
-              eventHandlers={{
-                dragend: (e) => {
-                  const marker = e.target;
-                  const position = marker.getLatLng();
-                  handleLocationSelect(position.lat, position.lng);
-                },
-              }}
+            <Marker
+              position={{ lat: latitude, lng: longitude }}
+              draggable={true}
+              onDragEnd={onMarkerDragEnd}
             />
           )}
-        </MapContainer>
+        </GoogleMap>
       </div>
 
       <div className="map-picker-actions">

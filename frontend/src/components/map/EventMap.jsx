@@ -1,61 +1,227 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, OverlayView } from '@react-google-maps/api';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/eventMap.css';
 
-// Fix for default marker icon issues in Leaflet with Vite
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
+};
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-});
+const DEFAULT_CENTER = {
+  lat: 20.5937,
+  lng: 78.9629
+};
 
-function ChangeView({ center, zoom }) {
-  const map = useMap();
+const CATEGORY_COLORS = {
+  'Sports': '#3B82F6',
+  'Music': '#8B5CF6',
+  'Food': '#F59E0B',
+  'Workshops': '#10B981',
+  'Meetups': '#EF4444',
+  'Student Events': '#14B8A6',
+  'Garage Sale': '#EAB308',
+  'Community': '#EC4899',
+};
+
+const getCategoryColor = (category) => CATEGORY_COLORS[category] || '#6366F1';
+
+const CustomEventMarker = ({ event, onClick }) => {
+  const color = getCategoryColor(event.category);
+  const position = { lat: event.latitude, lng: event.longitude };
+
+  return (
+    <OverlayView
+      position={position}
+      mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+      getPixelPositionOffset={(width, height) => ({
+        x: -(width / 2),
+        y: -height,
+      })}
+    >
+      <div
+        className="custom-marker"
+        onClick={() => onClick(event)}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        <div className="marker-image-container" style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '50%',
+          border: `3px solid ${color}`,
+          overflow: 'hidden',
+          backgroundColor: 'white',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+        }}>
+          {event.imageUrl ? (
+            <img
+              src={event.imageUrl}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', backgroundColor: '#f0f4f8', color: '#667085', fontSize: '10px', fontWeight: 'bold' }}>EH</div>
+          )}
+        </div>
+        <div className="marker-pin" style={{
+          width: '0',
+          height: '0',
+          borderLeft: '6px solid transparent',
+          borderRight: '6px solid transparent',
+          borderTop: `10px solid ${color}`,
+          marginTop: '-1px',
+        }} />
+      </div>
+    </OverlayView>
+  );
+};
+
+export default function EventMap({
+  events = [],
+  center: propCenter,
+  zoom: propZoom,
+  height = '400px',
+  showUserLocation = true
+}) {
+  const navigate = useNavigate();
+  const [map, setMap] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+
+  const [center, setCenter] = useState(() => {
+    if (propCenter) return Array.isArray(propCenter) ? { lat: propCenter[0], lng: propCenter[1] } : propCenter;
+    return DEFAULT_CENTER;
+  });
+
+  const [zoom, setZoom] = useState(propZoom || 5);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
+  });
+
   useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
+    if (propCenter) {
+      setCenter(Array.isArray(propCenter) ? { lat: propCenter[0], lng: propCenter[1] } : propCenter);
+    }
+    if (propZoom) {
+      setZoom(propZoom);
+    }
+  }, [propCenter, propZoom]);
 
-export default function EventMap({ events = [], center = [20.5937, 78.9629], zoom = 5, height = '400px' }) {
-  // Filter events with valid coordinates
-  const mapEvents = events.filter(event =>
+  const onLoad = useCallback(function callback(map) {
+    setMap(map);
+  }, []);
+
+  const onUnmount = useCallback(function callback(map) {
+    setMap(null);
+  }, []);
+
+  const mapEvents = useMemo(() => events.filter(event =>
     event.latitude !== null &&
     event.longitude !== null &&
     !isNaN(event.latitude) &&
     !isNaN(event.longitude)
-  );
+  ), [events]);
+
+  useEffect(() => {
+    if (showUserLocation && !propCenter && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const loc = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(loc);
+          setCenter(loc);
+          setZoom(13);
+        },
+        () => {
+          console.warn("Geolocation permission denied or error.");
+        }
+      );
+    }
+  }, [showUserLocation, propCenter]);
+
+  const handleMarkerClick = (event) => {
+    setSelectedEvent(event);
+  };
+
+  if (!isLoaded) return <div className="state-card">Loading map...</div>;
 
   return (
     <div className="map-container" style={{ height }}>
-      <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
-        <ChangeView center={center} zoom={zoom} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        center={center}
+        zoom={zoom}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        options={{
+          disableDefaultUI: false,
+          zoomControl: true,
+        }}
+      >
+        {userLocation && window.google && (
+          <Marker
+            position={userLocation}
+            icon={{
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#4285F4",
+              fillOpacity: 1,
+              strokeColor: "white",
+              strokeWeight: 2,
+            }}
+            label={{
+              text: "YOU",
+              color: "#4285F4",
+              fontSize: "10px",
+              fontWeight: "bold",
+              className: "user-location-label"
+            }}
+            title="Your Location"
+          />
+        )}
+
         {mapEvents.map((event) => (
-          <Marker key={event.eventId} position={[event.latitude, event.longitude]}>
-            <Popup>
-              <div className="event-map-popup">
-                <h3>{event.title}</h3>
-                <p>{event.category} · {event.city}</p>
-                <Link className="primary-button" style={{ minHeight: '32px', padding: '4px 12px', fontSize: '12px' }} to={`/events/${encodeURIComponent(event.eventId)}`}>
-                  View Event
-                </Link>
-              </div>
-            </Popup>
-          </Marker>
+          <CustomEventMarker
+            key={event.eventId}
+            event={event}
+            onClick={handleMarkerClick}
+          />
         ))}
-      </MapContainer>
+
+        {selectedEvent && (
+          <InfoWindow
+            position={{ lat: selectedEvent.latitude, lng: selectedEvent.longitude }}
+            onCloseClick={() => setSelectedEvent(null)}
+          >
+            <div className="event-map-popup">
+              {selectedEvent.imageUrl && (
+                <div style={{ width: '100%', height: '80px', marginBottom: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                  <img src={selectedEvent.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              )}
+              <h3>{selectedEvent.title}</h3>
+              <p style={{ margin: '2px 0' }}><strong>{selectedEvent.category}</strong></p>
+              <p>{selectedEvent.city} · {new Date(selectedEvent.startTime).toLocaleDateString()}</p>
+              <button
+                className="primary-button"
+                style={{ width: '100%', minHeight: '32px', padding: '4px 12px', fontSize: '12px', marginTop: '8px' }}
+                onClick={() => navigate(`/events/${encodeURIComponent(selectedEvent.eventId)}`)}
+              >
+                View Event →
+              </button>
+            </div>
+          </InfoWindow>
+        )}
+      </GoogleMap>
     </div>
   );
 }
