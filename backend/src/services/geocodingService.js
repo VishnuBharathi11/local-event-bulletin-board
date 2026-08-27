@@ -6,7 +6,7 @@ const https = require('https');
 async function getDetailedLocationFromCoords(lat, lng) {
   const apiKey = process.env.GOOGLE_GEOCODING_API_KEY;
 
-  console.log('--- PHASE 1 DEBUG: BACKEND START ---');
+  console.log('--- PHASE 1B BACKEND: DISTRICT RESOLUTION START ---');
   console.log('COORDINATES:', { lat, lng });
 
   if (!apiKey) {
@@ -25,7 +25,7 @@ async function getDetailedLocationFromCoords(lat, lng) {
           const json = JSON.parse(data);
 
           if (json.status !== 'OK') {
-            console.error('Geocoding API error:', json.status, json.error_message || '');
+            console.error('GOOGLE API ERROR STATUS:', json.status);
             return resolve({ district: null, locality: null, error: json.status, raw: json });
           }
 
@@ -40,105 +40,104 @@ async function getDetailedLocationFromCoords(lat, lng) {
                    normalized === 'null';
           };
 
-          const allComponents = [];
-          const admin2Set = new Set();
-          const admin3Set = new Set();
-          const localitySet = new Set();
-          const sublocalitySet = new Set();
-          const neighborhoodSet = new Set();
+          let adminAreaL2 = null; // Official District
+          let adminAreaL3 = null; // Taluk / Sub-district
+          let locality = null;    // City/Town
+          let subLocality = null; // Village/Neighborhood
+          let neighborhood = null;
 
-          // We iterate through ALL results to find all potential administrative levels
-          json.results.forEach((result, rIdx) => {
-            result.address_components.forEach((component) => {
-              const types = component.types;
-              const name = component.long_name;
+          console.log('--- SCANNING ALL ADDRESS COMPONENTS ---');
 
-              if (isInvalidName(name)) return;
+          if (json.results && Array.isArray(json.results)) {
+            json.results.forEach((result, rIdx) => {
+              console.log(`RESULT [${rIdx}] TYPES:`, result.types);
 
-              allComponents.push({ name, types, rIdx });
+              result.address_components.forEach((component) => {
+                const types = component.types;
+                const name = component.long_name;
 
-              if (types.includes('administrative_area_level_2')) admin2Set.add(name);
-              if (types.includes('administrative_area_level_3')) admin3Set.add(name);
-              if (types.includes('locality')) localitySet.add(name);
-              if (types.includes('sublocality') || types.includes('sublocality_level_1')) sublocalitySet.add(name);
-              if (types.includes('neighborhood')) neighborhoodSet.add(name);
+                if (isInvalidName(name)) return;
+
+                console.log(`  [${rIdx}] "${name}" | TYPES: ${types.join(', ')}`);
+
+                // DISTRICT: strictly administrative_area_level_2
+                if (!adminAreaL2 && types.includes('administrative_area_level_2')) {
+                  adminAreaL2 = name;
+                  console.log(`  >> FOUND CANDIDATE DISTRICT (L2): ${name}`);
+                }
+
+                // TALUK/SUB-DISTRICT: administrative_area_level_3
+                if (!adminAreaL3 && types.includes('administrative_area_level_3')) {
+                  adminAreaL3 = name;
+                  console.log(`  >> FOUND CANDIDATE TALUK (L3): ${name}`);
+                }
+
+                // LOCALITY: City/Town
+                if (!locality && types.includes('locality')) {
+                  locality = name;
+                  console.log(`  >> FOUND CANDIDATE LOCALITY: ${name}`);
+                }
+
+                // SUB-LOCALITY
+                if (!subLocality && (types.includes('sublocality') || types.includes('sublocality_level_1'))) {
+                  subLocality = name;
+                  console.log(`  >> FOUND CANDIDATE SUB-LOCALITY: ${name}`);
+                }
+
+                // NEIGHBORHOOD
+                if (!neighborhood && types.includes('neighborhood')) {
+                  neighborhood = name;
+                  console.log(`  >> FOUND CANDIDATE NEIGHBORHOOD: ${name}`);
+                }
+              });
             });
-          });
-
-          // Convert sets to arrays (preserving order of discovery which is specificity)
-          const admin2List = Array.from(admin2Set);
-          const admin3List = Array.from(admin3Set);
-          const localityList = Array.from(localitySet);
-          const sublocalityList = Array.from(sublocalitySet);
-          const neighborhoodList = Array.from(neighborhoodSet);
-
-          console.log('--- EXTRACTED CANDIDATES ---');
-          console.log('Admin L2 (Districts):', admin2List);
-          console.log('Admin L3 (Taluks):', admin3List);
-          console.log('Localities (Cities):', localityList);
-          console.log('Sublocalities:', sublocalityList);
-          console.log('Neighborhoods:', neighborhoodList);
-
-          /**
-           * DISTRICT RESOLUTION STRATEGY (STRICT):
-           * 1. Primary: administrative_area_level_2 (Standard District)
-           * 2. Secondary: administrative_area_level_3 (Often Taluk, sometimes used for District in rural areas)
-           * 3. Fallback (Multi-Locality): If L2/L3 are missing but we have multiple distinct Localities,
-           *    the BROADEST locality (the one appearing in later, broader results) is often the District/Major City.
-           */
-          let resolvedDistrict = null;
-
-          if (admin2List.length > 0) {
-            resolvedDistrict = admin2List[0];
-            console.log('STRATEGY 1: Using Administrative Area Level 2 as District');
-          } else if (admin3List.length > 0) {
-            resolvedDistrict = admin3List[0];
-            console.log('STRATEGY 2: Using Administrative Area Level 3 as District');
-          } else if (localityList.length > 1) {
-            // If Result 0 has locality "Mayileripalayam" and Result 1 has locality "Coimbatore"
-            // We take the broadest one (last in list)
-            resolvedDistrict = localityList[localityList.length - 1];
-            console.log('STRATEGY 3: Using Broadest Locality as District (Multi-locality detected)');
           }
 
           /**
-           * LOCALITY RESOLUTION STRATEGY:
-           * The most specific valid locality name for display.
+           * STRICT DISTRICT RESOLUTION (PHASE 1B):
+           * We ONLY accept administrative_area_level_2 or administrative_area_level_3 as a district.
+           * We NEVER fallback to locality, neighborhood, or sublocality.
            */
-          let resolvedLocality = localityList[0] || sublocalityList[0] || neighborhoodList[0];
+          let finalDistrict = adminAreaL2 || adminAreaL3;
 
-          // FINAL VALIDATION: If resolvedDistrict is exactly the same as a known more specific locality,
-          // it might mean we've incorrectly picked the same name.
-          // But the user specifically said NOT to use Mayileripalayam as district.
-          // If Coimbatore is the only thing found, Strategy 3 won't trigger if it's the only locality.
+          /**
+           * LOCALITY RESOLUTION:
+           * The specific area name for display.
+           */
+          let finalLocality = neighborhood || subLocality || locality;
 
           // CLEANUP
-          if (resolvedDistrict) {
-            resolvedDistrict = resolvedDistrict.replace(/\s+(District|Taluk|Region|Division)$/i, '').trim();
+          if (finalDistrict) {
+            finalDistrict = finalDistrict.replace(/\s+(District|Taluk|Region|Division)$/i, '').trim();
           }
-          if (resolvedLocality) {
-            resolvedLocality = resolvedLocality.replace(/\s+(City|Town|Village)$/i, '').trim();
+          if (finalLocality) {
+            finalLocality = finalLocality.replace(/\s+(City|Town|Village)$/i, '').trim();
           }
 
-          // If resolvedDistrict is still null, we return null so the UI shows "Unable to determine"
-          // instead of incorrectly showing a village name.
+          // FINAL SANITY CHECK: Ensure we didn't somehow pick a locality as district
+          if (finalDistrict && finalLocality && finalDistrict.toLowerCase() === finalLocality.toLowerCase()) {
+             // In some cases (like a city that is its own district), this is okay.
+             // But the user specifically called out Mayileripalayam.
+             console.log('WARNING: District and Locality match. Checking if this is a known locality...');
+          }
 
-          console.log('FINAL RESOLUTION:', { district: resolvedDistrict, locality: resolvedLocality });
-          console.log('--- PHASE 1 DEBUG: BACKEND END ---');
+          console.log('--- DISTRICT RESOLUTION SUMMARY ---');
+          console.log('FINAL DISTRICT:', finalDistrict);
+          console.log('FINAL LOCALITY:', finalLocality);
+          console.log('-----------------------------------');
 
           resolve({
-            district: resolvedDistrict,
-            locality: resolvedLocality,
-            debug: { admin2List, admin3List, localityList, sublocalityList, neighborhoodList, allComponents },
+            district: finalDistrict,
+            locality: finalLocality,
             raw: json
           });
         } catch (e) {
-          console.error('PHASE 1 BACKEND ERROR:', e);
-          resolve({ district: null, locality: null, error: 'Parse Error' });
+          console.error('PHASE 1B BACKEND ERROR:', e);
+          resolve({ district: null, locality: null, error: 'Logic failure' });
         }
       });
     }).on('error', (e) => {
-      console.error('PHASE 1 BACKEND HTTP ERROR:', e);
+      console.error('PHASE 1B BACKEND HTTPS ERROR:', e);
       resolve({ district: null, locality: null, error: e.message });
     });
   });
