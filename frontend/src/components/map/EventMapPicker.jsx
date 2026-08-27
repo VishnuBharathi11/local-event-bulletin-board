@@ -33,6 +33,9 @@ export default function EventMapPicker({
 
   const onLoad = useCallback(function callback(map) {
     setMap(map);
+    map.setOptions({
+      gestureHandling: 'greedy'
+    });
   }, []);
 
   const onUnmount = useCallback(function callback(map) {
@@ -87,6 +90,7 @@ export default function EventMapPicker({
           options={{
             streetViewControl: false,
             mapTypeControl: false,
+            gestureHandling: 'greedy',
           }}
         >
           {latitude !== null && longitude !== null && (

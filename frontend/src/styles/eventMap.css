@@ -91,29 +91,6 @@
   border-color: var(--brand);
 }
 
-.search-area-button {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--brand);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.search-area-button:hover {
-  background: #f8fafc;
-  transform: translateX(-50%) translateY(-2px);
-}
-
 .user-location-label {
   margin-top: 24px;
   background: white;

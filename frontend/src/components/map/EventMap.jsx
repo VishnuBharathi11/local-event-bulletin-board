@@ -99,7 +99,6 @@ export default function EventMap({
   const mapRef = useRef(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [showSearchArea, setShowSearchArea] = useState(false);
 
   const [center, setCenter] = useState(() => {
     if (propCenter) return Array.isArray(propCenter) ? { lat: propCenter[0], lng: propCenter[1] } : propCenter;
@@ -124,6 +123,9 @@ export default function EventMap({
 
   const onLoad = useCallback(function callback(map) {
     mapRef.current = map;
+    map.setOptions({
+      gestureHandling: 'greedy'
+    });
   }, []);
 
   const onUnmount = useCallback(function callback(map) {
@@ -166,17 +168,6 @@ export default function EventMap({
     setSelectedEvent(event);
   };
 
-  const handleCenterChanged = () => {
-    if (mapRef.current && !showSearchArea) {
-      setShowSearchArea(true);
-    }
-  };
-
-  const handleSearchThisArea = () => {
-    setShowSearchArea(false);
-    // reuses currently loaded dataset
-  };
-
   if (!isLoaded) return <div className="state-card">Loading map...</div>;
 
   return (
@@ -188,13 +179,13 @@ export default function EventMap({
           zoom={zoom}
           onLoad={onLoad}
           onUnmount={onUnmount}
-          onCenterChanged={handleCenterChanged}
           options={{
             disableDefaultUI: false,
             zoomControl: true,
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
+            gestureHandling: 'greedy',
           }}
         >
           {userLocation && window.google && (
@@ -286,15 +277,6 @@ export default function EventMap({
           <line x1="20" y1="12" x2="23" y2="12"/>
         </svg>
       </button>
-
-      {showSearchArea && (
-        <button
-          className="search-area-button"
-          onClick={handleSearchThisArea}
-        >
-          Search this area
-        </button>
-      )}
     </div>
   );
 }
