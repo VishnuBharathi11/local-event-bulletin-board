@@ -61,7 +61,57 @@
 }
 
 .marker-image-container {
-  transition: border-color 0.2s ease;
+  transition: transform 0.2s ease;
+}
+
+.marker-pin {
+  transition: transform 0.2s ease;
+}
+
+.map-action-button {
+  position: absolute;
+  bottom: 24px;
+  right: 12px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.map-action-button:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+.search-area-button {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-area-button:hover {
+  background: #f8fafc;
+  transform: translateX(-50%) translateY(-2px);
 }
 
 .user-location-label {
