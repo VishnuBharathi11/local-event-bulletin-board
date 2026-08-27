@@ -39,44 +39,54 @@ export function LocationProvider({ children }) {
 
   const detectLocation = useCallback(async () => {
     if (!navigator.geolocation) {
+      console.error("PHASE 1: Geolocation not supported by browser");
       setStatus('error')
       return
     }
 
     setStatus('detecting')
+    console.log("PHASE 1: Requesting browser coordinates...");
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-        console.log("--- PHASE 1 DEBUG: BROWSER LOCATION ---")
-        console.log("LATITUDE:", latitude)
-        console.log("LONGITUDE:", longitude)
+        console.log("PHASE 1 DEBUG: BROWSER COORDINATES RECEIVED", { latitude, longitude })
         setCoords({ latitude, longitude })
 
         try {
-          // Note: getDistrictFromCoords in locationService.js calls the backend /district endpoint
-          const data = await getDistrictFromCoords(latitude, longitude)
-          console.log("--- PHASE 1 DEBUG: API RESPONSE ---")
-          console.log("FULL DATA:", data)
+          // Calls backend /api/location/district
+          const response = await getDistrictFromCoords(latitude, longitude)
 
-          const rawDistrict = data?.district
-          const rawLocality = data?.locality
+          console.log("PHASE 1 DEBUG: FULL BACKEND API RESPONSE", response)
+
+          if (response.raw) {
+            console.log("PHASE 1 DEBUG: GOOGLE GEOCODING RAW RESULTS", response.raw.results)
+            response.raw.results.forEach((res, idx) => {
+               console.log(`PHASE 1 DEBUG: Result [${idx}] Address Components:`, res.address_components)
+            })
+          }
+
+          const rawDistrict = response?.district
+          const rawLocality = response?.locality
+
+          console.log("PHASE 1 DEBUG: EXTRACTED DISTRICT (Level 2):", rawDistrict)
+          console.log("PHASE 1 DEBUG: EXTRACTED LOCALITY (City/Village):", rawLocality)
 
           if (!isInvalidName(rawDistrict)) {
             const resolvedDistrict = rawDistrict.trim()
-            console.log("RESOLVED DISTRICT:", resolvedDistrict)
+            console.log("PHASE 1 SUCCESS: SETTING DISTRICT TO", resolvedDistrict)
             setDistrict(resolvedDistrict)
             localStorage.setItem('detected_district', resolvedDistrict)
 
             if (!isInvalidName(rawLocality)) {
               const resolvedLocality = rawLocality.trim()
-              console.log("RESOLVED LOCALITY:", resolvedLocality)
               setLocality(resolvedLocality)
               localStorage.setItem('detected_locality', resolvedLocality)
             }
 
             setStatus('resolved')
           } else {
-            console.warn('Resolved district was empty or invalid:', rawDistrict)
+            console.warn('PHASE 1 ERROR: Resolved district was empty or invalid:', rawDistrict)
             localStorage.removeItem('detected_district')
             localStorage.removeItem('detected_locality')
             setDistrict(null)
@@ -84,7 +94,7 @@ export function LocationProvider({ children }) {
             setStatus('error')
           }
         } catch (err) {
-          console.error('Failed to resolve location:', err)
+          console.error('PHASE 1 ERROR: Failed to resolve location from API:', err)
           localStorage.removeItem('detected_district')
           localStorage.removeItem('detected_locality')
           setDistrict(null)
@@ -93,7 +103,7 @@ export function LocationProvider({ children }) {
         }
       },
       (error) => {
-        console.warn('Geolocation denied or error:', error)
+        console.warn('PHASE 1 ERROR: Geolocation permission denied or error:', error)
         if (error.code === error.PERMISSION_DENIED) {
            localStorage.removeItem('detected_district')
            localStorage.removeItem('detected_locality')
@@ -102,17 +112,16 @@ export function LocationProvider({ children }) {
         }
         setStatus(error.code === error.PERMISSION_DENIED ? 'denied' : 'error')
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 } // force fresh position
     )
   }, [])
 
   useEffect(() => {
-    if (!district && status === 'idle') {
+    // ALWAYS trigger detection on mount for Phase 1 Debugging to ensure we aren't seeing stale cache
+    if (status === 'idle') {
       detectLocation()
-    } else if (district && status === 'idle') {
-      setStatus('resolved')
     }
-  }, [district, status, detectLocation])
+  }, [status, detectLocation])
 
   return (
     <LocationContext.Provider value={{ coords, district, locality, status, detectLocation }}>
