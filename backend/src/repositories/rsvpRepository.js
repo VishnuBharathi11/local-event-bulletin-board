@@ -25,14 +25,15 @@ async function rsvpToEvent(eventId, userId) {
     if (rsvpSnapshot.exists) return
 
     const eventSnapshot = await transaction.get(eventRef)
-    if (!eventSnapshot.exists) {
-      const error = new Error('Event not found.')
-      error.code = 'EVENT_NOT_FOUND'
-      throw error
-    }
+    if (!eventSnapshot.exists) throw Object.assign(new Error('Event not found.'), { code: 'EVENT_NOT_FOUND' })
+
+    const startTime = Number(eventSnapshot.get('startTime') || 0)
+    const endTime = Number(eventSnapshot.get('endTime') || eventSnapshot.get('expireAt') || 0)
+    const now = Date.now()
+    if (endTime > 0 && now >= endTime) throw Object.assign(new Error('This event has ended.'), { code: 'EVENT_ENDED' })
+    if (startTime > 0 && now >= startTime) throw Object.assign(new Error('RSVP is closed because this event is ongoing.'), { code: 'EVENT_ONGOING' })
 
     const currentCount = Number(eventSnapshot.get('rsvpCount') || 0)
-    const now = Date.now()
     transaction.set(rsvpRef, {
       rsvpId: getRSVPId(eventId, userId),
       eventId,
@@ -53,11 +54,7 @@ async function removeRSVP(eventId, userId) {
     if (!rsvpSnapshot.exists) return
 
     const eventSnapshot = await transaction.get(eventRef)
-    if (!eventSnapshot.exists) {
-      const error = new Error('Event not found.')
-      error.code = 'EVENT_NOT_FOUND'
-      throw error
-    }
+    if (!eventSnapshot.exists) throw Object.assign(new Error('Event not found.'), { code: 'EVENT_NOT_FOUND' })
 
     const currentCount = Number(eventSnapshot.get('rsvpCount') || 0)
     transaction.delete(rsvpRef)
