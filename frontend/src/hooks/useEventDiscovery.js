@@ -21,7 +21,7 @@ export function useEventDiscovery(rawEvents = []) {
   const activeEvents = useMemo(() => {
     const active = getActiveEvents(rawEvents, now)
     if (district) {
-      return active.filter(event => !event.district || event.district === district)
+      return active.filter(event => event.district === district)
     }
     return active
   }, [rawEvents, now, district])

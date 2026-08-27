@@ -56,10 +56,9 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
   return activeEvents
     .filter((event) => {
       // 1. District Filtering (Automatic)
-      // If a district is detected, only show events from that district by default.
-      // If selectedCity is 'All', we filter by district.
-      // If a specific city is selected, it must be within that district (city filter is updated below).
-      if (detectedDistrict && event.district && event.district !== detectedDistrict) {
+      // If a district is detected, only show events from that district.
+      // Legacy events (missing district) are hidden to maintain district-aware integrity.
+      if (detectedDistrict && event.district !== detectedDistrict) {
         return false
       }
 

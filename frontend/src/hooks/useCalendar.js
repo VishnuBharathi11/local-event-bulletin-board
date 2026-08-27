@@ -38,7 +38,7 @@ export function useCalendar() {
   const activeEvents = useMemo(
     () => {
       if (district) {
-        return state.events.filter(event => !event.district || event.district === district)
+        return state.events.filter(event => event.district === district)
       }
       return state.events
     },
