@@ -18,8 +18,11 @@ export default function CreateEventPage() {
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState(null)
   const [conflicts, setConflicts] = useState([])
+  const [suggestions, setSuggestions] = useState([])
   const [pendingEvent, setPendingEvent] = useState(null)
   const [continuing, setContinuing] = useState(false)
+  const [checkingAvailability, setCheckingAvailability] = useState(false)
+  const [availabilityMessage, setAvailabilityMessage] = useState(null)
 
   useEffect(() => {
     if (!isEdit) return
@@ -80,6 +83,8 @@ export default function CreateEventPage() {
       if (error.status === 409 && error.conflicts?.length) {
         setPendingEvent(event)
         setConflicts(error.conflicts)
+        setSuggestions(error.suggestions || [])
+        setAvailabilityMessage(null)
       } else {
         setServerError(error.message)
       }
@@ -104,9 +109,69 @@ export default function CreateEventPage() {
     }
   }
 
+  async function handleCheckAvailability(alternative, clearOnly = false) {
+    if (clearOnly) {
+      setAvailabilityMessage(null)
+      return
+    }
+    setCheckingAvailability(true)
+    setAvailabilityMessage(null)
+    try {
+      // Create a copy of the pending event with the new alternative details
+      const updatedEvent = {
+        ...pendingEvent,
+        startTime: alternative.startTime,
+        endTime: alternative.endTime,
+        location: alternative.location,
+        neighborhood: alternative.neighborhood,
+        city: alternative.city,
+        latitude: alternative.latitude,
+        longitude: alternative.longitude
+      }
+
+      const response = await checkEventConflicts(updatedEvent)
+      if (response.conflicts?.length === 0) {
+        setAvailabilityMessage('✓ No scheduling conflict found')
+      } else {
+        setConflicts(response.conflicts)
+        setSuggestions(response.suggestions || [])
+        setAvailabilityMessage(null)
+      }
+    } catch (error) {
+      setServerError(error.message)
+    } finally {
+      setCheckingAvailability(false)
+    }
+  }
+
+  async function handleConfirmAlternative(alternative) {
+    // Update the form data conceptually by creating the event with these details
+    const updatedEvent = {
+      ...pendingEvent,
+      startTime: alternative.startTime,
+      endTime: alternative.endTime,
+      location: alternative.location,
+      neighborhood: alternative.neighborhood,
+      city: alternative.city,
+      latitude: alternative.latitude,
+      longitude: alternative.longitude
+    }
+
+    // Clear conflict state before proceeding
+    setConflicts([])
+    setSuggestions([])
+    setPendingEvent(null)
+    setAvailabilityMessage(null)
+
+    // Call handleCreate with the updated event details
+    await handleCreate(updatedEvent)
+  }
+
   function handleCancelConflict() {
     setConflicts([])
+    setSuggestions([])
     setPendingEvent(null)
+    setAvailabilityMessage(null)
   }
 
   if (loading) {
@@ -141,9 +206,13 @@ export default function CreateEventPage() {
       {conflicts.length > 0 && (
         <ConflictReview
           conflicts={conflicts}
+          suggestions={suggestions}
           onCancel={handleCancelConflict}
-          onContinue={handleContinue}
-          continuing={continuing}
+          onCheckAvailability={handleCheckAvailability}
+          onConfirm={handleConfirmAlternative}
+          checking={checkingAvailability}
+          continuing={submitting}
+          availabilityMessage={availabilityMessage}
         />
       )}
     </section>

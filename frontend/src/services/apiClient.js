@@ -23,6 +23,7 @@ export async function apiRequest(path, options = {}) {
     const error = new Error(payload?.error || `API request failed with status ${response.status}`)
     error.status = response.status
     error.conflicts = payload?.conflicts || []
+    error.suggestions = payload?.suggestions || []
     throw error
   }
 

@@ -53,7 +53,12 @@ async function createEventAnyway(input, userId) {
 
 async function checkEventConflicts(input, userId) {
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
-  return conflictService.checkConflicts(event)
+  const conflicts = await conflictService.checkConflicts(event)
+  if (conflicts.length > 0) {
+    const suggestions = await conflictService.suggestAlternatives(event)
+    return { conflicts, suggestions }
+  }
+  return { conflicts: [] }
 }
 
 async function saveEvent(input, userId) {

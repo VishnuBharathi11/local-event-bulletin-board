@@ -8,6 +8,10 @@ function handleError(res, error) {
       body.conflicts = error.conflicts
     }
 
+    if (error.suggestions) {
+      body.suggestions = error.suggestions
+    }
+
     return res.status(error.statusCode).json(body)
   }
 
@@ -73,14 +77,12 @@ async function createEvent(req, res) {
 
 async function checkEventConflicts(req, res) {
   try {
-    const conflicts = await eventService.checkEventConflicts(
+    const result = await eventService.checkEventConflicts(
       req.body,
       req.user.userId
     )
 
-    return res.json({
-      conflicts,
-    })
+    return res.json(result)
   } catch (error) {
     return handleError(res, error)
   }
