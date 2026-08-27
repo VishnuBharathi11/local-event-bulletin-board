@@ -35,7 +35,24 @@ export function useCalendar() {
     return () => { cancelled = true }
   }, [])
 
-  const activeEvents = useMemo(() => getCalendarEvents(state.events), [state.events])
+  const activeEvents = useMemo(() => {
+    const calendarEvents = getCalendarEvents(state.events)
+    if (district) {
+      const normalizedDetected = district.toLowerCase().trim()
+      return calendarEvents.filter(event => {
+        if (event.district) {
+          const normalizedEventDistrict = event.district.toLowerCase().trim()
+          return normalizedEventDistrict === normalizedDetected ||
+                 normalizedEventDistrict.includes(normalizedDetected) ||
+                 normalizedDetected.includes(normalizedEventDistrict)
+        }
+        // Fallback for legacy data
+        const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+        return searchSpace.includes(normalizedDetected)
+      })
+    }
+    return calendarEvents
+  }, [state.events, district])
 
   const eventDays = useMemo(
     () => getEventDaysForMonth(activeEvents, currentMonth),

@@ -77,6 +77,23 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
 
   return activeEvents
     .filter((event) => {
+      // 1. District Filtering (Automatic)
+      // If a district is detected, only show events from that district.
+      if (detectedDistrict) {
+        const normalizedDetected = detectedDistrict.toLowerCase().trim();
+        if (event.district) {
+          // Robust match for enriched data
+          const normalizedEventDistrict = event.district.toLowerCase().trim();
+          if (normalizedEventDistrict !== normalizedDetected && !normalizedEventDistrict.includes(normalizedDetected) && !normalizedDetected.includes(normalizedEventDistrict)) {
+             return false;
+          }
+        } else {
+          // Fallback match for legacy data (check city/neighborhood)
+          const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+          if (!searchSpace.includes(normalizedDetected)) return false
+        }
+      }
+
       const matchesSearch = query === '' || [
         event.title,
         event.description,
@@ -86,7 +103,9 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
       ].some((value) => String(value ?? '').toLowerCase().includes(query))
 
       const matchesCategory = discovery.selectedCategory === 'All' || event.category === discovery.selectedCategory
-      const matchesCity = discovery.selectedCity === 'All' || event.city === discovery.selectedCity
+      const matchesCity = discovery.selectedCity === 'All' ||
+                          event.city === discovery.selectedCity ||
+                          event.neighborhood === discovery.selectedCity
       const matchesDate = matchesDateFilter(event.startTime, discovery.selectedDateFilter, now)
 
       return matchesSearch && matchesCategory && matchesCity && matchesDate

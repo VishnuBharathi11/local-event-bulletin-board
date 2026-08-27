@@ -143,8 +143,8 @@ export default function EventBoardPage() {
             </div>
           ) : viewMode === 'map' ? (
             <div className="event-map-view">
-              <EventMap events={discovery.events} height="600px" />
-              {discovery.events.some(e => !e.latitude) && (
+              <EventMap events={discovery.districtEvents} height="600px" />
+              {discovery.districtEvents.some(e => !e.latitude) && (
                 <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
                   * Some events don't have map locations yet and are not shown on the map.
                 </p>
