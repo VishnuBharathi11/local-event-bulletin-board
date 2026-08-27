@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import logo from '../assets/logo.jpeg'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -31,7 +32,11 @@ export default function RegisterPage() {
   return (
     <section className="auth-page">
       <div className="auth-card">
-        <p className="eyebrow">EventHive account</p>
+        <div className="auth-brand-logo">
+          <img src={logo} alt="" />
+          <span>EventHive</span>
+        </div>
+        <p className="eyebrow">Create a local EventHive account</p>
         <h1>Create account</h1>
         <p className="auth-card__description">Create a local EventHive account with a name, email, and password.</p>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import logo from '../assets/logo.jpeg'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -31,7 +32,11 @@ export default function LoginPage() {
   return (
     <section className="auth-page">
       <div className="auth-card">
-        <p className="eyebrow">EventHive account</p>
+        <div className="auth-brand-logo">
+          <img src={logo} alt="" />
+          <span>EventHive</span>
+        </div>
+        <p className="eyebrow">Welcome back to EventHive</p>
         <h1>Log in</h1>
         <p className="auth-card__description">Sign in to create events, RSVP, and participate in community requests.</p>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>

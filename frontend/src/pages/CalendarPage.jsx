@@ -36,10 +36,10 @@ export default function CalendarPage() {
     <main className="calendar-page">
       <header className="calendar-page__intro page-hero-layout">
         <div className="page-hero-layout__copy">
-          <p className="eyebrow">Community events</p>
-          <h1>Calendar</h1>
+          <p className="eyebrow">COMMUNITY EVENTS</p>
+          <h1>Event Calendar</h1>
           <p className="calendar-page__description">
-            Browse upcoming local events by date. Select an event to open its existing details page.
+            Browse upcoming local events by date and discover what's happening in your community.
           </p>
         </div>
         <div className="page-hero-layout__image">

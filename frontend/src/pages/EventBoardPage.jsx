@@ -76,104 +76,221 @@ export default function EventBoardPage() {
   const isAll = discovery.discovery.selectedCategory === 'All';
 
   return (
-    <section className="event-page">
-      <header className={`event-board-header page-hero-layout event-board-header--${categorySlug}`}>
-        <div className="page-hero-layout__copy">
-          <span className="event-board-header__badge">EventHive · {discovery.discovery.selectedCategory}</span>
-          <h1>{categoryInfo.title}</h1>
-          <p className="event-board-header__sub">{categoryInfo.description}</p>
-          <div className="event-board-header__actions" style={{ marginTop: '16px' }}>
-            <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
-          </div>
-        </div>
-        {categoryInfo.image && (
-          <div className="page-hero-layout__image">
-            <img src={categoryInfo.image} alt="" />
-          </div>
-        )}
-      </header>
-
-      {status === 'loading' && (
-        <div className="state-card state-card--loading" role="status" aria-live="polite">
-          <div className="state-card__icon" aria-hidden="true">◌</div>
-          <strong>Loading events…</strong>
-          <span>Retrieving events from the event service.</span>
-        </div>
+  <section className="event-page">
+    <header className={`event-board-header event-board-header--${categorySlug}`}>
+      {categoryInfo.image && (
+        <div
+          className="event-board-header__bg"
+          style={{ backgroundImage: `url(${categoryInfo.image})` }}
+          aria-hidden="true"
+        />
       )}
 
-      {status === 'error' && (
-        <div className="state-card state-card--error" role="alert">
-          <div className="state-card__icon" aria-hidden="true">!</div>
-          <strong>Unable to load events</strong>
-          <span>{error}</span>
-          <button className="secondary-button" type="button" onClick={reload}>Try Again</button>
-        </div>
-      )}
+      <div className="event-board-header__overlay" />
 
-      {status === 'success' && (
-        <>
-          <div className="location-status" style={{ marginBottom: '16px', fontSize: '13.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-            {locationStatus === 'detecting' && <span>Detecting location...</span>}
-            {locationStatus === 'resolved' && district && <span>📍 Showing events in <strong>{district}</strong></span>}
-            {locationStatus === 'denied' && <span>Location access denied. Showing all events.</span>}
-            {(locationStatus === 'error' || (locationStatus === 'resolved' && !district)) && <span>Unable to determine district. Showing all events.</span>}
-            {(locationStatus === 'denied' || locationStatus === 'error') && (
-              <button onClick={detectLocation} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'underline' }}>
-                Retry Detection
-              </button>
+      <div className="event-board-header__content">
+        <span className="event-board-header__badge">
+          EventHive · {discovery.discovery.selectedCategory}
+        </span>
+
+        <h1>{categoryInfo.title}</h1>
+
+        <p className="event-board-header__sub">
+          {categoryInfo.description}
+        </p>
+
+        <div
+          className="event-board-header__actions"
+          style={{ marginTop: '20px' }}
+        >
+          <Link
+            className="primary-button event-board-header__btn"
+            to="/events/new"
+          >
+            Create Event
+          </Link>
+        </div>
+      </div>
+    </header>
+    {status === 'loading' && (
+      <div className="state-card state-card--loading" role="status" aria-live="polite">
+        <div className="state-card__icon" aria-hidden="true">◌</div>
+        <strong>Loading events…</strong>
+        <span>Retrieving events from the event service.</span>
+      </div>
+    )}
+
+    {status === 'error' && (
+      <div className="state-card state-card--error" role="alert">
+        <div className="state-card__icon" aria-hidden="true">!</div>
+        <strong>Unable to load events</strong>
+        <span>{error}</span>
+        <button className="secondary-button" type="button" onClick={reload}>
+          Try Again
+        </button>
+      </div>
+    )}
+
+    {status === 'success' && (
+      <>
+        <div
+          className="location-status"
+          style={{
+            marginBottom: '16px',
+            fontSize: '13.5px',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: 600
+          }}
+        >
+          {locationStatus === 'detecting' && (
+            <span>Detecting location...</span>
+          )}
+
+          {locationStatus === 'resolved' && district && (
+            <span>
+              Showing events in <strong>{district}</strong>
+            </span>
+          )}
+
+          {locationStatus === 'denied' && (
+            <span>
+              Location access denied. Showing all events.
+            </span>
+          )}
+
+          {(locationStatus === 'error' ||
+            (locationStatus === 'resolved' && !district)) && (
+            <span>
+              Unable to determine district. Showing all events.
+            </span>
+          )}
+
+          {(locationStatus === 'denied' ||
+            locationStatus === 'error') && (
+            <button
+              onClick={detectLocation}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--brand)',
+                cursor: 'pointer',
+                fontWeight: 700,
+                padding: 0,
+                textDecoration: 'underline'
+              }}
+            >
+              Retry Detection
+            </button>
+          )}
+        </div>
+
+        <DiscoveryControls
+          discovery={discovery.discovery}
+          cityOptions={discovery.cityOptions}
+          actions={discovery}
+        />
+
+        <div className="map-toggle-container">
+          <button
+            className={`map-toggle-button ${
+              viewMode === 'list'
+                ? 'map-toggle-button--active'
+                : ''
+            }`}
+            onClick={() => setViewMode('list')}
+          >
+            List View
+          </button>
+
+          <button
+            className={`map-toggle-button ${
+              viewMode === 'map'
+                ? 'map-toggle-button--active'
+                : ''
+            }`}
+            onClick={() => setViewMode('map')}
+          >
+            Map View
+          </button>
+        </div>
+
+        {rawEvents.length === 0 ? (
+          <div className="state-card state-card--empty">
+            <div className="state-card__icon" aria-hidden="true">
+              ◎
+            </div>
+            <strong>No upcoming events available.</strong>
+            <span>
+              There are currently no events available.
+            </span>
+          </div>
+        ) : discovery.events.length === 0 ? (
+          <div className="state-card state-card--empty">
+            <div className="state-card__icon" aria-hidden="true">
+              ⌕
+            </div>
+            <strong>No available upcoming events.</strong>
+            <span>
+              Try changing your search or filters.
+            </span>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={discovery.clearFilters}
+            >
+              Clear All
+            </button>
+          </div>
+        ) : viewMode === 'map' ? (
+          <div className="event-map-view">
+            <EventMap
+              events={discovery.districtEvents}
+              height="600px"
+            />
+
+            {discovery.districtEvents.some(
+              (event) => !event.latitude
+            ) && (
+              <p
+                style={{
+                  marginTop: '12px',
+                  fontSize: '13px',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                * Some events don't have map locations yet and are not
+                shown on the map.
+              </p>
             )}
           </div>
-
-          <DiscoveryControls
-            discovery={discovery.discovery}
-            cityOptions={discovery.cityOptions}
-            actions={discovery}
-          />
-
-          <div className="map-toggle-container">
-            <button
-              className={`map-toggle-button ${viewMode === 'list' ? 'map-toggle-button--active' : ''}`}
-              onClick={() => setViewMode('list')}
-            >
-              List View
-            </button>
-            <button
-              className={`map-toggle-button ${viewMode === 'map' ? 'map-toggle-button--active' : ''}`}
-              onClick={() => setViewMode('map')}
-            >
-              Map View
-            </button>
+        ) : (
+          <div
+            className={`event-grid event-grid--${
+              discovery.events.length === 1
+                ? '1'
+                : discovery.events.length === 2
+                  ? '2'
+                  : discovery.events.length === 3
+                    ? '3'
+                    : 'many'
+            }`}
+            aria-live="polite"
+          >
+            {discovery.events.map((event) => (
+              <EventCard
+                key={event.eventId}
+                event={event}
+                onRsvpChanged={reload}
+              />
+            ))}
           </div>
+        )}
+      </>
+    )}
 
-          {rawEvents.length === 0 ? (
-            <div className="state-card state-card--empty">
-              <div className="state-card__icon" aria-hidden="true">◎</div>
-              <strong>No upcoming events available.</strong>
-              <span>There are currently no events available.</span>
-            </div>
-          ) : discovery.events.length === 0 ? (
-            <div className="state-card state-card--empty">
-              <div className="state-card__icon" aria-hidden="true">⌕</div>
-              <strong>No available upcoming events.</strong>
-              <span>Try changing your search or filters.</span>
-              <button className="secondary-button" type="button" onClick={discovery.clearFilters}>Clear All</button>
-            </div>
-          ) : viewMode === 'map' ? (
-            <div className="event-map-view">
-              <EventMap events={discovery.districtEvents} height="600px" />
-              {discovery.districtEvents.some(e => !e.latitude) && (
-                <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>
-                  * Some events don't have map locations yet and are not shown on the map.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className={`event-grid event-grid--${discovery.events.length === 1 ? '1' : discovery.events.length === 2 ? '2' : discovery.events.length === 3 ? '3' : 'many'}`} aria-live="polite">
-              {discovery.events.map((event) => <EventCard key={event.eventId} event={event} onRsvpChanged={reload} />)}
-            </div>
-          )}
-        </>
-      )}
-    </section>
+  </section>
   )
 }

@@ -1,4 +1,8 @@
 import EventCard from '../events/EventCard.jsx'
+import CategoryBadge from '../events/CategoryBadge.jsx'
+import EventStatusBadge from '../events/EventStatusBadge.jsx'
+import { Link } from 'react-router-dom'
+import { formatEventTimeRange } from '../../utils/dateTime.js'
 import { getCalendarCells, formatMonthYear, formatSelectedDate, WEEKDAYS, isExpired } from '../../utils/calendar.js'
 
 export default function Calendar({
@@ -81,7 +85,7 @@ export default function Calendar({
       <section className="calendar__events" aria-labelledby="selected-date-heading">
         <div className="calendar__events-heading">
           <div>
-            <p className="eyebrow">Selected date</p>
+            <p className="eyebrow">SELECTED DATE</p>
             <h2 id="selected-date-heading">{formatSelectedDate(selectedDate)}</h2>
           </div>
           <span className="calendar__event-count">
@@ -96,12 +100,32 @@ export default function Calendar({
             <span>Try another date to discover local events.</span>
           </div>
         ) : (
-          <div className={`event-grid event-grid--${eventsForDate.length === 1 ? '1' : eventsForDate.length === 2 ? '2' : eventsForDate.length === 3 ? '3' : 'many'}`}>
+          <div className="calendar__event-preview-list">
             {eventsForDate.map((event) => (
-              <EventCard
+              <div
                 key={event.eventId}
-                event={event}
-              />
+                className="calendar-event-preview-card"
+                style={{ opacity: isExpired(event, now) ? 0.6 : 1 }}
+              >
+                <Link className="calendar-event-preview-card__link" to={`/events/${encodeURIComponent(event.eventId)}`}>
+                  {event.imageUrl && (
+                    <div className="calendar-event-preview-card__image-wrap">
+                      <img src={event.imageUrl} alt="" />
+                    </div>
+                  )}
+                  <div className="calendar-event-preview-card__content">
+                    <div className="calendar-event-preview-card__badges">
+                      <CategoryBadge category={event.category} />
+                      <EventStatusBadge status={event.status} />
+                    </div>
+                    <h3 className="calendar-event-preview-card__title">{event.title}</h3>
+                    <div className="calendar-event-preview-card__meta">
+                      <span>🕐 {formatEventTimeRange(event.startTime, event.endTime)}</span>
+                      <span>📍 {event.location}, {[event.neighborhood, event.city].filter(Boolean).join(' · ')}</span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         )}

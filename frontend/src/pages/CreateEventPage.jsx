@@ -187,16 +187,18 @@ export default function CreateEventPage() {
       <div className="create-event-layout">
         {/* LEFT COLUMN: VISUAL INTRO */}
         <div className="create-event-layout__visual">
-          <Link className="back-link" to="/">← Back to Event Board</Link>
-          <div className="create-event-visual__content">
-            <p className="eyebrow">{isEdit ? 'Edit event' : 'New event'}</p>
-            <h1>{isEdit ? 'Edit Event' : 'Create New Event'}</h1>
-            <p className="create-event-description">
-              {isEdit
-                ? 'Update the details of your event. Changes will be reflected immediately.'
-                : 'Publish a local event with the date, time, location, category, and description attendees need.'
-              }
-            </p>
+          <div className="create-event-visual__top">
+            <Link className="back-link" to="/">← Back to Event Board</Link>
+            <div className="create-event-visual__content" style={{ marginTop: '24px' }}>
+              <p className="eyebrow">{isEdit ? 'Edit event' : 'New event'}</p>
+              <h1 style={{ marginTop: '8px' }}>{isEdit ? 'Edit Event' : 'Create New Event'}</h1>
+              <p className="create-event-description">
+                {isEdit
+                  ? 'Update the details of your event. Changes will be reflected immediately.'
+                  : 'Publish a local event with the date, time, location, category, and description attendees need.'
+                }
+              </p>
+            </div>
           </div>
           <div className="create-event-visual__image">
             <img src={createEventHero} alt="" />

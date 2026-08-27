@@ -509,28 +509,30 @@ export default function CreateEventRequestPage() {
       <div className="create-request-layout">
         {/* LEFT COLUMN: VISUAL INTRO */}
         <div className="create-request-layout__visual">
-          <Link
-            className="back-link"
-            to={isEdit ? '/profile' : '/community-requests'}
-            style={{ display: 'inline-block', marginBottom: '12px' }}
-          >
-            ← {isEdit ? 'Back to Profile' : 'Community Requests'}
-          </Link>
-          <div className="create-request-visual__content">
-            <p className="eyebrow">
-              {isEdit ? 'Edit Request' : 'Request Event'}
-            </p>
+          <div className="create-request-visual__top">
+            <Link
+              className="back-link"
+              to={isEdit ? '/profile' : '/community-requests'}
+              style={{ display: 'inline-block', marginBottom: '12px' }}
+            >
+              ← {isEdit ? 'Back to Profile' : 'Community Requests'}
+            </Link>
+            <div className="create-request-visual__content" style={{ marginTop: '24px' }}>
+              <p className="eyebrow">
+                {isEdit ? 'Edit Request' : 'Request Event'}
+              </p>
 
-            <h1>
-              {isEdit ? 'Update your community request' : 'Tell the community what should happen'}
-            </h1>
+              <h1 style={{ marginTop: '8px' }}>
+                {isEdit ? 'Update your request' : 'Tell the community what should happen'}
+              </h1>
 
-            <p className="create-request-description">
-              {isEdit
-                ? 'Refine the details of your event request. Changes will be reflected immediately.'
-                : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
-              }
-            </p>
+              <p className="create-request-description">
+                {isEdit
+                  ? 'Refine the details of your event request. Changes will be reflected immediately.'
+                  : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
+                }
+              </p>
+            </div>
           </div>
           <div className="create-request-visual__image">
             <img src={eventPlanningHero} alt="" />

@@ -147,7 +147,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <div className="profile-container" style={{ display: 'grid', gap: '32px', marginTop: '24px' }}>
+      <div className="profile-container">
 
         {/* PROFILE HEADER CARD */}
         <section className="profile-card profile-header-card" style={{
