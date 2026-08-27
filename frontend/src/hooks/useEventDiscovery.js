@@ -15,14 +15,6 @@ export function useEventDiscovery(rawEvents = []) {
   const [discovery, setDiscovery] = useState(() => createDiscoveryState())
   const now = new Date()
 
-  // Initialize city from user profile once
-  const [userCitySet, setUserCitySet] = useState(false)
-  useEffect(() => {
-    if (currentUser?.city && !userCitySet && discovery.selectedCity === 'All') {
-      setDiscovery(current => ({ ...current, selectedCity: currentUser.city }))
-      setUserCitySet(true)
-    }
-  }, [currentUser, userCitySet, discovery.selectedCity])
 
   const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents])
   const cityOptions = useMemo(() => getCityOptions(activeEvents), [activeEvents])
