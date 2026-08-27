@@ -8,6 +8,7 @@ const {
   deleteEventRequest,
   getInterestStatus,
   expressInterest,
+  removeInterest,
   confirmEventRequest,
   confirmEventRequestAnyway,
   declineEventRequest,
@@ -24,6 +25,7 @@ router.patch('/event-requests/:requestId', authenticate, updateEventRequest)
 router.delete('/event-requests/:requestId', authenticate, deleteEventRequest)
 router.get('/event-requests/:requestId/interest', authenticate, getInterestStatus)
 router.post('/event-requests/:requestId/interest', authenticate, expressInterest)
+router.delete('/event-requests/:requestId/interest', authenticate, removeInterest)
 router.post('/event-requests/:requestId/confirm', authenticate, confirmEventRequest)
 router.post('/event-requests/:requestId/confirm-anyway', authenticate, confirmEventRequestAnyway)
 router.post('/event-requests/:requestId/decline', authenticate, declineEventRequest)
