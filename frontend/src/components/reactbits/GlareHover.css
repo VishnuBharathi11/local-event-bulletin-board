@@ -1,0 +1,20 @@
+.reactbits-glare-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.reactbits-glare-hover::before {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(135deg, transparent 45%, var(--rb-glare-rgba) 52%, transparent 59%);
+  background-size: 260% 260%;
+  background-position: -120% -120%;
+  transition: background-position var(--rb-glare-duration) ease;
+}
+
+.reactbits-glare-hover:hover::before {
+  background-position: 120% 120%;
+}
