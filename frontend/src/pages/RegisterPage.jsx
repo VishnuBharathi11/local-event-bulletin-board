@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import ClickSpark from '../components/reactbits/ClickSpark.jsx'
+import GlareHover from '../components/reactbits/GlareHover.jsx'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -30,28 +32,32 @@ export default function RegisterPage() {
 
   return (
     <section className="auth-page">
-      <div className="auth-card">
-        <p className="eyebrow">EventHive account</p>
-        <h1>Create account</h1>
-        <p className="auth-card__description">Create a local EventHive account with a name, email, and password.</p>
-        <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          <label className="form-field">
-            <span>Name</span>
-            <input type="text" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-          </label>
-          <label className="form-field">
-            <span>Email</span>
-            <input type="email" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-          </label>
-          <label className="form-field">
-            <span>Password</span>
-            <input type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-          </label>
-          {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Register'}</button>
-        </form>
-        <p className="auth-card__footer">Already registered? <Link to="/login">Login</Link></p>
-      </div>
+      <GlareHover className="auth-glare-surface" glareColor="#ffffff" glareOpacity={0.24}>
+        <div className="auth-card">
+          <p className="eyebrow">EventHive account</p>
+          <h1>Create account</h1>
+          <p className="auth-card__description">Create a local EventHive account with a name, email, and password.</p>
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <label className="form-field">
+              <span>Name</span>
+              <input type="text" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            </label>
+            <label className="form-field">
+              <span>Email</span>
+              <input type="email" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            </label>
+            <label className="form-field">
+              <span>Password</span>
+              <input type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
+            </label>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <ClickSpark sparkColor="#ffffff" sparkSize={7} sparkRadius={16} sparkCount={8}>
+              <button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Register'}</button>
+            </ClickSpark>
+          </form>
+          <p className="auth-card__footer">Already registered? <Link to="/login">Login</Link></p>
+        </div>
+      </GlareHover>
     </section>
   )
 }
