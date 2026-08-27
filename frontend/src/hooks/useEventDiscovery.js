@@ -20,26 +20,10 @@ export function useEventDiscovery(rawEvents = []) {
 
   const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents, now])
 
-  const districtEvents = useMemo(() => {
-    if (!district) return activeEvents
-    const normalizedDetected = district.toLowerCase().trim()
-    return activeEvents.filter(event => {
-      if (event.district) {
-        const normalizedEventDistrict = event.district.toLowerCase().trim()
-        return normalizedEventDistrict === normalizedDetected ||
-               normalizedEventDistrict.includes(normalizedDetected) ||
-               normalizedDetected.includes(normalizedEventDistrict)
-      }
-      // Fallback for legacy data
-      const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
-      return searchSpace.includes(normalizedDetected)
-    })
-  }, [activeEvents, district])
-
   const cityOptions = useMemo(() => getCityOptions(activeEvents, district), [activeEvents, district])
   const events = useMemo(
-    () => filterAndSortEvents(rawEvents, discovery, now, district),
-    [rawEvents, discovery, now, district],
+    () => filterAndSortEvents(rawEvents, discovery, now, null),
+    [rawEvents, discovery, now],
   )
 
   const updateSearchQuery = useCallback((searchQuery) => {
@@ -70,7 +54,6 @@ export function useEventDiscovery(rawEvents = []) {
     discovery,
     events,
     activeEvents,
-    districtEvents,
     cityOptions,
     updateSearchQuery,
     updateCategory,

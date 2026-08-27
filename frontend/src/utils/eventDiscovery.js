@@ -42,33 +42,69 @@ export function getActiveEvents(events = [], now = new Date()) {
 }
 
 export function getCityOptions(events = [], detectedDistrict = null) {
-  let filteredEvents = events;
+  if (!detectedDistrict) return ['All'];
 
-  if (detectedDistrict) {
-    const normalizedDetected = detectedDistrict.toLowerCase().trim();
-    filteredEvents = events.filter(event => {
-      if (event.district) {
-        const normalizedEventDistrict = event.district.toLowerCase().trim();
-        return normalizedEventDistrict === normalizedDetected ||
-               normalizedEventDistrict.includes(normalizedDetected) ||
-               normalizedDetected.includes(normalizedEventDistrict);
-      }
-      const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase();
-      return searchSpace.includes(normalizedDetected);
-    });
-  }
+  const normalizedDetected = detectedDistrict.toLowerCase().trim();
 
-  const locations = new Set();
-  filteredEvents.forEach(event => {
-    if (event.city) locations.add(event.city);
-    if (event.neighborhood) locations.add(event.neighborhood);
+  // 1. Filter events to only those belonging to the user's detected district
+  const districtEvents = events.filter(event => {
+    if (event.district) {
+      const normalizedEventDistrict = event.district.toLowerCase().trim();
+      return normalizedEventDistrict === normalizedDetected ||
+             normalizedEventDistrict.includes(normalizedDetected) ||
+             normalizedDetected.includes(normalizedEventDistrict);
+    }
+    // Fallback for events missing structured district field
+    const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase();
+    return searchSpace.includes(normalizedDetected);
   });
 
-  return ['All', ...locations].sort((a, b) => {
-    if (a === 'All') return -1
-    if (b === 'All') return 1
-    return a.localeCompare(b)
-  })
+  const locations = new Set();
+
+  /**
+   * Heuristic to exclude venue names, buildings, landmarks, and street addresses
+   * which are NOT legitimate city/town/village geographic names.
+   */
+  const isLegitimateLocality = (name) => {
+    if (!name || typeof name !== 'string') return false;
+    const lower = name.toLowerCase().trim();
+
+    // Exclude landmarks/venues based on common keywords
+    const invalidKeywords = [
+      'near ', 'hospital', 'tower', 'mall', 'station', 'building', 'hotel',
+      'college', 'university', 'ground', 'complex', 'plaza', 'house',
+      'shop', 'market', 'office', 'room', 'hall', 'center', 'centre',
+      'road', 'street', 'lane', 'avenue', 'apartment', 'flat', 'villa'
+    ];
+
+    if (invalidKeywords.some(keyword => lower.includes(lower.startsWith(keyword) ? keyword : ' ' + keyword))) {
+       return false;
+    }
+
+    // Exclude if it looks like a specific address (starts with number or contains numbers)
+    if (/^\d/.test(lower) || /\s\d/.test(lower)) return false;
+
+    // Names that are too long are likely addresses, not localities
+    if (name.length > 30) return false;
+
+    return true;
+  };
+
+  districtEvents.forEach(event => {
+    // Collect from city field
+    if (event.city && isLegitimateLocality(event.city)) {
+      locations.add(event.city.trim());
+    }
+    // Collect from neighborhood field (often maps to village/sub-locality)
+    if (event.neighborhood && isLegitimateLocality(event.neighborhood)) {
+      locations.add(event.neighborhood.trim());
+    }
+  });
+
+  // Sort alphabetically
+  const sortedLocations = Array.from(locations).sort((a, b) => a.localeCompare(b));
+
+  return ['All', ...sortedLocations];
 }
 
 export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date(), detectedDistrict = null) {
