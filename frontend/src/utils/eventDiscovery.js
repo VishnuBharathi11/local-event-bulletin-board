@@ -42,7 +42,13 @@ export function getActiveEvents(events = [], now = new Date()) {
 }
 
 export function getCityOptions(events = []) {
-  return ['All', ...new Set(events.map((event) => event.city).filter(Boolean))].sort((a, b) => {
+  const locations = new Set()
+  events.forEach(event => {
+    if (event.city) locations.add(event.city)
+    if (event.neighborhood) locations.add(event.neighborhood)
+  })
+
+  return ['All', ...locations].sort((a, b) => {
     if (a === 'All') return -1
     if (b === 'All') return 1
     return a.localeCompare(b)
@@ -81,7 +87,9 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
       ].some((value) => String(value ?? '').toLowerCase().includes(query))
 
       const matchesCategory = discovery.selectedCategory === 'All' || event.category === discovery.selectedCategory
-      const matchesCity = discovery.selectedCity === 'All' || event.city === discovery.selectedCity
+      const matchesCity = discovery.selectedCity === 'All' ||
+                          event.city === discovery.selectedCity ||
+                          event.neighborhood === discovery.selectedCity
       const matchesDate = matchesDateFilter(event.startTime, discovery.selectedDateFilter, now)
 
       return matchesSearch && matchesCategory && matchesCity && matchesDate

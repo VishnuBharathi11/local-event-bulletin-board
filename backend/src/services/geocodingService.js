@@ -28,7 +28,6 @@ async function getDistrictFromCoords(lat, lng) {
           let adminAreaL2 = null; // District (e.g., Coimbatore)
           let adminAreaL3 = null; // Sub-district/Taluk (e.g., Coimbatore South)
           let locality = null;    // City/Town (e.g., Coimbatore)
-          let subLocality = null; // Neighborhood/Area
 
           const isInvalidName = (name) => {
             if (!name) return true;
@@ -41,6 +40,7 @@ async function getDistrictFromCoords(lat, lng) {
           };
 
           // Google Geocoding returns results from most specific to least specific
+          // We iterate ALL results to find the most appropriate administrative district
           for (const result of json.results) {
             for (const component of result.address_components) {
               const types = component.types;
@@ -48,32 +48,33 @@ async function getDistrictFromCoords(lat, lng) {
 
               if (isInvalidName(name)) continue;
 
+              // Priority 1: District (Standard for India)
               if (!adminAreaL2 && types.includes('administrative_area_level_2')) {
                 adminAreaL2 = name;
               }
-              if (!adminAreaL3 && types.includes('administrative_area_level_3')) {
-                adminAreaL3 = name;
-              }
+              // Priority 2: Locality (City/Town)
               if (!locality && types.includes('locality')) {
                 locality = name;
               }
-              if (!subLocality && types.includes('sublocality_level_1')) {
-                subLocality = name;
+              // Priority 3: Sub-district/Taluk
+              if (!adminAreaL3 && types.includes('administrative_area_level_3')) {
+                adminAreaL3 = name;
               }
             }
           }
 
-          // Priority for "District":
-          // 1. administrative_area_level_2 is the standard for "District" in India.
-          // 2. locality is a fallback for metropolitan cities where L2 might be missing or less useful.
-          // 3. administrative_area_level_3 as a middle ground.
+          console.log('DISTRICT RESOLUTION CANDIDATES:', { adminAreaL2, locality, adminAreaL3 });
+
+          // STRICT RESOLUTION:
+          // We MUST prefer the administrative district (L2) to ensure district-wide filtering.
+          // Using a locality (like Mayileripalayam) as a district filter is incorrect.
           let resolvedDistrict = adminAreaL2 || locality || adminAreaL3;
 
           if (resolvedDistrict) {
             resolvedDistrict = resolvedDistrict.replace(/\s+(District|Taluk|Region|Division)$/i, '').trim();
           }
 
-          // FINAL FALLBACK: If everything failed, take the first available valid locality-like component
+          // FINAL FALLBACK: If everything failed, take the first available valid locality-like component from the first result
           if (!resolvedDistrict && json.results[0]) {
              const fallback = json.results[0].address_components.find(c =>
                !isInvalidName(c.long_name) && (c.types.includes('locality') || c.types.includes('administrative_area_level_2'))
@@ -85,6 +86,7 @@ async function getDistrictFromCoords(lat, lng) {
             resolvedDistrict = null;
           }
 
+          console.log('FINAL RESOLVED DISTRICT:', resolvedDistrict);
           resolve(resolvedDistrict);
         } catch (e) {
           reject(e);
