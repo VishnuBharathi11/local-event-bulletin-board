@@ -49,7 +49,7 @@ export default function EventCard({
       cancelled = true
       if (timerId) window.clearTimeout(timerId)
     }
-  }, [event, onExpired])
+  }, [event.eventId, event.startTime, event.endTime, event.expireAt, onExpired])
 
   if (lifecycleStatus === 'EXPIRED') return null
 
@@ -132,6 +132,7 @@ export default function EventCard({
         )}
       </div>
 
+      {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
       <Link className="event-card__link" to={`/events/${encodeURIComponent(event.eventId)}`}>View Event <span aria-hidden="true">→</span></Link>
     </article>
   )
