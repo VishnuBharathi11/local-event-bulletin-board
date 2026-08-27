@@ -1,7 +1,6 @@
 .event-details {
-  width: min(100%, 1120px);
-  margin-inline: auto;
-  padding: clamp(18px, 3vw, 30px);
+  width: 100%;
+  padding: clamp(18px, 4vw, 36px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);

@@ -2,7 +2,9 @@
 
 /* Details page */
 .request-details--ui07 {
-  width: min(100%, 920px);
+  width: 100%;
+  max-width: var(--content-event);
+  margin-inline: auto;
   padding: clamp(22px, 5vw, 44px);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -140,7 +142,8 @@
 
 /* Actual request creation form */
 .request-form {
-  width: min(100%, 860px);
+  width: 100%;
+  max-width: var(--content-narrow);
   margin-inline: auto;
 }
 .request-form__intro { margin-bottom: 26px; }
@@ -228,12 +231,13 @@
 }
 .event-form > .primary-button { width: 100%; min-height: 48px; }
 .event-form .time-picker-field input { min-height: 46px; }
-.event-form .time-picker-dropdown { max-width: min(390px, calc(100vw - 24px)); }
+.event-form .time-picker-dropdown { width: 100%; max-width: 390px; }
 
 /* ConflictReview uses its existing component/logic; only presentation is refined. */
 .conflict-overlay { background: rgb(15 23 42 / 46%); backdrop-filter: blur(2px); }
 .conflict-dialog {
-  width: min(100% - 32px, 760px);
+  width: 100%;
+  max-width: 760px;
   max-height: min(88vh, 820px);
   border: 1px solid #d5dde8;
   border-radius: var(--radius-lg);
@@ -271,7 +275,7 @@
   .event-form .form-grid--date-time,
   .event-form .form-grid--location { grid-template-columns: 1fr; }
   .event-form .form-grid--date-time .form-field:first-child { grid-column: auto; }
-  .conflict-dialog { width: min(100% - 20px, 760px); max-height: 92vh; }
+  .conflict-dialog { width: 100%; max-width: 760px; max-height: 92vh; }
   .conflict-dialog__actions { align-items: stretch; flex-direction: column-reverse; }
   .conflict-dialog__actions > * { width: 100%; }
 }

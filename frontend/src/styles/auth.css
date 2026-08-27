@@ -6,7 +6,8 @@
 }
 
 .auth-card {
-  width: min(100%, 460px);
+  width: 100%;
+  max-width: 460px;
   padding: clamp(24px, 5vw, 36px);
   border: 1px solid var(--border);
   border-radius: 16px;

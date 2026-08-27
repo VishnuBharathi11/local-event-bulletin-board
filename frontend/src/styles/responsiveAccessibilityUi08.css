@@ -77,13 +77,8 @@
 }
 
 @media (max-width: 600px) {
-  .app-main {
-    width: min(100% - 20px, var(--content-wide));
-    padding-block: 22px 34px;
-  }
-
-  .app-header__inner {
-    width: min(100% - 20px, var(--content-wide));
+  .app-main, .app-header__inner {
+    padding-inline: 16px;
   }
 
   .brand strong {
@@ -101,13 +96,8 @@
 }
 
 @media (max-width: 480px) {
-  .app-main {
-    width: min(100% - 16px, var(--content-wide));
-    padding-block: 18px 28px;
-  }
-
-  .app-header__inner {
-    width: min(100% - 16px, var(--content-wide));
+  .app-main, .app-header__inner {
+    padding-inline: 12px;
   }
 
   .brand__mark {
@@ -430,7 +420,8 @@
 
 .conflict-dialog {
   box-sizing: border-box;
-  width: min(860px, calc(100vw - 16px));
+  width: 100%;
+  max-width: calc(100vw - 16px);
   max-width: calc(100vw - 16px);
 }
 

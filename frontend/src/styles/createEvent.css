@@ -1,5 +1,6 @@
 .create-event-page {
-  width: min(100%, 920px);
+  width: 100%;
+  max-width: var(--content-narrow);
   margin-inline: auto;
 }
 

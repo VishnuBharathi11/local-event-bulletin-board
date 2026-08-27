@@ -465,26 +465,17 @@
 
 /* Data-adaptive Grid layouts for desktop/tablet */
 @media (min-width: 1025px) {
-  .event-grid--1 {
-    grid-template-columns: minmax(0, 420px) !important;
-    justify-content: center;
-  }
-  .event-grid--2 {
-    grid-template-columns: repeat(2, minmax(0, 420px)) !important;
-    justify-content: center;
-  }
-  .event-grid--3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  .event-grid, .request-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+    justify-content: stretch;
+    gap: 24px !important;
   }
 }
 
 @media (max-width: 1024px) and (min-width: 761px) {
-  .event-grid--1 {
-    grid-template-columns: minmax(0, 420px) !important;
-    justify-content: center;
-  }
-  .event-grid--2, .event-grid--3, .event-grid--many {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .event-grid, .request-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 20px !important;
   }
 }
 
@@ -2282,7 +2273,19 @@
 
 /* Page container widths */
 .app-main {
-  max-width: 1040px !important;
+  width: 100% !important;
+  max-width: var(--content-wide) !important;
+  margin-inline: auto !important;
+}
+
+.request-details {
+  max-width: var(--content-event) !important;
+  width: 100% !important;
+}
+
+.create-event-form, .event-form {
+  max-width: var(--content-narrow) !important;
+  width: 100% !important;
   margin-inline: auto !important;
 }
 

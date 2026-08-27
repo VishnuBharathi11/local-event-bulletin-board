@@ -1,4 +1,4 @@
-.calendar-page { width: min(100%, 1120px); margin-inline: auto; }
+.calendar-page { width: 100%; }
 .calendar-page__intro { margin-bottom: 18px; }
 .calendar-page__description { margin: 0; max-width: 720px; color: var(--text-muted); line-height: 1.6; }
 

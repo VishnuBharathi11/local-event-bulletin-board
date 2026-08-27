@@ -1,6 +1,5 @@
 .community-requests-page {
-  width: min(100%, 1120px);
-  margin-inline: auto;
+  width: 100%;
 }
 
 .community-requests-header {
@@ -193,7 +192,8 @@
 }
 
 .request-form {
-  width: min(100%, 820px);
+  width: 100%;
+  max-width: var(--content-narrow);
   margin-inline: auto;
 }
 
@@ -215,9 +215,10 @@
 }
 
 .request-details {
-  width: min(100%, 820px);
+  width: 100%;
+  max-width: var(--content-event);
   margin-inline: auto;
-  padding: clamp(22px, 5vw, 40px);
+  padding: clamp(22px, 5vw, 48px);
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--surface);
@@ -739,10 +740,8 @@
     left: 50%;
     transform: translateX(-50%);
 
-    width: min(
-      390px,
-      calc(100vw - 24px)
-    );
+    width: 100%;
+    max-width: 390px;
 
     padding: 20px;
   }
