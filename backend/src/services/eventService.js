@@ -6,11 +6,31 @@ const { getDistrictFromCoords } = require('./geocodingService')
 
 async function getEvents(currentUserId) {
   const events = await eventRepository.getActiveEvents()
+
   // Hide user's own events from the discovery board
+  let discoveryEvents = events;
   if (currentUserId) {
-    return events.filter(event => event.organizerId !== currentUserId)
+    discoveryEvents = events.filter(event => event.organizerId !== currentUserId)
   }
-  return events
+
+  // Reliability: Ensure all events have a district if they have coords
+  // This satisfies the "derive using existing mechanism" requirement.
+  for (const event of discoveryEvents) {
+    if (event.latitude && event.longitude && !event.district) {
+       try {
+         const resolved = await getDistrictFromCoords(event.latitude, event.longitude);
+         if (resolved) {
+           event.district = resolved;
+           // Silently update repository for future calls
+           await eventRepository.saveEvent(event);
+         }
+       } catch (err) {
+         console.warn(`Failed to derive district for event ${event.eventId}:`, err.message);
+       }
+    }
+  }
+
+  return discoveryEvents
 }
 
 async function getMyEvents(userId) {

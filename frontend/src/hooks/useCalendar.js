@@ -37,21 +37,27 @@ export function useCalendar() {
 
   const activeEvents = useMemo(() => {
     const calendarEvents = getCalendarEvents(state.events)
-    if (district) {
-      const normalizedDetected = district.toLowerCase().trim()
-      return calendarEvents.filter(event => {
-        if (event.district) {
-          const normalizedEventDistrict = event.district.toLowerCase().trim()
-          return normalizedEventDistrict === normalizedDetected ||
-                 normalizedEventDistrict.includes(normalizedDetected) ||
-                 normalizedDetected.includes(normalizedEventDistrict)
-        }
-        // Fallback for legacy data
-        const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
-        return searchSpace.includes(normalizedDetected)
-      })
-    }
-    return calendarEvents
+    if (!district) return calendarEvents
+
+    const normalizedDetected = district.toLowerCase().trim()
+    const filtered = calendarEvents.filter(event => {
+      if (event.district) {
+        const normalizedEventDistrict = event.district.toLowerCase().trim()
+        return normalizedEventDistrict === normalizedDetected ||
+               normalizedEventDistrict.includes(normalizedDetected) ||
+               normalizedDetected.includes(normalizedEventDistrict)
+      }
+      // Fallback for legacy data
+      const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+      return searchSpace.includes(normalizedDetected)
+    })
+
+    console.log("--- CALENDAR DISTRICT FILTER VERIFICATION ---")
+    console.log("DETECTED USER DISTRICT:", district)
+    console.log("TOTAL CALENDAR EVENTS:", calendarEvents.length)
+    console.log("EVENTS AFTER FILTER:", filtered.length)
+
+    return filtered
   }, [state.events, district])
 
   const eventDays = useMemo(

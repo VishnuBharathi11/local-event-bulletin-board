@@ -18,12 +18,40 @@ export function useEventDiscovery(rawEvents = []) {
   const now = new Date()
 
 
-  const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents, now])
+  const activeEvents = useMemo(() => {
+    const active = getActiveEvents(rawEvents, now)
+    if (!district) return active
 
-  const cityOptions = useMemo(() => getCityOptions(activeEvents, district), [activeEvents, district])
+    const normalizedDetected = district.toLowerCase().trim()
+    const filtered = active.filter(event => {
+      if (event.district) {
+        const normalizedEventDistrict = event.district.toLowerCase().trim()
+        return normalizedEventDistrict === normalizedDetected ||
+               normalizedEventDistrict.includes(normalizedDetected) ||
+               normalizedDetected.includes(normalizedEventDistrict)
+      }
+      const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+      return searchSpace.includes(normalizedDetected)
+    })
+
+    console.log("--- DISTRICT FILTER VERIFICATION ---")
+    console.log("DETECTED USER DISTRICT:", district)
+    console.log("TOTAL EVENTS RECEIVED:", active.length)
+    console.log("EVENTS AFTER DISTRICT FILTER:", filtered.length)
+    console.log("EVENTS EXCLUDED BY DISTRICT:", active.length - filtered.length)
+
+    return filtered
+  }, [rawEvents, now, district])
+
+  const cityOptions = useMemo(() => {
+    const options = getCityOptions(activeEvents, district)
+    console.log("CITY OPTIONS GENERATED:", options)
+    return options
+  }, [activeEvents, district])
+
   const events = useMemo(
-    () => filterAndSortEvents(rawEvents, discovery, now, null),
-    [rawEvents, discovery, now],
+    () => filterAndSortEvents(activeEvents, discovery, now, district),
+    [activeEvents, discovery, now, district],
   )
 
   const updateSearchQuery = useCallback((searchQuery) => {
@@ -54,6 +82,7 @@ export function useEventDiscovery(rawEvents = []) {
     discovery,
     events,
     activeEvents,
+    districtEvents: activeEvents,
     cityOptions,
     updateSearchQuery,
     updateCategory,
