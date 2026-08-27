@@ -11,13 +11,18 @@ export default function CommunityRequestsPage() {
 
   return (
     <section className="community-requests-page community-requests-page--ui06">
-      <header className="community-requests-header community-requests-header--ui06">
-        <div className="community-requests-header__copy">
+      <header className="community-requests-header community-requests-header--ui06 page-hero-layout">
+        <div className="page-hero-layout__copy">
           <span className="community-requests-header__badge">EventHive · Demand</span>
           <h1>What the Community Wants</h1>
           <p className="community-requests-header__sub">See what events people are asking for and help bring them to life.</p>
+          <div style={{ marginTop: '16px' }}>
+            <Link className="primary-button community-requests-header__action" to="/community-requests/new">Request Event</Link>
+          </div>
         </div>
-        <Link className="primary-button community-requests-header__action" to="/community-requests/new">Request Event</Link>
+        <div className="page-hero-layout__image">
+          <img src={communityEventHero} alt="" />
+        </div>
       </header>
 
       {status === 'loading' && (

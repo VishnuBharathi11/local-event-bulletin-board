@@ -2536,3 +2536,55 @@
     padding: 24px 20px !important;
   }
 }
+
+/* Category Filter Chip Hover State Accents */
+.category-chip--all:hover {
+  background-color: var(--color-cat-all-bg) !important;
+  color: var(--color-cat-all-text) !important;
+  border-color: var(--color-cat-all-border) !important;
+}
+.category-chip--all.category-chip--selected {
+  background-color: var(--color-cat-all-text) !important;
+  color: white !important;
+  border-color: var(--color-cat-all-text) !important;
+}
+.category-chip--sports:hover {
+  background-color: var(--color-cat-sports-bg) !important;
+  color: var(--color-cat-sports-text) !important;
+  border-color: var(--color-cat-sports-border) !important;
+}
+.category-chip--music:hover {
+  background-color: var(--color-cat-music-bg) !important;
+  color: var(--color-cat-music-text) !important;
+  border-color: var(--color-cat-music-border) !important;
+}
+.category-chip--food:hover {
+  background-color: var(--color-cat-food-bg) !important;
+  color: var(--color-cat-food-text) !important;
+  border-color: var(--color-cat-food-border) !important;
+}
+.category-chip--workshops:hover {
+  background-color: var(--color-cat-workshops-bg) !important;
+  color: var(--color-cat-workshops-text) !important;
+  border-color: var(--color-cat-workshops-border) !important;
+}
+.category-chip--meetups:hover {
+  background-color: var(--color-cat-meetups-bg) !important;
+  color: var(--color-cat-meetups-text) !important;
+  border-color: var(--color-cat-meetups-border) !important;
+}
+.category-chip--student-events:hover {
+  background-color: var(--color-cat-student-bg) !important;
+  color: var(--color-cat-student-text) !important;
+  border-color: var(--color-cat-student-border) !important;
+}
+.category-chip--garage-sale:hover {
+  background-color: var(--color-cat-garage-bg) !important;
+  color: var(--color-cat-garage-text) !important;
+  border-color: var(--color-cat-garage-border) !important;
+}
+.category-chip--community:hover {
+  background-color: var(--color-cat-community-bg) !important;
+  color: var(--color-cat-community-text) !important;
+  border-color: var(--color-cat-community-border) !important;
+}

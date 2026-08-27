@@ -506,28 +506,33 @@ export default function CreateEventRequestPage() {
 
   return (
     <section className="request-form">
-      <Link
-        className="back-link"
-        to={isEdit ? '/profile' : '/community-requests'}
-      >
-        ← {isEdit ? 'Back to Profile' : 'Community Requests'}
-      </Link>
+      <header className="request-form__intro page-hero-layout">
+        <div className="page-hero-layout__copy">
+          <Link
+            className="back-link"
+            to={isEdit ? '/profile' : '/community-requests'}
+            style={{ display: 'inline-block', marginBottom: '12px' }}
+          >
+            ← {isEdit ? 'Back to Profile' : 'Community Requests'}
+          </Link>
+          <p className="eyebrow">
+            {isEdit ? 'Edit Request' : 'Request Event'}
+          </p>
 
-      <header className="request-form__intro">
-        <p className="eyebrow">
-          {isEdit ? 'Edit Request' : 'Request Event'}
-        </p>
+          <h1>
+            {isEdit ? 'Update your community request' : 'Tell the community what should happen'}
+          </h1>
 
-        <h1>
-          {isEdit ? 'Update your community request' : 'Tell the community what should happen'}
-        </h1>
-
-        <p>
-          {isEdit
-            ? 'Refine the details of your event request. Changes will be reflected immediately.'
-            : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
-          }
-        </p>
+          <p>
+            {isEdit
+              ? 'Refine the details of your event request. Changes will be reflected immediately.'
+              : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
+            }
+          </p>
+        </div>
+        <div className="page-hero-layout__image">
+          <img src={eventPlanningHero} alt="" />
+        </div>
       </header>
 
       <form

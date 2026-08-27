@@ -13,17 +13,65 @@ export default function EventBoardPage() {
   const discovery = useEventDiscovery(rawEvents)
   const [viewMode, setViewMode] = useState('list')
 
+  const CATEGORY_INFOS = {
+    All: {
+      title: 'Discover local events',
+      description: 'Explore and RSVP to activities happening in your community today.'
+    },
+    Sports: {
+      title: 'Sports & Activities',
+      description: 'Find sports, fitness sessions, and outdoor games happening near you.'
+    },
+    Music: {
+      title: 'Concerts & Gigs',
+      description: 'Discover local live music, performances, and student concerts.'
+    },
+    Food: {
+      title: 'Food & Culinary',
+      description: 'Explore food festivals, market stalls, and food pop-ups.'
+    },
+    Workshops: {
+      title: 'Workshops & Seminars',
+      description: 'Learn new skills at classes, tutoring sessions, and seminars.'
+    },
+    Meetups: {
+      title: 'Socials & Meetups',
+      description: 'Connect with people at neighborhood assemblies and volunteer projects.'
+    },
+    'Student Events': {
+      title: 'Student Events',
+      description: 'Check out study groups, campus meetups, and academic activities.'
+    },
+    'Garage Sale': {
+      title: 'Garage & Flea Sales',
+      description: 'Find local yard sales, flea markets, and second-hand sales.'
+    },
+    Community: {
+      title: 'Community Programs',
+      description: 'Participate in volunteer cleanups, local meetings, and civic workshops.'
+    }
+  };
+
+  const categoryInfo = CATEGORY_INFOS[discovery.discovery.selectedCategory] || CATEGORY_INFOS.All;
+  const categorySlug = discovery.discovery.selectedCategory.toLowerCase().replace(/\s+/g, '-');
+  const isAll = discovery.discovery.selectedCategory === 'All';
+
   return (
     <section className="event-page">
-      <header className="event-board-header">
-        <div className="event-board-header__copy">
-          <span className="event-board-header__badge">EventHive · Community Discovery</span>
-          <h1>Discover local events</h1>
-          <p className="event-board-header__sub">Explore and RSVP to activities happening in your community today.</p>
+      <header className={`event-board-header page-hero-layout event-board-header--${categorySlug}`}>
+        <div className="page-hero-layout__copy">
+          <span className="event-board-header__badge">EventHive · ${discovery.discovery.selectedCategory}</span>
+          <h1>{categoryInfo.title}</h1>
+          <p className="event-board-header__sub">{categoryInfo.description}</p>
+          <div className="event-board-header__actions" style={{ marginTop: '16px' }}>
+            <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
+          </div>
         </div>
-        <div className="event-board-header__actions">
-          <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
-        </div>
+        {isAll && (
+          <div className="page-hero-layout__image">
+            <img src={eventCommunityHero} alt="" />
+          </div>
+        )}
       </header>
 
       {status === 'loading' && (

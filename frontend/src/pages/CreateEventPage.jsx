@@ -184,17 +184,22 @@ export default function CreateEventPage() {
 
   return (
     <section className="event-page create-event-page">
-      <header className="page-header-simple create-event-header">
-        <Link className="back-link" to="/">← Back to Event Board</Link>
-        <div>
-          <p className="eyebrow">{isEdit ? 'Edit event' : 'New event'}</p>
-          <h1>{isEdit ? 'Edit Event' : 'Create New Event'}</h1>
-          <p className="create-event-header__intro">
-            {isEdit
-              ? 'Update the details of your event. Changes will be reflected immediately.'
-              : 'Publish a local event with the date, time, location, category, and description attendees need.'
-            }
-          </p>
+      <header className="page-header-simple create-event-header page-hero-layout">
+        <div className="page-hero-layout__copy">
+          <Link className="back-link" to="/">← Back to Event Board</Link>
+          <div>
+            <p className="eyebrow">{isEdit ? 'Edit event' : 'New event'}</p>
+            <h1>{isEdit ? 'Edit Event' : 'Create New Event'}</h1>
+            <p className="create-event-header__intro">
+              {isEdit
+                ? 'Update the details of your event. Changes will be reflected immediately.'
+                : 'Publish a local event with the date, time, location, category, and description attendees need.'
+              }
+            </p>
+          </div>
+        </div>
+        <div className="page-hero-layout__image">
+          <img src={createEventHero} alt="" />
         </div>
       </header>
       <EventForm
