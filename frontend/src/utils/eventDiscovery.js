@@ -41,8 +41,30 @@ export function getActiveEvents(events = [], now = new Date()) {
   return events.filter((event) => !isPastEvent(event, now))
 }
 
-export function getCityOptions(events = []) {
-  return ['All', ...new Set(events.map((event) => event.city).filter(Boolean))].sort((a, b) => {
+export function getCityOptions(events = [], detectedDistrict = null) {
+  let filteredEvents = events;
+
+  if (detectedDistrict) {
+    const normalizedDetected = detectedDistrict.toLowerCase().trim();
+    filteredEvents = events.filter(event => {
+      if (event.district) {
+        const normalizedEventDistrict = event.district.toLowerCase().trim();
+        return normalizedEventDistrict === normalizedDetected ||
+               normalizedEventDistrict.includes(normalizedDetected) ||
+               normalizedDetected.includes(normalizedEventDistrict);
+      }
+      const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase();
+      return searchSpace.includes(normalizedDetected);
+    });
+  }
+
+  const locations = new Set();
+  filteredEvents.forEach(event => {
+    if (event.city) locations.add(event.city);
+    if (event.neighborhood) locations.add(event.neighborhood);
+  });
+
+  return ['All', ...locations].sort((a, b) => {
     if (a === 'All') return -1
     if (b === 'All') return 1
     return a.localeCompare(b)

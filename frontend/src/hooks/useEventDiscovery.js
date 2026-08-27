@@ -20,7 +20,7 @@ export function useEventDiscovery(rawEvents = []) {
 
   const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents, now])
 
-  const cityOptions = useMemo(() => getCityOptions(activeEvents), [activeEvents])
+  const cityOptions = useMemo(() => getCityOptions(activeEvents, district), [activeEvents, district])
   const events = useMemo(
     () => filterAndSortEvents(rawEvents, discovery, now, null),
     [rawEvents, discovery, now],
