@@ -22,9 +22,10 @@ async function getEventRequests() {
 async function getUserEventRequests(userId) {
   const snapshot = await getRequestCollection()
     .where('organizerId', '==', userId)
-    .orderBy('createdAt', 'desc')
     .get()
-  return snapshot.docs.map(fromFirestoreDocument)
+  return snapshot.docs
+    .map(fromFirestoreDocument)
+    .sort((a, b) => b.createdAt - a.createdAt)
 }
 
 async function getEventRequestById(requestId) {
