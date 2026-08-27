@@ -5,10 +5,24 @@ const LocationContext = createContext()
 
 export function LocationProvider({ children }) {
   const [coords, setCoords] = useState(null)
+
+  const isInvalidName = (name) => {
+    if (!name || typeof name !== 'string') return true;
+    const normalized = name.toLowerCase().trim();
+    return normalized.length === 0 ||
+           normalized.includes('[no name]') ||
+           normalized.includes('unnamed') ||
+           normalized.includes('unknown') ||
+           normalized === 'null' ||
+           normalized === 'undefined';
+  };
+
   const [district, setDistrict] = useState(() => {
     const saved = localStorage.getItem('detected_district')
-    // Guard against literal "null" or "undefined" strings from localStorage
-    if (saved === 'null' || saved === 'undefined' || !saved) return null
+    if (isInvalidName(saved)) {
+      if (saved) localStorage.removeItem('detected_district');
+      return null;
+    }
     return saved
   })
   const [status, setStatus] = useState('idle') // idle, detecting, resolved, denied, error
@@ -31,18 +45,7 @@ export function LocationProvider({ children }) {
           console.log("GEOCODING RESPONSE", data)
           const rawDistrict = data?.district
 
-          const isInvalid = (name) => {
-            if (!name || typeof name !== 'string') return true;
-            const normalized = name.toLowerCase().trim();
-            return normalized.length === 0 ||
-                   normalized.includes('[no name]') ||
-                   normalized.includes('unnamed') ||
-                   normalized.includes('unknown') ||
-                   normalized === 'null' ||
-                   normalized === 'undefined';
-          };
-
-          if (!isInvalid(rawDistrict)) {
+          if (!isInvalidName(rawDistrict)) {
             const resolvedDistrict = rawDistrict.trim()
             console.log("RESOLVED LOCATION", resolvedDistrict)
             setDistrict(resolvedDistrict)

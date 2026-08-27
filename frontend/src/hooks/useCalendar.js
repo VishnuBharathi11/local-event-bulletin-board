@@ -38,10 +38,17 @@ export function useCalendar() {
   const activeEvents = useMemo(
     () => {
       if (district) {
+        const normalizedDetected = district.toLowerCase().trim()
         return state.events.filter(event => {
-          if (event.district) return event.district === district
-          const searchSpace = `${event.city} ${event.neighborhood}`.toLowerCase()
-          return searchSpace.includes(district.toLowerCase())
+          if (event.district) {
+            const normalizedEventDistrict = event.district.toLowerCase().trim()
+            return normalizedEventDistrict === normalizedDetected ||
+                   normalizedEventDistrict.includes(normalizedDetected) ||
+                   normalizedDetected.includes(normalizedEventDistrict)
+          }
+          // Fallback for legacy data
+          const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+          return searchSpace.includes(normalizedDetected)
         })
       }
       return state.events
