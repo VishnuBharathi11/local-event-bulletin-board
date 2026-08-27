@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { expressInterest, getEventRequests, getInterestStatus } from '../services/eventRequestService.js'
+import { expressInterest, getEventRequests, getInterestStatus, removeInterest } from '../services/eventRequestService.js'
 
 export function useEventRequests() {
   const { authenticated, currentUser } = useAuth()
@@ -13,28 +13,14 @@ export function useEventRequests() {
     setState((current) => ({ ...current, status: 'loading', error: null }))
     setInterestError(null)
     setInterestedIds(new Set())
-
     try {
       let requests = await getEventRequests()
       let existingInterestIds = new Set()
-
       if (authenticated && requests.length > 0) {
-        // Filter out current user's requests from the public list
-        if (currentUser?.userId) {
-          requests = requests.filter(r => r.organizerId !== currentUser.userId)
-        }
-
-        const interestResults = await Promise.all(
-          requests.map(async (request) => ({
-            requestId: request.requestId,
-            interested: await getInterestStatus(request.requestId),
-          })),
-        )
-        existingInterestIds = new Set(
-          interestResults.filter((result) => Boolean(result.interested?.interested)).map((result) => result.requestId),
-        )
+        if (currentUser?.userId) requests = requests.filter(r => r.organizerId !== currentUser.userId)
+        const interestResults = await Promise.all(requests.map(async (request) => ({ requestId: request.requestId, interested: await getInterestStatus(request.requestId) })))
+        existingInterestIds = new Set(interestResults.filter((result) => Boolean(result.interested?.interested)).map((result) => result.requestId))
       }
-
       setInterestedIds(existingInterestIds)
       setState({ status: 'success', requests, error: null })
     } catch (error) {
@@ -45,17 +31,20 @@ export function useEventRequests() {
 
   useEffect(() => { reload() }, [reload])
 
-  const addInterest = useCallback(async (requestId) => {
-    if (!authenticated || interestLoadingId || interestedIds.has(requestId)) return
+  const toggleInterest = useCallback(async (requestId) => {
+    if (!authenticated || interestLoadingId) return
+    const currentlyInterested = interestedIds.has(requestId)
     setInterestLoadingId(requestId)
     setInterestError(null)
     try {
-      const updatedRequest = await expressInterest(requestId)
-      setInterestedIds((current) => new Set(current).add(requestId))
-      setState((current) => ({
-        ...current,
-        requests: current.requests.map((request) => request.requestId === requestId ? updatedRequest : request),
-      }))
+      const updatedRequest = currentlyInterested ? await removeInterest(requestId) : await expressInterest(requestId)
+      setInterestedIds((current) => {
+        const next = new Set(current)
+        if (currentlyInterested) next.delete(requestId)
+        else next.add(requestId)
+        return next
+      })
+      setState((current) => ({ ...current, requests: current.requests.map((request) => request.requestId === requestId ? updatedRequest : request) }))
     } catch (error) {
       setInterestError({ requestId, message: error.message })
     } finally {
@@ -63,12 +52,5 @@ export function useEventRequests() {
     }
   }, [authenticated, interestLoadingId, interestedIds])
 
-  return {
-    ...state,
-    reload,
-    interestedIds,
-    interestLoadingId,
-    interestError,
-    addInterest,
-  }
+  return { ...state, reload, interestedIds, interestLoadingId, interestError, toggleInterest }
 }
