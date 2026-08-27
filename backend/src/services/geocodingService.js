@@ -11,15 +11,15 @@ async function getDetailedLocationFromCoords(lat, lng) {
   console.log('API KEY PRESENT:', !!apiKey);
 
   if (!apiKey) {
+    console.error('CRITICAL: GOOGLE_GEOCODING_API_KEY is missing from process.env');
     return {
       district: null,
       locality: null,
-      error: 'GOOGLE_GEOCODING_API_KEY is missing in backend .env'
+      error: 'Backend API Key missing'
     };
   }
 
   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-  console.log('REQUESTING URL:', `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey.substring(0, 5)}***`);
 
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
@@ -30,7 +30,7 @@ async function getDetailedLocationFromCoords(lat, lng) {
           const json = JSON.parse(data);
 
           console.log('GOOGLE API STATUS:', json.status);
-          if (json.error_message) console.log('GOOGLE API ERROR:', json.error_message);
+          if (json.error_message) console.error('GOOGLE API ERROR_MESSAGE:', json.error_message);
 
           if (json.status !== 'OK') {
             return resolve({
@@ -41,58 +41,74 @@ async function getDetailedLocationFromCoords(lat, lng) {
             });
           }
 
-          let adminAreaL2 = null; // District
-          let locality = null;    // City
-          let subLocality = null; // Village/Neighborhood
-
-          const allFoundComponents = [];
+          // Address component extraction
+          let adminAreaL2 = null; // Official District
+          let locality = null;    // City/Town
+          let subLocality = null; // Village/Area
+          let adminAreaL1 = null; // State
 
           const isInvalidName = (name) => {
             if (!name) return true;
             const normalized = name.toLowerCase().trim();
-            return normalized.includes('[no name]') ||
+            return normalized.length === 0 ||
+                   normalized.includes('[no name]') ||
                    normalized.includes('unnamed') ||
                    normalized.includes('unknown') ||
                    normalized === 'undefined' ||
                    normalized === 'null';
           };
 
-          // Deep extraction from all results
+          // We'll collect all valid components across all results for deep inspection
+          const allComponents = [];
+
           if (json.results && Array.isArray(json.results)) {
-            json.results.forEach((result) => {
-              if (result.address_components && Array.isArray(result.address_components)) {
-                result.address_components.forEach((component) => {
-                  const types = component.types;
-                  const name = component.long_name;
+            json.results.forEach((result, rIdx) => {
+              result.address_components.forEach((component) => {
+                const types = component.types;
+                const name = component.long_name;
 
-                  if (isInvalidName(name)) return;
+                if (isInvalidName(name)) return;
 
-                  allFoundComponents.push({ name, types });
+                allComponents.push({ name, types, rIdx });
 
-                  // DISTRICT: administrative_area_level_2
-                  if (!adminAreaL2 && types.includes('administrative_area_level_2')) {
-                    adminAreaL2 = name;
-                    console.log('  >> MATCHED DISTRICT (L2):', name);
-                  }
-
-                  // LOCALITY: locality
-                  if (!locality && types.includes('locality')) {
-                    locality = name;
-                    console.log('  >> MATCHED LOCALITY:', name);
-                  }
-
-                  // SUB-LOCALITY: neighborhood, sublocality, sublocality_level_1
-                  if (!subLocality && (types.includes('neighborhood') || types.includes('sublocality') || types.includes('sublocality_level_1'))) {
-                    subLocality = name;
-                    console.log('  >> MATCHED SUB-LOCALITY:', name);
-                  }
-                });
-              }
+                // Identify components
+                if (!adminAreaL2 && types.includes('administrative_area_level_2')) {
+                  adminAreaL2 = name;
+                }
+                if (!locality && types.includes('locality')) {
+                  locality = name;
+                }
+                if (!subLocality && (types.includes('sublocality') || types.includes('neighborhood') || types.includes('sublocality_level_1'))) {
+                  subLocality = name;
+                }
+                if (!adminAreaL1 && types.includes('administrative_area_level_1')) {
+                  adminAreaL1 = name;
+                }
+              });
             });
           }
 
+          console.log('DETECTION CANDIDATES:', { adminAreaL2, locality, subLocality, adminAreaL1 });
+
+          // RESOLUTION LOGIC:
+          // 1. Primary: Administrative Area Level 2 (Standard for "District")
           let resolvedDistrict = adminAreaL2;
-          let resolvedLocality = locality || subLocality;
+
+          // 2. Fallback: If L2 is missing, but we have a Locality (City) that is DIFFERENT
+          // from the Sublocality (Village), then the Locality might be the parent district/city.
+          if (!resolvedDistrict && locality && subLocality && locality !== subLocality) {
+            resolvedDistrict = locality;
+            console.log('FALLBACK: Using Locality as District because Sublocality is present');
+          }
+
+          // 3. Last Resort: If still missing, just use Locality if it exists.
+          if (!resolvedDistrict && locality) {
+            resolvedDistrict = locality;
+            console.log('FALLBACK: Using Locality as District (last resort)');
+          }
+
+          // LOCALITY resolution for display
+          let resolvedLocality = subLocality || locality;
 
           // CLEANUP
           if (resolvedDistrict) {
@@ -102,24 +118,23 @@ async function getDetailedLocationFromCoords(lat, lng) {
             resolvedLocality = resolvedLocality.replace(/\s+(City|Town|Village)$/i, '').trim();
           }
 
-          console.log('DEBUG: Resolved District:', resolvedDistrict);
-          console.log('DEBUG: Resolved Locality:', resolvedLocality);
+          console.log('FINAL RESOLVED:', { district: resolvedDistrict, locality: resolvedLocality });
           console.log('--- PHASE 1 DEBUG: BACKEND END ---');
 
           resolve({
             district: resolvedDistrict,
             locality: resolvedLocality,
-            allComponents: allFoundComponents,
-            raw: json
+            raw: json,
+            debug: { candidates: { adminAreaL2, locality, subLocality, adminAreaL1 }, allComponents }
           });
         } catch (e) {
           console.error('PHASE 1 BACKEND JSON ERROR:', e);
-          resolve({ district: null, locality: null, error: 'Failed to parse Google response' });
+          resolve({ district: null, locality: null, error: 'JSON Parse Error' });
         }
       });
     }).on('error', (e) => {
-      console.error('PHASE 1 BACKEND HTTP ERROR:', e);
-      resolve({ district: null, locality: null, error: `HTTP Request failed: ${e.message}` });
+      console.error('PHASE 1 BACKEND HTTPS ERROR:', e);
+      resolve({ district: null, locality: null, error: `HTTPS error: ${e.message}` });
     });
   });
 }

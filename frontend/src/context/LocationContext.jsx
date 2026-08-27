@@ -39,62 +39,58 @@ export function LocationProvider({ children }) {
 
   const detectLocation = useCallback(async () => {
     if (!navigator.geolocation) {
-      console.error("PHASE 1 DEBUG: Browser does not support geolocation.");
+      console.error("PHASE 1 FRONTEND: Geolocation not supported by browser");
       setStatus('error')
       return
     }
 
     setStatus('detecting')
-    console.log("PHASE 1 DEBUG: Requesting geolocation...");
+    console.log("PHASE 1 FRONTEND: Requesting geolocation...");
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-        console.log("PHASE 1 DEBUG: COORDS OBTAINED:", { latitude, longitude })
+        console.log("PHASE 1 FRONTEND: COORDS OBTAINED", { latitude, longitude })
         setCoords({ latitude, longitude })
 
         try {
-          // getDistrictFromCoords from locationService.js makes a fetch to /api/location/district
+          // getDistrictFromCoords from locationService.js calls backend /api/location/district
           const response = await getDistrictFromCoords(latitude, longitude)
-
-          console.log("PHASE 1 DEBUG: BACKEND RESPONSE:", response)
+          console.log("PHASE 1 FRONTEND: BACKEND RESPONSE", response)
 
           if (response.error) {
-            console.error("PHASE 1 DEBUG: BACKEND ERROR:", response.error)
+            console.error("PHASE 1 FRONTEND: BACKEND RETURNED ERROR:", response.error)
             setStatus('error')
             return
           }
 
-          // Log ALL components found for debugging
-          if (response.allComponents) {
-            console.log("--- PHASE 1 DEBUG: ALL ADDRESS COMPONENTS RECEIVED ---")
-            response.allComponents.forEach((comp, idx) => {
-               console.log(`  [${idx}] "${comp.name}" (Types: ${comp.types.join(', ')})`)
-            })
-            console.log("-------------------------------------------------------")
+          if (response.debug) {
+            console.log("--- PHASE 1 FRONTEND: COMPONENT INSPECTION ---")
+            console.log("CANDIDATES:", response.debug.candidates)
+            console.log("ALL COMPONENTS FOUND:", response.debug.allComponents)
+            console.log("-----------------------------------------------")
           }
 
           const rawDistrict = response?.district
           const rawLocality = response?.locality
 
-          console.log("PHASE 1 DEBUG: EXTRACTED DISTRICT:", rawDistrict)
-          console.log("PHASE 1 DEBUG: EXTRACTED LOCALITY:", rawLocality)
+          console.log("PHASE 1 FRONTEND: EXTRACTED DISTRICT =", rawDistrict)
+          console.log("PHASE 1 FRONTEND: EXTRACTED LOCALITY =", rawLocality)
 
           if (!isInvalidName(rawDistrict)) {
             const resolvedDistrict = rawDistrict.trim()
-            console.log("PHASE 1 DEBUG: SUCCESS! SETTING DISTRICT TO:", resolvedDistrict)
+            console.log("PHASE 1 FRONTEND: SUCCESS - SETTING DISTRICT TO", resolvedDistrict)
             setDistrict(resolvedDistrict)
             localStorage.setItem('detected_district', resolvedDistrict)
 
             if (!isInvalidName(rawLocality)) {
-              const resolvedLocality = rawLocality.trim()
-              setLocality(resolvedLocality)
-              localStorage.setItem('detected_locality', resolvedLocality)
+              setLocality(rawLocality.trim())
+              localStorage.setItem('detected_locality', rawLocality.trim())
             }
 
             setStatus('resolved')
           } else {
-            console.warn('PHASE 1 DEBUG: District resolution failed. rawDistrict was null or invalid.')
+            console.warn('PHASE 1 FRONTEND: District resolution returned empty or invalid string.')
             setDistrict(null)
             setLocality(null)
             localStorage.removeItem('detected_district')
@@ -102,12 +98,12 @@ export function LocationProvider({ children }) {
             setStatus('error')
           }
         } catch (err) {
-          console.error('PHASE 1 DEBUG: Network or API failure:', err)
+          console.error('PHASE 1 FRONTEND: Network/Fetch failure:', err)
           setStatus('error')
         }
       },
       (error) => {
-        console.warn('PHASE 1 DEBUG: Geolocation error:', error)
+        console.warn('PHASE 1 FRONTEND: Geolocation error:', error)
         setStatus(error.code === error.PERMISSION_DENIED ? 'denied' : 'error')
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
