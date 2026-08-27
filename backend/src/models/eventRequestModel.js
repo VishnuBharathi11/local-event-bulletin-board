@@ -32,10 +32,19 @@ function normalizeEventRequest(input = {}, requestId = input.requestId || '') {
     organizerId: input.organizerId ?? '',
     imageUrl: input.imageUrl ?? '',
     eventId: input.eventId ?? '',
+    latitude: input.latitude !== undefined && input.latitude !== null ? Number(input.latitude) : null,
+    longitude: input.longitude !== undefined && input.longitude !== null ? Number(input.longitude) : null,
   }
 
   for (const field of ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'imageUrl', 'eventId']) {
     if (typeof request[field] !== 'string') throw new TypeError(`${field} must be a string`)
+  }
+
+  if (request.latitude !== null && (!Number.isFinite(request.latitude) || request.latitude < -90 || request.latitude > 90)) {
+    throw new TypeError('latitude must be a finite number between -90 and 90')
+  }
+  if (request.longitude !== null && (!Number.isFinite(request.longitude) || request.longitude < -180 || request.longitude > 180)) {
+    throw new TypeError('longitude must be a finite number between -180 and 180')
   }
 
   if (!isSafeInteger(request.startTime)) throw new TypeError('startTime must be a safe integer')

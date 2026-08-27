@@ -135,6 +135,8 @@ async function confirmEventRequest(requestId) {
       expireAt: request.endTime,
       conflictStatus: 'NONE',
       imageUrl: request.imageUrl || '',
+      latitude: request.latitude ?? null,
+      longitude: request.longitude ?? null,
     }
     const { eventId: _eventId, ...eventFields } = createdEvent
     transaction.set(eventRef, eventFields)

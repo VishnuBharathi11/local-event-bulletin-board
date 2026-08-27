@@ -14,6 +14,8 @@ const DEFAULT_EVENT = Object.freeze({
   eventId: '', title: '', description: '', category: '', city: '', neighborhood: '', location: '',
   startTime: 0, endTime: 0, status: 'DRAFT', rsvpCount: 0, organizerId: '', createdAt: 0, expireAt: 0, conflictStatus: 'NONE',
   imageUrl: '',
+  latitude: null,
+  longitude: null,
 })
 
 function isSafeInteger(value) {
@@ -28,6 +30,8 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
     status: input.status ?? DEFAULT_EVENT.status, rsvpCount: input.rsvpCount ?? DEFAULT_EVENT.rsvpCount, organizerId: input.organizerId ?? DEFAULT_EVENT.organizerId,
     createdAt: input.createdAt ?? DEFAULT_EVENT.createdAt, expireAt: input.expireAt ?? DEFAULT_EVENT.expireAt, conflictStatus: input.conflictStatus ?? DEFAULT_EVENT.conflictStatus,
     imageUrl: input.imageUrl ?? DEFAULT_EVENT.imageUrl,
+    latitude: input.latitude !== undefined && input.latitude !== null ? Number(input.latitude) : null,
+    longitude: input.longitude !== undefined && input.longitude !== null ? Number(input.longitude) : null,
   }
 
   const stringFields = ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'conflictStatus', 'imageUrl']
@@ -35,6 +39,14 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
   for (const field of ['startTime', 'endTime', 'createdAt', 'expireAt']) if (!isSafeInteger(event[field])) throw new TypeError(`${field} must be a safe integer`)
   if (!Number.isInteger(event.rsvpCount)) throw new TypeError('rsvpCount must be an integer')
   if (!EVENT_STATUSES.includes(event.status)) throw new TypeError(`status must be one of: ${EVENT_STATUSES.join(', ')}`)
+
+  if (event.latitude !== null && (!Number.isFinite(event.latitude) || event.latitude < -90 || event.latitude > 90)) {
+    throw new TypeError('latitude must be a finite number between -90 and 90')
+  }
+  if (event.longitude !== null && (!Number.isFinite(event.longitude) || event.longitude < -180 || event.longitude > 180)) {
+    throw new TypeError('longitude must be a finite number between -180 and 180')
+  }
+
   return event
 }
 
