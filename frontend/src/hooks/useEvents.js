@@ -14,9 +14,16 @@ export function useEvents() {
     }
   }, [])
 
+  const removeEvent = useCallback((eventId) => {
+    setState((current) => ({
+      ...current,
+      events: current.events.filter((event) => event.eventId !== eventId),
+    }))
+  }, [])
+
   useEffect(() => {
     loadEvents()
   }, [loadEvents])
 
-  return { ...state, reload: loadEvents }
+  return { ...state, reload: loadEvents, removeEvent }
 }
