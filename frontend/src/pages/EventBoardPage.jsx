@@ -1,12 +1,4 @@
 import eventCommunityHero from '../assets/event-community-hero.jpeg'
-import categorySports from '../assets/category-sports.png'
-import categoryMusic from '../assets/category-music.png'
-import categoryFood from '../assets/category-food.png'
-import categoryWorkshops from '../assets/category-workshops.png'
-import categoryMeetups from '../assets/category-meetups.png'
-import categoryStudentEvents from '../assets/category-student-events.png'
-import categoryGarageSale from '../assets/category-garage-sale.png'
-import categoryCommunity from '../assets/category-community.png'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import EventCard from '../components/events/EventCard.jsx'
@@ -17,81 +9,71 @@ import { useEventDiscovery } from '../hooks/useEventDiscovery.js'
 import { useLocation } from '../context/LocationContext.jsx'
 import '../styles/eventMap.css'
 
-const CATEGORY_INFOS = {
-  All: {
-    title: 'Discover local events',
-    description: 'Explore and RSVP to activities happening in your community today.',
-    image: eventCommunityHero,
-  },
-  Sports: {
-    title: 'Sports & Activities',
-    description: 'Find sports, fitness sessions, and outdoor games happening near you.',
-    image: categorySports,
-  },
-  Music: {
-    title: 'Concerts & Gigs',
-    description: 'Discover local live music, performances, and student concerts.',
-    image: categoryMusic,
-  },
-  Food: {
-    title: 'Food & Culinary',
-    description: 'Explore food festivals, market stalls, and food pop-ups.',
-    image: categoryFood,
-  },
-  Workshops: {
-    title: 'Workshops & Seminars',
-    description: 'Learn new skills at classes, tutoring sessions, and seminars.',
-    image: categoryWorkshops,
-  },
-  Meetups: {
-    title: 'Socials & Meetups',
-    description: 'Connect with people at neighborhood assemblies and volunteer projects.',
-    image: categoryMeetups,
-  },
-  'Student Events': {
-    title: 'Student Events',
-    description: 'Check out study groups, campus meetups, and academic activities.',
-    image: categoryStudentEvents,
-  },
-  'Garage Sale': {
-    title: 'Garage & Flea Sales',
-    description: 'Find local yard sales, flea markets, and second-hand sales.',
-    image: categoryGarageSale,
-  },
-  Community: {
-    title: 'Community Programs',
-    description: 'Participate in volunteer cleanups, local meetings, and civic workshops.',
-    image: categoryCommunity,
-  },
-}
-
 export default function EventBoardPage() {
   const { status, events: rawEvents, error, reload } = useEvents()
   const discovery = useEventDiscovery(rawEvents)
   const { district, status: locationStatus, detectLocation } = useLocation()
   const [viewMode, setViewMode] = useState('list')
 
-  const selectedCategory = discovery.discovery.selectedCategory
-  const categoryInfo = CATEGORY_INFOS[selectedCategory] || CATEGORY_INFOS.All
-  const categorySlug = selectedCategory.toLowerCase().replace(/\s+/g, '-')
+  const CATEGORY_INFOS = {
+    All: {
+      title: 'Discover local events',
+      description: 'Explore and RSVP to activities happening in your community today.'
+    },
+    Sports: {
+      title: 'Sports & Activities',
+      description: 'Find sports, fitness sessions, and outdoor games happening near you.'
+    },
+    Music: {
+      title: 'Concerts & Gigs',
+      description: 'Discover local live music, performances, and student concerts.'
+    },
+    Food: {
+      title: 'Food & Culinary',
+      description: 'Explore food festivals, market stalls, and food pop-ups.'
+    },
+    Workshops: {
+      title: 'Workshops & Seminars',
+      description: 'Learn new skills at classes, tutoring sessions, and seminars.'
+    },
+    Meetups: {
+      title: 'Socials & Meetups',
+      description: 'Connect with people at neighborhood assemblies and volunteer projects.'
+    },
+    'Student Events': {
+      title: 'Student Events',
+      description: 'Check out study groups, campus meetups, and academic activities.'
+    },
+    'Garage Sale': {
+      title: 'Garage & Flea Sales',
+      description: 'Find local yard sales, flea markets, and second-hand sales.'
+    },
+    Community: {
+      title: 'Community Programs',
+      description: 'Participate in volunteer cleanups, local meetings, and civic workshops.'
+    }
+  };
+
+  const categoryInfo = CATEGORY_INFOS[discovery.discovery.selectedCategory] || CATEGORY_INFOS.All;
+  const categorySlug = discovery.discovery.selectedCategory.toLowerCase().replace(/\s+/g, '-');
+  const isAll = discovery.discovery.selectedCategory === 'All';
 
   return (
     <section className="event-page">
-      <header className={`event-board-header event-board-header--${categorySlug}`}>
-        <div className="event-board-header__bg" aria-hidden="true">
-          <img src={categoryInfo.image} alt="" />
-        </div>
-        <div className="event-board-header__overlay" aria-hidden="true" />
-        <div className="event-board-header__content">
-          <div className="event-board-header__copy">
-            <span className="event-board-header__badge">EventHive · {selectedCategory}</span>
-            <h1>{categoryInfo.title}</h1>
-            <p className="event-board-header__sub">{categoryInfo.description}</p>
-            <div className="event-board-header__actions">
-              <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
-            </div>
+      <header className={`event-board-header page-hero-layout event-board-header--${categorySlug}`}>
+        <div className="page-hero-layout__copy">
+          <span className="event-board-header__badge">EventHive · {discovery.discovery.selectedCategory}</span>
+          <h1>{categoryInfo.title}</h1>
+          <p className="event-board-header__sub">{categoryInfo.description}</p>
+          <div className="event-board-header__actions" style={{ marginTop: '16px' }}>
+            <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
           </div>
         </div>
+        {isAll && (
+          <div className="page-hero-layout__image">
+            <img src={eventCommunityHero} alt="" />
+          </div>
+        )}
       </header>
 
       {status === 'loading' && (
