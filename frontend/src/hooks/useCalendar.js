@@ -38,7 +38,11 @@ export function useCalendar() {
   const activeEvents = useMemo(
     () => {
       if (district) {
-        return state.events.filter(event => event.district === district)
+        return state.events.filter(event => {
+          if (event.district) return event.district === district
+          const searchSpace = `${event.city} ${event.neighborhood}`.toLowerCase()
+          return searchSpace.includes(district.toLowerCase())
+        })
       }
       return state.events
     },

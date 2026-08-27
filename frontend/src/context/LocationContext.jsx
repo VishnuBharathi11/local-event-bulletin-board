@@ -22,11 +22,13 @@ export function LocationProvider({ children }) {
 
         try {
           const data = await getDistrictFromCoords(latitude, longitude)
-          if (data.district) {
-            setDistrict(data.district)
-            localStorage.setItem('detected_district', data.district)
+          if (data.district && data.district.trim()) {
+            const resolvedDistrict = data.district.trim()
+            setDistrict(resolvedDistrict)
+            localStorage.setItem('detected_district', resolvedDistrict)
             setStatus('resolved')
           } else {
+            console.warn('Resolved district was empty or invalid:', data.district)
             setStatus('error')
           }
         } catch (err) {

@@ -57,9 +57,15 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
     .filter((event) => {
       // 1. District Filtering (Automatic)
       // If a district is detected, only show events from that district.
-      // Legacy events (missing district) are hidden to maintain district-aware integrity.
-      if (detectedDistrict && event.district !== detectedDistrict) {
-        return false
+      if (detectedDistrict) {
+        if (event.district) {
+          // Strict match for enriched data
+          if (event.district !== detectedDistrict) return false
+        } else {
+          // Fallback match for legacy data (check city/neighborhood)
+          const searchSpace = `${event.city} ${event.neighborhood}`.toLowerCase()
+          if (!searchSpace.includes(detectedDistrict.toLowerCase())) return false
+        }
       }
 
       const matchesSearch = query === '' || [

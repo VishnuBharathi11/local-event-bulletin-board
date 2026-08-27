@@ -24,20 +24,30 @@ async function getDistrictFromCoords(lat, lng) {
             return resolve(null);
           }
 
-          // Extract administrative_area_level_2 (District in India)
+          // Robust extraction for Indian districts and metropolitan areas
           let district = null;
+          let locality = null;
+          let adminAreaL2 = null;
+
           for (const result of json.results) {
-            const component = result.address_components.find(c =>
-              c.types.includes('administrative_area_level_2')
-            );
-            if (component) {
-              district = component.long_name;
-              break;
+            for (const component of result.address_components) {
+              if (component.types.includes('administrative_area_level_2')) {
+                adminAreaL2 = component.long_name;
+              }
+              if (component.types.includes('locality')) {
+                locality = component.long_name;
+              }
             }
+            if (adminAreaL2) break;
           }
 
-          // Fallback to administrative_area_level_1 (State) if district not found?
-          // The requirement specifically mentions "district".
+          // Priority: District (L2) -> Locality
+          district = adminAreaL2 || locality;
+
+          // Clean up "District" suffix if present to match typical event data
+          if (district) {
+            district = district.replace(/\s+District$/i, '');
+          }
 
           resolve(district);
         } catch (e) {
