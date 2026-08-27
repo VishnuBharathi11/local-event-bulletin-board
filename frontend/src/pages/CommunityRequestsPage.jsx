@@ -1,3 +1,4 @@
+import communityEventHero from '../assets/community-event-hero.jpeg'
 import { Link } from 'react-router-dom'
 import EventRequestCard from '../components/community/EventRequestCard.jsx'
 import { useEventRequests } from '../hooks/useEventRequests.js'

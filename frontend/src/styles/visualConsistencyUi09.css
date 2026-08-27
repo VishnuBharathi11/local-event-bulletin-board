@@ -1764,19 +1764,17 @@
 
 /* Image Upload component visual improvements */
 .image-upload {
-  border: 2px dashed #cbd5e1 !important;
-  border-radius: var(--radius-sm) !important;
-  background-color: #fafbfc;
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.image-upload:hover {
-  border-color: var(--brand-secondary) !important;
-  background-color: var(--brand-light) !important;
+  border: none !important;
+  background-color: transparent !important;
+  transition: none !important;
+  overflow: visible !important;
 }
 
 .image-upload__label {
+  border: 2px dashed #cbd5e1 !important;
+  border-radius: var(--radius-sm) !important;
+  background-color: #fafbfc !important;
+  transition: all 0.2s ease !important;
   padding: 24px 20px !important;
   cursor: pointer;
   display: flex;
@@ -1784,6 +1782,11 @@
   align-items: center;
   gap: 10px;
   width: 100%;
+}
+
+.image-upload__label:hover {
+  border-color: var(--brand-secondary) !important;
+  background-color: var(--brand-light) !important;
 }
 
 .image-upload__icon {
@@ -2018,7 +2021,7 @@
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .desktop-only-nav {
     display: none !important;
   }
@@ -2041,12 +2044,12 @@
 }
 
 /* Nav drawer drawer animation and slide fixes */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-header__inner {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    min-height: 64px !important;
+    min-height: 72px !important;
   }
   .mobile-menu-toggle {
     display: inline-flex;
@@ -2068,7 +2071,7 @@
   .mobile-nav-overlay {
     position: fixed;
     inset: 0;
-    top: 64px;
+    top: 72px;
     z-index: 1000;
     background-color: rgba(23, 32, 51, 0.4);
     backdrop-filter: blur(4px);
@@ -2079,7 +2082,7 @@
 
   .mobile-nav-drawer {
     width: 280px;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 72px);
     background-color: var(--surface);
     border-left: 1px solid var(--border);
     box-shadow: -4px 0 24px rgba(23, 32, 51, 0.08);
@@ -2294,4 +2297,242 @@
   background-color: var(--brand) !important;
   border-color: var(--brand) !important;
   color: #ffffff !important;
+}
+
+/* --- Phase 6.2 Responsive menu drawer leakage fixes --- */
+.mobile-menu-toggle,
+.mobile-only-user-bar,
+.mobile-nav-overlay {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  .mobile-menu-toggle {
+    display: inline-flex !important;
+  }
+  .mobile-only-user-bar {
+    display: flex !important;
+  }
+  .mobile-nav-overlay {
+    display: flex !important;
+  }
+}
+
+/* --- Phase 6.3: Category Visual System & Page Hero Layouts --- */
+
+/* Category semantic color variables */
+:root {
+  --color-cat-all-bg: #f3f4f6;
+  --color-cat-all-text: #4b5563;
+  --color-cat-all-border: #e5e7eb;
+  
+  --color-cat-sports-bg: #fff7ed;
+  --color-cat-sports-text: #c2410c;
+  --color-cat-sports-border: #ffedd5;
+  
+  --color-cat-music-bg: #f3e8ff;
+  --color-cat-music-text: #6b21a8;
+  --color-cat-music-border: #e9d5ff;
+  
+  --color-cat-food-bg: #fff5f5;
+  --color-cat-food-text: #c53030;
+  --color-cat-food-border: #fed7d7;
+  
+  --color-cat-workshops-bg: #fefbeb;
+  --color-cat-workshops-text: #b45309;
+  --color-cat-workshops-border: #fef3c7;
+  
+  --color-cat-meetups-bg: #eff6ff;
+  --color-cat-meetups-text: #1d4ed8;
+  --color-cat-meetups-border: #bfdbfe;
+  
+  --color-cat-student-bg: #f0fdf4;
+  --color-cat-student-text: #15803d;
+  --color-cat-student-border: #dcfce7;
+  
+  --color-cat-garage-bg: #fdfaf2;
+  --color-cat-garage-text: #854d0e;
+  --color-cat-garage-border: #fef08a;
+  
+  --color-cat-community-bg: #f0fdfa;
+  --color-cat-community-text: #0f766e;
+  --color-cat-community-border: #ccfbf1;
+}
+
+/* Category Badge Semantic Color Overrides */
+.event-badge {
+  background-color: var(--color-cat-all-bg) !important;
+  color: var(--color-cat-all-text) !important;
+  border: 1px solid var(--color-cat-all-border) !important;
+}
+.event-badge--sports,
+.request-card__category--sports {
+  background-color: var(--color-cat-sports-bg) !important;
+  color: var(--color-cat-sports-text) !important;
+  border: 1px solid var(--color-cat-sports-border) !important;
+}
+.event-badge--music,
+.request-card__category--music {
+  background-color: var(--color-cat-music-bg) !important;
+  color: var(--color-cat-music-text) !important;
+  border: 1px solid var(--color-cat-music-border) !important;
+}
+.event-badge--food,
+.request-card__category--food {
+  background-color: var(--color-cat-food-bg) !important;
+  color: var(--color-cat-food-text) !important;
+  border: 1px solid var(--color-cat-food-border) !important;
+}
+.event-badge--workshops,
+.request-card__category--workshops {
+  background-color: var(--color-cat-workshops-bg) !important;
+  color: var(--color-cat-workshops-text) !important;
+  border: 1px solid var(--color-cat-workshops-border) !important;
+}
+.event-badge--meetups,
+.request-card__category--meetups {
+  background-color: var(--color-cat-meetups-bg) !important;
+  color: var(--color-cat-meetups-text) !important;
+  border: 1px solid var(--color-cat-meetups-border) !important;
+}
+.event-badge--student,
+.request-card__category--student-events {
+  background-color: var(--color-cat-student-bg) !important;
+  color: var(--color-cat-student-text) !important;
+  border: 1px solid var(--color-cat-student-border) !important;
+}
+.event-badge--garage,
+.request-card__category--garage-sale {
+  background-color: var(--color-cat-garage-bg) !important;
+  color: var(--color-cat-garage-text) !important;
+  border: 1px solid var(--color-cat-garage-border) !important;
+}
+.event-badge--community,
+.request-card__category--community {
+  background-color: var(--color-cat-community-bg) !important;
+  color: var(--color-cat-community-text) !important;
+  border: 1px solid var(--color-cat-community-border) !important;
+}
+
+/* Category Filter Selected Chip Accents */
+.category-chip--sports.category-chip--selected {
+  background-color: var(--color-cat-sports-bg) !important;
+  color: var(--color-cat-sports-text) !important;
+  border-color: var(--color-cat-sports-text) !important;
+}
+.category-chip--music.category-chip--selected {
+  background-color: var(--color-cat-music-bg) !important;
+  color: var(--color-cat-music-text) !important;
+  border-color: var(--color-cat-music-text) !important;
+}
+.category-chip--food.category-chip--selected {
+  background-color: var(--color-cat-food-bg) !important;
+  color: var(--color-cat-food-text) !important;
+  border-color: var(--color-cat-food-text) !important;
+}
+.category-chip--workshops.category-chip--selected {
+  background-color: var(--color-cat-workshops-bg) !important;
+  color: var(--color-cat-workshops-text) !important;
+  border-color: var(--color-cat-workshops-text) !important;
+}
+.category-chip--meetups.category-chip--selected {
+  background-color: var(--color-cat-meetups-bg) !important;
+  color: var(--color-cat-meetups-text) !important;
+  border-color: var(--color-cat-meetups-text) !important;
+}
+.category-chip--student-events.category-chip--selected {
+  background-color: var(--color-cat-student-bg) !important;
+  color: var(--color-cat-student-text) !important;
+  border-color: var(--color-cat-student-text) !important;
+}
+.category-chip--garage-sale.category-chip--selected {
+  background-color: var(--color-cat-garage-bg) !important;
+  color: var(--color-cat-garage-text) !important;
+  border-color: var(--color-cat-garage-text) !important;
+}
+.category-chip--community.category-chip--selected {
+  background-color: var(--color-cat-community-bg) !important;
+  color: var(--color-cat-community-text) !important;
+  border-color: var(--color-cat-community-text) !important;
+}
+
+/* Page Hero Layout Container */
+.page-hero-layout {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 32px !important;
+  padding: clamp(24px, 4vw, 40px) !important;
+  border-radius: var(--radius-lg) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f8fc 100%) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-md) !important;
+  margin-bottom: 30px !important;
+  overflow: hidden;
+}
+
+.page-hero-layout__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-hero-layout__image {
+  flex: 0 0 clamp(160px, 20vw, 240px);
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.page-hero-layout__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  opacity: 0.95;
+}
+
+/* Category-specific accent headers on the Event Board */
+.event-board-header--sports {
+  background: linear-gradient(135deg, var(--color-cat-sports-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-sports-border) !important;
+}
+.event-board-header--music {
+  background: linear-gradient(135deg, var(--color-cat-music-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-music-border) !important;
+}
+.event-board-header--food {
+  background: linear-gradient(135deg, var(--color-cat-food-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-food-border) !important;
+}
+.event-board-header--workshops {
+  background: linear-gradient(135deg, var(--color-cat-workshops-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-workshops-border) !important;
+}
+.event-board-header--meetups {
+  background: linear-gradient(135deg, var(--color-cat-meetups-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-meetups-border) !important;
+}
+.event-board-header--student-events {
+  background: linear-gradient(135deg, var(--color-cat-student-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-student-border) !important;
+}
+.event-board-header--garage-sale {
+  background: linear-gradient(135deg, var(--color-cat-garage-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-garage-border) !important;
+}
+.event-board-header--community {
+  background: linear-gradient(135deg, var(--color-cat-community-bg) 0%, #ffffff 100%) !important;
+  border-color: var(--color-cat-community-border) !important;
+}
+
+/* Hide hero illustrations on mobile viewports to keep content first */
+@media (max-width: 768px) {
+  .page-hero-layout__image {
+    display: none !important;
+  }
+  .page-hero-layout {
+    padding: 24px 20px !important;
+  }
 }

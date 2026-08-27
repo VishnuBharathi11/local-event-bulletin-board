@@ -58,7 +58,7 @@ export default function EventRequestCard({
         </div>
       )}
       <div className="request-card__topline">
-        <span className="request-card__category">{request.category}</span>
+        <span className={`request-card__category request-card__category--${request.category.toLowerCase().replace(/\s+/g, '-')}`}>{request.category}</span>
         <span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>
           {statusLabels[request.status] || request.status}
         </span>

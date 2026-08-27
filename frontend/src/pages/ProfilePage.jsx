@@ -186,13 +186,7 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
-          <div className="profile-header-meta" style={{ textAlign: 'right' }}>
-            <span className="eyebrow" style={{ color: 'rgba(255,255,255,0.7)', display: 'block' }}>Account Status</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#4ade80' }}></span>
-              <strong style={{ fontSize: '18px' }}>{currentUser?.status || 'Active'}</strong>
-            </div>
-          </div>
+
         </section>
 
         {updateStatus === 'success' && (

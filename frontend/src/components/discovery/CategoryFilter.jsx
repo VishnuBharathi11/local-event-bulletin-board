@@ -10,7 +10,7 @@ export default function CategoryFilter({ value, onChange }) {
           return (
             <button
               key={category}
-              className={`category-chip${selected ? ' category-chip--selected' : ''}`}
+              className={`category-chip category-chip--${category.toLowerCase().replace(/\s+/g, '-')}${selected ? ' category-chip--selected' : ''}`}
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(category)}

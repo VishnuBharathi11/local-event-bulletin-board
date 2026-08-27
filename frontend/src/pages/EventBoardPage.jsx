@@ -1,3 +1,4 @@
+import eventCommunityHero from '../assets/event-community-hero.jpeg'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import EventCard from '../components/events/EventCard.jsx'

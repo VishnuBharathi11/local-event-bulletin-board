@@ -1,3 +1,4 @@
+import eventPlanningHero from '../assets/event-planning-hero.jpeg'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'

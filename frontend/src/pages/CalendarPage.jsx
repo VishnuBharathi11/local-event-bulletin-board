@@ -1,3 +1,4 @@
+import calendarHero from '../assets/calendar-hero.jpeg'
 import Calendar from '../components/calendar/Calendar.jsx'
 import { useCalendar } from '../hooks/useCalendar.js'
 import '../styles/calendar.css'

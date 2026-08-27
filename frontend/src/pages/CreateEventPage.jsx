@@ -1,3 +1,4 @@
+import createEventHero from '../assets/create-event-hero.jpeg'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import EventForm from '../components/events/EventForm.jsx'
