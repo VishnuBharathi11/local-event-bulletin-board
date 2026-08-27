@@ -4,6 +4,7 @@ import './index.css'
 import './styles/auth.css'
 import './styles/responsiveAccessibilityUi08.css'
 import './styles/visualConsistencyUi09.css'
+import './styles/uiPolishFinal.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
