@@ -47,13 +47,17 @@ export function LocationProvider({ children }) {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-        console.log("USER LATITUDE:", latitude)
-        console.log("USER LONGITUDE:", longitude)
+        console.log("--- PHASE 1 DEBUG: BROWSER LOCATION ---")
+        console.log("LATITUDE:", latitude)
+        console.log("LONGITUDE:", longitude)
         setCoords({ latitude, longitude })
 
         try {
+          // Note: getDistrictFromCoords in locationService.js calls the backend /district endpoint
           const data = await getDistrictFromCoords(latitude, longitude)
-          console.log("FULL API RESPONSE:", data)
+          console.log("--- PHASE 1 DEBUG: API RESPONSE ---")
+          console.log("FULL DATA:", data)
+
           const rawDistrict = data?.district
           const rawLocality = data?.locality
 
@@ -80,7 +84,7 @@ export function LocationProvider({ children }) {
             setStatus('error')
           }
         } catch (err) {
-          console.error('Failed to resolve district:', err)
+          console.error('Failed to resolve location:', err)
           localStorage.removeItem('detected_district')
           localStorage.removeItem('detected_locality')
           setDistrict(null)
@@ -90,7 +94,6 @@ export function LocationProvider({ children }) {
       },
       (error) => {
         console.warn('Geolocation denied or error:', error)
-        // Only clear if the user explicitly denied it
         if (error.code === error.PERMISSION_DENIED) {
            localStorage.removeItem('detected_district')
            localStorage.removeItem('detected_locality')
