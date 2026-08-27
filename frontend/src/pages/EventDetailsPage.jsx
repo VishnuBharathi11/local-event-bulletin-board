@@ -12,7 +12,7 @@ import '../styles/eventDetails.css'
 export default function EventDetailsPage() {
   const { eventId } = useParams()
   const { status, event, error, reload } = useEvent(eventId)
-  const { authenticated } = useAuth()
+  const { authenticated, currentUser } = useAuth()
   const rsvp = useEventRSVP(eventId, authenticated)
 
   if (status === 'loading') {
