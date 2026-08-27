@@ -506,8 +506,9 @@ export default function CreateEventRequestPage() {
 
   return (
     <section className="request-form">
-      <header className="request-form__intro page-hero-layout">
-        <div className="page-hero-layout__copy">
+      <div className="create-request-layout">
+        {/* LEFT COLUMN: VISUAL INTRO */}
+        <div className="create-request-layout__visual">
           <Link
             className="back-link"
             to={isEdit ? '/profile' : '/community-requests'}
@@ -515,31 +516,34 @@ export default function CreateEventRequestPage() {
           >
             ← {isEdit ? 'Back to Profile' : 'Community Requests'}
           </Link>
-          <p className="eyebrow">
-            {isEdit ? 'Edit Request' : 'Request Event'}
-          </p>
+          <div className="create-request-visual__content">
+            <p className="eyebrow">
+              {isEdit ? 'Edit Request' : 'Request Event'}
+            </p>
 
-          <h1>
-            {isEdit ? 'Update your community request' : 'Tell the community what should happen'}
-          </h1>
+            <h1>
+              {isEdit ? 'Update your community request' : 'Tell the community what should happen'}
+            </h1>
 
-          <p>
-            {isEdit
-              ? 'Refine the details of your event request. Changes will be reflected immediately.'
-              : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
-            }
-          </p>
+            <p className="create-request-description">
+              {isEdit
+                ? 'Refine the details of your event request. Changes will be reflected immediately.'
+                : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
+              }
+            </p>
+          </div>
+          <div className="create-request-visual__image">
+            <img src={eventPlanningHero} alt="" />
+          </div>
         </div>
-        <div className="page-hero-layout__image">
-          <img src={eventPlanningHero} alt="" />
-        </div>
-      </header>
 
-      <form
-        className="event-form create-event-form"
-        onSubmit={handleSubmit}
-        noValidate
-      >
+        {/* RIGHT COLUMN: FORM CARD */}
+        <div className="create-request-layout__form">
+          <form
+            className="event-form create-event-form"
+            onSubmit={handleSubmit}
+            noValidate
+          >
         <div className="form-grid">
           <div className="form-field">
             <label htmlFor="user-name">
@@ -902,6 +906,8 @@ export default function CreateEventRequestPage() {
             : (isEdit ? 'Update Request' : 'Submit Request')}
         </button>
       </form>
+        </div>
+      </div>
     </section>
   )
 }

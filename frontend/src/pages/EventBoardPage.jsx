@@ -1,4 +1,12 @@
 import eventCommunityHero from '../assets/event-community-hero.jpeg'
+import sportsHero from '../assets/category-sports.png'
+import musicHero from '../assets/category-music.png'
+import foodHero from '../assets/category-food.png'
+import workshopsHero from '../assets/category-workshops.png'
+import meetupsHero from '../assets/category-meetups.png'
+import studentHero from '../assets/category-student-events.png'
+import garageHero from '../assets/category-garage-sale.png'
+import communityHero from '../assets/category-community.png'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import EventCard from '../components/events/EventCard.jsx'
@@ -18,39 +26,48 @@ export default function EventBoardPage() {
   const CATEGORY_INFOS = {
     All: {
       title: 'Discover local events',
-      description: 'Explore and RSVP to activities happening in your community today.'
+      description: 'Explore and RSVP to activities happening in your community today.',
+      image: eventCommunityHero
     },
     Sports: {
       title: 'Sports & Activities',
-      description: 'Find sports, fitness sessions, and outdoor games happening near you.'
+      description: 'Find sports, fitness sessions, and outdoor games happening near you.',
+      image: sportsHero
     },
     Music: {
       title: 'Concerts & Gigs',
-      description: 'Discover local live music, performances, and student concerts.'
+      description: 'Discover local live music, performances, and student concerts.',
+      image: musicHero
     },
     Food: {
       title: 'Food & Culinary',
-      description: 'Explore food festivals, market stalls, and food pop-ups.'
+      description: 'Explore food festivals, market stalls, and food pop-ups.',
+      image: foodHero
     },
     Workshops: {
       title: 'Workshops & Seminars',
-      description: 'Learn new skills at classes, tutoring sessions, and seminars.'
+      description: 'Learn new skills at classes, tutoring sessions, and seminars.',
+      image: workshopsHero
     },
     Meetups: {
       title: 'Socials & Meetups',
-      description: 'Connect with people at neighborhood assemblies and volunteer projects.'
+      description: 'Connect with people at neighborhood meetings and volunteer projects.',
+      image: meetupsHero
     },
     'Student Events': {
       title: 'Student Events',
-      description: 'Check out study groups, campus meetups, and academic activities.'
+      description: 'Check out study groups, campus meetups, and academic activities.',
+      image: studentHero
     },
     'Garage Sale': {
       title: 'Garage & Flea Sales',
-      description: 'Find local yard sales, flea markets, and second-hand sales.'
+      description: 'Find local yard sales, flea markets, and second-hand sales.',
+      image: garageHero
     },
     Community: {
       title: 'Community Programs',
-      description: 'Participate in volunteer cleanups, local meetings, and civic workshops.'
+      description: 'Participate in volunteer cleanups, local meetings, and civic workshops.',
+      image: communityHero
     }
   };
 
@@ -69,9 +86,9 @@ export default function EventBoardPage() {
             <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
           </div>
         </div>
-        {isAll && (
+        {categoryInfo.image && (
           <div className="page-hero-layout__image">
-            <img src={eventCommunityHero} alt="" />
+            <img src={categoryInfo.image} alt="" />
           </div>
         )}
       </header>

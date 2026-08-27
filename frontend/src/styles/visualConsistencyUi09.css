@@ -2598,3 +2598,100 @@
   color: var(--color-cat-community-text) !important;
   border-color: var(--color-cat-community-border) !important;
 }
+
+/* --- Phase 6.5: Two-column Desktop Layouts for Forms --- */
+
+.create-event-layout,
+.create-request-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(600px, 1.2fr);
+  gap: 48px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+.create-event-layout__visual,
+.create-request-layout__visual {
+  position: sticky;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.create-event-visual__content,
+.create-request-visual__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-event-visual__content h1,
+.create-request-visual__content h1 {
+  font-size: 38px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.create-event-description,
+.create-request-description {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.create-event-visual__image,
+.create-request-visual__image {
+  width: 100%;
+  max-width: 440px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-muted);
+  border: 1px solid var(--border);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.create-event-visual__image img,
+.create-request-visual__image img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.create-event-layout__form,
+.create-request-layout__form {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 1024px) {
+  .create-event-layout,
+  .create-request-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .create-event-layout__visual,
+  .create-request-layout__visual {
+    position: static;
+  }
+
+  .create-event-visual__image,
+  .create-request-visual__image {
+    max-width: 320px;
+    margin-inline: auto;
+  }
+
+  .create-event-layout__form,
+  .create-request-layout__form {
+    padding: 24px;
+  }
+}
