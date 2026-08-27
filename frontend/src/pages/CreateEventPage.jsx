@@ -74,7 +74,7 @@ export default function CreateEventPage() {
       } else {
         await createEvent(event)
       }
-      navigate('/', { replace: true })
+      navigate('/profile', { replace: true })
     } catch (error) {
       if (error.status === 409 && error.conflicts?.length) {
         setPendingEvent(event)
@@ -95,7 +95,7 @@ export default function CreateEventPage() {
       await continueEventCreation(pendingEvent)
       setConflicts([])
       setPendingEvent(null)
-      navigate('/', { replace: true })
+      navigate('/profile', { replace: true })
     } catch (error) {
       setServerError(error.message)
     } finally {

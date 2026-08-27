@@ -6,14 +6,16 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   --surface: #ffffff;
-  --surface-muted: #eef2f7;
-  --border: #dce2ea;
-  --border-strong: #c4cedb;
+  --surface-muted: #F5F7FB;
+  --border: #E2E8F0;
+  --border-strong: #cbd5e1;
   --text: #172033;
-  --text-strong: #101828;
-  --text-muted: #657084;
-  --brand: #234b8a;
-  --brand-dark: #173766;
+  --text-strong: #172033;
+  --text-muted: #64748B;
+  --brand: #5E2EA8;
+  --brand-dark: #4A1E8C;
+  --brand-light: #F3ECFA;
+  --brand-secondary: #976ED4;
   --success: #18794e;
   --warning: #9a6700;
   --danger: #b42318;
@@ -38,7 +40,7 @@ button { border: 0; }
 
 .container { width: min(100% - 32px, var(--content-wide)); margin-inline: auto; }
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
-.app-header { position: sticky; top: 0; z-index: 10; background: rgb(255 255 255 / 96%); border-bottom: 1px solid var(--border); backdrop-filter: blur(8px); }
+.app-header { position: sticky; top: 0; z-index: 100; background: rgb(255 255 255 / 96%); border-bottom: 1px solid var(--border); backdrop-filter: blur(8px); }
 .app-header__inner { min-height: 72px; display: flex; align-items: center; gap: 20px; }
 .brand { display: inline-flex; align-items: center; gap: 11px; min-width: 220px; color: var(--text); text-decoration: none; }
 .brand__logo { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; }

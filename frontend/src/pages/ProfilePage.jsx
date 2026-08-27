@@ -319,7 +319,7 @@ export default function ProfilePage() {
             )}
 
             {!loadingEvents && !eventError && events.length > 0 && (
-              <div className="event-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
+              <div className={"event-grid event-grid--" + (events.length === 1 ? "1" : events.length === 2 ? "2" : events.length === 3 ? "3" : "many")}>
                 {events.map(event => (
                   <EventCard
                     key={event.eventId}

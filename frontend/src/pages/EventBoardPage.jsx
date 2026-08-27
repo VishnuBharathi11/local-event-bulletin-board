@@ -14,14 +14,14 @@ export default function EventBoardPage() {
 
   return (
     <section className="event-page">
-      <header className="event-page__header event-page__hero">
-        <div className="event-page__hero-copy">
-          <p className="eyebrow">EventHive · Local events</p>
-          <h1>Discover what&apos;s happening nearby.</h1>
-          <p className="event-page__description">Discover events happening in your local community.</p>
+      <header className="event-board-header">
+        <div className="event-board-header__copy">
+          <span className="event-board-header__badge">EventHive · Community Discovery</span>
+          <h1>Discover local events</h1>
+          <p className="event-board-header__sub">Explore and RSVP to activities happening in your community today.</p>
         </div>
-        <div className="event-page__hero-action">
-          <Link className="primary-button primary-button--header" to="/events/new">Create Event</Link>
+        <div className="event-board-header__actions">
+          <Link className="primary-button event-board-header__btn" to="/events/new">Create Event</Link>
         </div>
       </header>
 
@@ -88,7 +88,7 @@ export default function EventBoardPage() {
               )}
             </div>
           ) : (
-            <div className="event-grid" aria-live="polite">
+            <div className={`event-grid event-grid--${discovery.events.length === 1 ? '1' : discovery.events.length === 2 ? '2' : discovery.events.length === 3 ? '3' : 'many'}`} aria-live="polite">
               {discovery.events.map((event) => <EventCard key={event.eventId} event={event} onRsvpChanged={reload} />)}
             </div>
           )}

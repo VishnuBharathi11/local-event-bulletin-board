@@ -72,6 +72,7 @@ export default function Calendar({
               onClick={() => onDateSelected(cell.date)}
             >
               <span>{cell.day}</span>
+              {hasEvents && <span className="calendar__event-dot" aria-hidden="true" />}
             </button>
           )
         })}

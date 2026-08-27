@@ -12,9 +12,9 @@ export default function CommunityRequestsPage() {
     <section className="community-requests-page community-requests-page--ui06">
       <header className="community-requests-header community-requests-header--ui06">
         <div className="community-requests-header__copy">
-          <p className="eyebrow">Community demand</p>
-          <h1>Community Requests</h1>
-          <p>Help shape what happens in your community. Browse proposed local events and express interest in the ones you want to see happen.</p>
+          <span className="community-requests-header__badge">EventHive · Demand</span>
+          <h1>What the Community Wants</h1>
+          <p className="community-requests-header__sub">See what events people are asking for and help bring them to life.</p>
         </div>
         <Link className="primary-button community-requests-header__action" to="/community-requests/new">Request Event</Link>
       </header>

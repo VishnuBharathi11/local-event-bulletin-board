@@ -530,8 +530,9 @@ export default function CreateEventRequestPage() {
       </header>
 
       <form
-        className="event-form"
+        className="event-form create-event-form"
         onSubmit={handleSubmit}
+        noValidate
       >
         <div className="form-grid">
           <div className="form-field">
@@ -561,8 +562,13 @@ export default function CreateEventRequestPage() {
           </div>
         </div>
 
-        <div className="form-field">
-          <label htmlFor="request-title">
+        <div className="create-event-form__section">
+          <div className="create-event-form__section-header">
+            <h2 className="create-event-form__section-title">What should happen?</h2>
+            <p className="create-event-form__section-description">Describe the event idea you are proposing to the community.</p>
+          </div>
+          <div className="form-field">
+            <label htmlFor="request-title">
             Proposed title <span className="required-star">*</span>
           </label>
 
@@ -628,28 +634,40 @@ export default function CreateEventRequestPage() {
             )}
           </select>
         </div>
-
-        <div className="form-field">
-          <label htmlFor="request-min-participants">
-            Minimum required participants <span className="required-star">*</span>
-          </label>
-
-          <input
-            id="request-min-participants"
-            type="number"
-            min="1"
-            value={form.demandThreshold}
-            onChange={(event) =>
-              update(
-                'demandThreshold',
-                event.target.value
-              )
-            }
-            placeholder="Enter minimum number of people"
-          />
         </div>
 
-        <div className="form-grid form-grid--date-time">
+        <div className="create-event-form__section">
+          <div className="create-event-form__section-header">
+            <h2 className="create-event-form__section-title">How much interest is needed?</h2>
+            <p className="create-event-form__section-description">Set a target. Once met, organizers will review the proposal.</p>
+          </div>
+          <div className="form-field request-min-participants-field">
+            <label htmlFor="request-min-participants" className="community-target-label">
+              COMMUNITY SUPPORT TARGET
+            </label>
+            <span className="community-target-description">Minimum people needed to show interest</span>
+            <input
+              id="request-min-participants"
+              type="number"
+              min="1"
+              value={form.demandThreshold}
+              onChange={(event) =>
+                update(
+                  'demandThreshold',
+                  event.target.value
+                )
+              }
+              placeholder="Enter minimum number of people"
+            />
+          </div>
+        </div>
+
+        <div className="create-event-form__section">
+          <div className="create-event-form__section-header">
+            <h2 className="create-event-form__section-title">When?</h2>
+            <p className="create-event-form__section-description">Suggest a date and time for the proposed event.</p>
+          </div>
+          <div className="form-grid form-grid--date-time">
           <div className="form-field">
             <label htmlFor="request-date">
               Suggested date <span className="required-star">*</span>
@@ -720,8 +738,14 @@ export default function CreateEventRequestPage() {
             />
           </div>
         </div>
+        </div>
 
-        <div className="form-field">
+        <div className="create-event-form__section">
+          <div className="create-event-form__section-header">
+            <h2 className="create-event-form__section-title">Event Image</h2>
+            <p className="create-event-form__section-description">Provide a cover image to help attract community interest.</p>
+          </div>
+          <div className="form-field">
           <label htmlFor="request-image">
             Event Image <span className="required-star">*</span>
           </label>
@@ -767,8 +791,14 @@ export default function CreateEventRequestPage() {
             )}
           </div>
         </div>
+        </div>
 
-        <div className="form-field">
+        <div className="create-event-form__section">
+          <div className="create-event-form__section-header">
+            <h2 className="create-event-form__section-title">Where?</h2>
+            <p className="create-event-form__section-description">Suggest a neighborhood or venue location.</p>
+          </div>
+          <div className="form-field">
           <label htmlFor="request-location">
             Suggested venue <span className="required-star">*</span>
           </label>
@@ -823,6 +853,7 @@ export default function CreateEventRequestPage() {
               }
             />
           </div>
+        </div>
         </div>
 
         <div className="form-field" style={{ marginTop: '16px' }}>
