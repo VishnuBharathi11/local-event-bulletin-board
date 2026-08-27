@@ -1,5 +1,5 @@
 const express = require('express');
-const { getDistrictFromCoords } = require('../services/geocodingService');
+const { getDetailedLocationFromCoords } = require('../services/geocodingService');
 
 const router = express.Router();
 
@@ -11,10 +11,10 @@ router.get('/district', async (req, res) => {
   }
 
   try {
-    const district = await getDistrictFromCoords(lat, lng);
-    return res.json({ district });
+    const { district, locality } = await getDetailedLocationFromCoords(lat, lng);
+    return res.json({ district, locality });
   } catch (error) {
-    console.error('Failed to resolve district:', error);
+    console.error('Failed to resolve location details:', error);
     return res.status(500).json({ error: 'Failed to resolve location information.' });
   }
 });

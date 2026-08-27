@@ -1,13 +1,14 @@
 const https = require('https');
 
 /**
- * Resolves latitude and longitude to a district using Google Geocoding API.
+ * Resolves latitude and longitude to location details using Google Geocoding API.
+ * Returns an object with district and locality.
  */
-async function getDistrictFromCoords(lat, lng) {
+async function getDetailedLocationFromCoords(lat, lng) {
   const apiKey = process.env.GOOGLE_GEOCODING_API_KEY;
   if (!apiKey) {
     console.warn('GOOGLE_GEOCODING_API_KEY is not configured.');
-    return null;
+    return { district: null, locality: null };
   }
 
   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
@@ -21,13 +22,13 @@ async function getDistrictFromCoords(lat, lng) {
           const json = JSON.parse(data);
           if (json.status !== 'OK') {
             console.error('Geocoding API error:', json.status, json.error_message);
-            return resolve(null);
+            return resolve({ district: null, locality: null });
           }
 
           // Robust extraction for Indian administrative structures
           let adminAreaL2 = null; // District (e.g., Coimbatore)
-          let adminAreaL3 = null; // Sub-district/Taluk (e.g., Coimbatore South)
           let locality = null;    // City/Town (e.g., Coimbatore)
+          let subLocality = null; // Neighborhood/Area
 
           const isInvalidName = (name) => {
             if (!name) return true;
@@ -40,15 +41,17 @@ async function getDistrictFromCoords(lat, lng) {
           };
 
           // Google Geocoding returns results from most specific to least specific
-          // We iterate ALL results to find the most appropriate administrative district
+          console.log('FULL REVERSE-GEOCODING RESPONSE:', JSON.stringify(json, null, 2));
+
           for (const result of json.results) {
+            console.log('RESULT ADDRESS COMPONENTS:', result.address_components);
             for (const component of result.address_components) {
               const types = component.types;
               const name = component.long_name;
 
               if (isInvalidName(name)) continue;
 
-              // Priority 1: District (Standard for India)
+              // Priority 1: District (Standard for India - Administrative Area Level 2)
               if (!adminAreaL2 && types.includes('administrative_area_level_2')) {
                 adminAreaL2 = name;
               }
@@ -56,38 +59,28 @@ async function getDistrictFromCoords(lat, lng) {
               if (!locality && types.includes('locality')) {
                 locality = name;
               }
-              // Priority 3: Sub-district/Taluk
-              if (!adminAreaL3 && types.includes('administrative_area_level_3')) {
-                adminAreaL3 = name;
+              // Priority 3: Sub-locality (Neighborhood/Village)
+              if (!subLocality && (types.includes('sublocality_level_1') || types.includes('neighborhood'))) {
+                subLocality = name;
               }
             }
           }
 
-          console.log('DISTRICT RESOLUTION CANDIDATES:', { adminAreaL2, locality, adminAreaL3 });
+          // DISTRICT ≠ CITY ≠ VILLAGE ≠ LOCALITY
+          // We strictly resolve District from Level 2.
+          let resolvedDistrict = adminAreaL2;
 
-          // STRICT RESOLUTION:
-          // We MUST prefer the administrative district (L2) to ensure district-wide filtering.
-          // Using a locality (like Mayileripalayam) as a district filter is incorrect.
-          let resolvedDistrict = adminAreaL2 || locality || adminAreaL3;
+          // Locality can be the City/Town or a Sub-locality if locality is missing.
+          let resolvedLocality = locality || subLocality;
 
           if (resolvedDistrict) {
             resolvedDistrict = resolvedDistrict.replace(/\s+(District|Taluk|Region|Division)$/i, '').trim();
           }
-
-          // FINAL FALLBACK: If everything failed, take the first available valid locality-like component from the first result
-          if (!resolvedDistrict && json.results[0]) {
-             const fallback = json.results[0].address_components.find(c =>
-               !isInvalidName(c.long_name) && (c.types.includes('locality') || c.types.includes('administrative_area_level_2'))
-             );
-             if (fallback) resolvedDistrict = fallback.long_name;
+          if (resolvedLocality) {
+            resolvedLocality = resolvedLocality.replace(/\s+(City|Town|Village)$/i, '').trim();
           }
 
-          if (resolvedDistrict && isInvalidName(resolvedDistrict)) {
-            resolvedDistrict = null;
-          }
-
-          console.log('FINAL RESOLVED DISTRICT:', resolvedDistrict);
-          resolve(resolvedDistrict);
+          resolve({ district: resolvedDistrict, locality: resolvedLocality });
         } catch (e) {
           reject(e);
         }
@@ -98,4 +91,12 @@ async function getDistrictFromCoords(lat, lng) {
   });
 }
 
-module.exports = { getDistrictFromCoords };
+/**
+ * Legacy wrapper for single district string resolution.
+ */
+async function getDistrictFromCoords(lat, lng) {
+  const { district } = await getDetailedLocationFromCoords(lat, lng);
+  return district;
+}
+
+module.exports = { getDistrictFromCoords, getDetailedLocationFromCoords };

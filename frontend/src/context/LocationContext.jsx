@@ -25,6 +25,16 @@ export function LocationProvider({ children }) {
     }
     return saved
   })
+
+  const [locality, setLocality] = useState(() => {
+    const saved = localStorage.getItem('detected_locality')
+    if (isInvalidName(saved)) {
+      if (saved) localStorage.removeItem('detected_locality');
+      return null;
+    }
+    return saved
+  })
+
   const [status, setStatus] = useState('idle') // idle, detecting, resolved, denied, error
 
   const detectLocation = useCallback(async () => {
@@ -37,30 +47,44 @@ export function LocationProvider({ children }) {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-        console.log("USER COORDINATES", { latitude, longitude })
+        console.log("USER LATITUDE:", latitude)
+        console.log("USER LONGITUDE:", longitude)
         setCoords({ latitude, longitude })
 
         try {
           const data = await getDistrictFromCoords(latitude, longitude)
-          console.log("GEOCODING RESPONSE", data)
+          console.log("FULL API RESPONSE:", data)
           const rawDistrict = data?.district
+          const rawLocality = data?.locality
 
           if (!isInvalidName(rawDistrict)) {
             const resolvedDistrict = rawDistrict.trim()
-            console.log("RESOLVED LOCATION", resolvedDistrict)
+            console.log("RESOLVED DISTRICT:", resolvedDistrict)
             setDistrict(resolvedDistrict)
             localStorage.setItem('detected_district', resolvedDistrict)
+
+            if (!isInvalidName(rawLocality)) {
+              const resolvedLocality = rawLocality.trim()
+              console.log("RESOLVED LOCALITY:", resolvedLocality)
+              setLocality(resolvedLocality)
+              localStorage.setItem('detected_locality', resolvedLocality)
+            }
+
             setStatus('resolved')
           } else {
             console.warn('Resolved district was empty or invalid:', rawDistrict)
             localStorage.removeItem('detected_district')
+            localStorage.removeItem('detected_locality')
             setDistrict(null)
+            setLocality(null)
             setStatus('error')
           }
         } catch (err) {
           console.error('Failed to resolve district:', err)
           localStorage.removeItem('detected_district')
+          localStorage.removeItem('detected_locality')
           setDistrict(null)
+          setLocality(null)
           setStatus('error')
         }
       },
@@ -69,7 +93,9 @@ export function LocationProvider({ children }) {
         // Only clear if the user explicitly denied it
         if (error.code === error.PERMISSION_DENIED) {
            localStorage.removeItem('detected_district')
+           localStorage.removeItem('detected_locality')
            setDistrict(null)
+           setLocality(null)
         }
         setStatus(error.code === error.PERMISSION_DENIED ? 'denied' : 'error')
       },
@@ -86,7 +112,7 @@ export function LocationProvider({ children }) {
   }, [district, status, detectLocation])
 
   return (
-    <LocationContext.Provider value={{ coords, district, status, detectLocation }}>
+    <LocationContext.Provider value={{ coords, district, locality, status, detectLocation }}>
       {children}
     </LocationContext.Provider>
   )
