@@ -62,7 +62,7 @@ export default function EventBoardPage() {
     <section className="event-page">
       <header className={`event-board-header page-hero-layout event-board-header--${categorySlug}`}>
         <div className="page-hero-layout__copy">
-          <span className="event-board-header__badge">EventHive · ${discovery.discovery.selectedCategory}</span>
+          <span className="event-board-header__badge">EventHive · {discovery.discovery.selectedCategory}</span>
           <h1>{categoryInfo.title}</h1>
           <p className="event-board-header__sub">{categoryInfo.description}</p>
           <div className="event-board-header__actions" style={{ marginTop: '16px' }}>

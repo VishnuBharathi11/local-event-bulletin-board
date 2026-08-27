@@ -21,11 +21,17 @@ export function useEventDiscovery(rawEvents = []) {
   const activeEvents = useMemo(() => {
     const active = getActiveEvents(rawEvents, now)
     if (district) {
+      const normalizedDetected = district.toLowerCase().trim()
       return active.filter(event => {
-        if (event.district) return event.district === district
+        if (event.district) {
+          const normalizedEventDistrict = event.district.toLowerCase().trim()
+          return normalizedEventDistrict === normalizedDetected ||
+                 normalizedEventDistrict.includes(normalizedDetected) ||
+                 normalizedDetected.includes(normalizedEventDistrict)
+        }
         // Fallback for legacy data
-        const searchSpace = `${event.city} ${event.neighborhood}`.toLowerCase()
-        return searchSpace.includes(district.toLowerCase())
+        const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+        return searchSpace.includes(normalizedDetected)
       })
     }
     return active

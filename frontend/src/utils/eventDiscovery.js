@@ -58,13 +58,17 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
       // 1. District Filtering (Automatic)
       // If a district is detected, only show events from that district.
       if (detectedDistrict) {
+        const normalizedDetected = detectedDistrict.toLowerCase().trim();
         if (event.district) {
-          // Strict match for enriched data
-          if (event.district !== detectedDistrict) return false
+          // Robust match for enriched data
+          const normalizedEventDistrict = event.district.toLowerCase().trim();
+          if (normalizedEventDistrict !== normalizedDetected && !normalizedEventDistrict.includes(normalizedDetected) && !normalizedDetected.includes(normalizedEventDistrict)) {
+             return false;
+          }
         } else {
           // Fallback match for legacy data (check city/neighborhood)
-          const searchSpace = `${event.city} ${event.neighborhood}`.toLowerCase()
-          if (!searchSpace.includes(detectedDistrict.toLowerCase())) return false
+          const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
+          if (!searchSpace.includes(normalizedDetected)) return false
         }
       }
 

@@ -5,7 +5,12 @@ const LocationContext = createContext()
 
 export function LocationProvider({ children }) {
   const [coords, setCoords] = useState(null)
-  const [district, setDistrict] = useState(() => localStorage.getItem('detected_district'))
+  const [district, setDistrict] = useState(() => {
+    const saved = localStorage.getItem('detected_district')
+    // Guard against literal "null" or "undefined" strings from localStorage
+    if (saved === 'null' || saved === 'undefined' || !saved) return null
+    return saved
+  })
   const [status, setStatus] = useState('idle') // idle, detecting, resolved, denied, error
 
   const detectLocation = useCallback(async () => {
@@ -18,26 +23,51 @@ export function LocationProvider({ children }) {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
+        console.log("USER COORDINATES", { latitude, longitude })
         setCoords({ latitude, longitude })
 
         try {
           const data = await getDistrictFromCoords(latitude, longitude)
-          if (data.district && data.district.trim()) {
-            const resolvedDistrict = data.district.trim()
+          console.log("GEOCODING RESPONSE", data)
+          const rawDistrict = data?.district
+
+          const isInvalid = (name) => {
+            if (!name || typeof name !== 'string') return true;
+            const normalized = name.toLowerCase().trim();
+            return normalized.length === 0 ||
+                   normalized.includes('[no name]') ||
+                   normalized.includes('unnamed') ||
+                   normalized.includes('unknown') ||
+                   normalized === 'null' ||
+                   normalized === 'undefined';
+          };
+
+          if (!isInvalid(rawDistrict)) {
+            const resolvedDistrict = rawDistrict.trim()
+            console.log("RESOLVED LOCATION", resolvedDistrict)
             setDistrict(resolvedDistrict)
             localStorage.setItem('detected_district', resolvedDistrict)
             setStatus('resolved')
           } else {
-            console.warn('Resolved district was empty or invalid:', data.district)
+            console.warn('Resolved district was empty or invalid:', rawDistrict)
+            localStorage.removeItem('detected_district')
+            setDistrict(null)
             setStatus('error')
           }
         } catch (err) {
           console.error('Failed to resolve district:', err)
+          localStorage.removeItem('detected_district')
+          setDistrict(null)
           setStatus('error')
         }
       },
       (error) => {
         console.warn('Geolocation denied or error:', error)
+        // Only clear if the user explicitly denied it
+        if (error.code === error.PERMISSION_DENIED) {
+           localStorage.removeItem('detected_district')
+           setDistrict(null)
+        }
         setStatus(error.code === error.PERMISSION_DENIED ? 'denied' : 'error')
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 3600000 }

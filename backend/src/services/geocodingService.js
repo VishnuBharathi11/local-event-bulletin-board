@@ -24,32 +24,68 @@ async function getDistrictFromCoords(lat, lng) {
             return resolve(null);
           }
 
-          // Robust extraction for Indian districts and metropolitan areas
-          let district = null;
-          let locality = null;
-          let adminAreaL2 = null;
+          // Robust extraction for Indian administrative structures
+          let adminAreaL2 = null; // District (e.g., Coimbatore)
+          let adminAreaL3 = null; // Sub-district/Taluk (e.g., Coimbatore South)
+          let locality = null;    // City/Town (e.g., Coimbatore)
+          let subLocality = null; // Neighborhood/Area
 
+          const isInvalidName = (name) => {
+            if (!name) return true;
+            const normalized = name.toLowerCase().trim();
+            return normalized.includes('[no name]') ||
+                   normalized.includes('unnamed') ||
+                   normalized.includes('unknown') ||
+                   normalized === 'undefined' ||
+                   normalized === 'null';
+          };
+
+          // Google Geocoding returns results from most specific to least specific
           for (const result of json.results) {
             for (const component of result.address_components) {
-              if (component.types.includes('administrative_area_level_2')) {
-                adminAreaL2 = component.long_name;
+              const types = component.types;
+              const name = component.long_name;
+
+              if (isInvalidName(name)) continue;
+
+              if (!adminAreaL2 && types.includes('administrative_area_level_2')) {
+                adminAreaL2 = name;
               }
-              if (component.types.includes('locality')) {
-                locality = component.long_name;
+              if (!adminAreaL3 && types.includes('administrative_area_level_3')) {
+                adminAreaL3 = name;
+              }
+              if (!locality && types.includes('locality')) {
+                locality = name;
+              }
+              if (!subLocality && types.includes('sublocality_level_1')) {
+                subLocality = name;
               }
             }
-            if (adminAreaL2) break;
           }
 
-          // Priority: District (L2) -> Locality
-          district = adminAreaL2 || locality;
+          // Priority for "District":
+          // 1. administrative_area_level_2 is the standard for "District" in India.
+          // 2. locality is a fallback for metropolitan cities where L2 might be missing or less useful.
+          // 3. administrative_area_level_3 as a middle ground.
+          let resolvedDistrict = adminAreaL2 || locality || adminAreaL3;
 
-          // Clean up "District" suffix if present to match typical event data
-          if (district) {
-            district = district.replace(/\s+District$/i, '');
+          if (resolvedDistrict) {
+            resolvedDistrict = resolvedDistrict.replace(/\s+(District|Taluk|Region|Division)$/i, '').trim();
           }
 
-          resolve(district);
+          // FINAL FALLBACK: If everything failed, take the first available valid locality-like component
+          if (!resolvedDistrict && json.results[0]) {
+             const fallback = json.results[0].address_components.find(c =>
+               !isInvalidName(c.long_name) && (c.types.includes('locality') || c.types.includes('administrative_area_level_2'))
+             );
+             if (fallback) resolvedDistrict = fallback.long_name;
+          }
+
+          if (resolvedDistrict && isInvalidName(resolvedDistrict)) {
+            resolvedDistrict = null;
+          }
+
+          resolve(resolvedDistrict);
         } catch (e) {
           reject(e);
         }
