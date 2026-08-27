@@ -41,6 +41,8 @@ export function getActiveEvents(events = [], now = new Date()) {
   return events.filter((event) => !isPastEvent(event, now))
 }
 
+export const isPincode = (val) => /^\d{5,6}$/.test(String(val).trim());
+
 export function getCityOptions(events = [], detectedDistrict = null) {
   if (!detectedDistrict) return ['All'];
 
@@ -54,22 +56,23 @@ export function getCityOptions(events = [], detectedDistrict = null) {
              normalizedEventDistrict.includes(normalizedDetected) ||
              normalizedDetected.includes(normalizedEventDistrict);
     }
-    // Fallback for events missing structured district field
     const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase();
     return searchSpace.includes(normalizedDetected);
   });
 
   const locations = new Set();
 
-  /**
-   * Heuristic to exclude venue names, buildings, landmarks, and street addresses
-   * which are NOT legitimate city/town/village geographic names.
-   */
   const isLegitimateLocality = (name) => {
     if (!name || typeof name !== 'string') return false;
     const lower = name.toLowerCase().trim();
 
-    // Exclude landmarks/venues based on common keywords
+    // 1. Exclude if it's the detected district name itself
+    if (lower === normalizedDetected) return false;
+
+    // 2. Exclude Pincodes (must never be visible in UI)
+    if (isPincode(lower)) return false;
+
+    // 3. Exclude landmarks/venues based on common keywords
     const invalidKeywords = [
       'near ', 'hospital', 'tower', 'mall', 'station', 'building', 'hotel',
       'college', 'university', 'ground', 'complex', 'plaza', 'house',
@@ -81,27 +84,24 @@ export function getCityOptions(events = [], detectedDistrict = null) {
        return false;
     }
 
-    // Exclude if it looks like a specific address (starts with number or contains numbers)
-    if (/^\d/.test(lower) || /\s\d/.test(lower)) return false;
+    // 4. Exclude if it looks like a specific address (starts with number)
+    if (/^\d/.test(lower)) return false;
 
-    // Names that are too long are likely addresses, not localities
+    // 5. Length check
     if (name.length > 30) return false;
 
     return true;
   };
 
   districtEvents.forEach(event => {
-    // Collect from city field
     if (event.city && isLegitimateLocality(event.city)) {
       locations.add(event.city.trim());
     }
-    // Collect from neighborhood field (often maps to village/sub-locality)
     if (event.neighborhood && isLegitimateLocality(event.neighborhood)) {
       locations.add(event.neighborhood.trim());
     }
   });
 
-  // Sort alphabetically
   const sortedLocations = Array.from(locations).sort((a, b) => a.localeCompare(b));
 
   return ['All', ...sortedLocations];
@@ -110,26 +110,45 @@ export function getCityOptions(events = [], detectedDistrict = null) {
 export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date(), detectedDistrict = null) {
   const activeEvents = getActiveEvents(events, now)
   const query = discovery.searchQuery.trim().toLowerCase()
+  const selectedCity = discovery.selectedCity
+
+  // Internal accurate matching logic:
+  // Identify all values (names and pincodes) that map to the selected city name.
+  let allowedInternalValues = new Set();
+  if (selectedCity !== 'All') {
+    allowedInternalValues.add(selectedCity.toLowerCase().trim());
+
+    // Scan all events to find associated pincodes/alternate names for internal matching
+    activeEvents.forEach(e => {
+      const city = String(e.city || '').toLowerCase().trim();
+      const neighborhood = String(e.neighborhood || '').toLowerCase().trim();
+
+      if (city === selectedCity.toLowerCase().trim()) {
+        if (neighborhood) allowedInternalValues.add(neighborhood);
+      }
+      if (neighborhood === selectedCity.toLowerCase().trim()) {
+        if (city) allowedInternalValues.add(city);
+      }
+    });
+  }
 
   return activeEvents
     .filter((event) => {
       // 1. District Filtering (Automatic)
-      // If a district is detected, only show events from that district.
       if (detectedDistrict) {
         const normalizedDetected = detectedDistrict.toLowerCase().trim();
         if (event.district) {
-          // Robust match for enriched data
           const normalizedEventDistrict = event.district.toLowerCase().trim();
           if (normalizedEventDistrict !== normalizedDetected && !normalizedEventDistrict.includes(normalizedDetected) && !normalizedDetected.includes(normalizedEventDistrict)) {
              return false;
           }
         } else {
-          // Fallback match for legacy data (check city/neighborhood)
           const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
           if (!searchSpace.includes(normalizedDetected)) return false
         }
       }
 
+      // 2. Search query
       const matchesSearch = query === '' || [
         event.title,
         event.description,
@@ -138,10 +157,18 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
         event.location,
       ].some((value) => String(value ?? '').toLowerCase().includes(query))
 
+      // 3. Category
       const matchesCategory = discovery.selectedCategory === 'All' || event.category === discovery.selectedCategory
-      const matchesCity = discovery.selectedCity === 'All' ||
-                          event.city === discovery.selectedCity ||
-                          event.neighborhood === discovery.selectedCity
+
+      // 4. City/Locality (Using internal accurate values if selected)
+      let matchesCity = selectedCity === 'All';
+      if (!matchesCity) {
+        const eventCity = String(event.city || '').toLowerCase().trim();
+        const eventNeighborhood = String(event.neighborhood || '').toLowerCase().trim();
+        matchesCity = allowedInternalValues.has(eventCity) || allowedInternalValues.has(eventNeighborhood);
+      }
+
+      // 5. Date
       const matchesDate = matchesDateFilter(event.startTime, discovery.selectedDateFilter, now)
 
       return matchesSearch && matchesCategory && matchesCity && matchesDate

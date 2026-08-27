@@ -6,6 +6,7 @@ import { useEvent } from '../hooks/useEvent.js'
 import { useEventRSVP } from '../hooks/useEventRSVP.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
+import { isPincode } from '../utils/eventDiscovery.js'
 import EventMap from '../components/map/EventMap.jsx'
 import '../styles/eventDetails.css'
 
@@ -98,7 +99,7 @@ export default function EventDetailsPage() {
               <div>
                 <span className="event-detail-fact__label">Location</span>
                 <strong>{event.location}</strong>
-                <span>{event.neighborhood}, {event.city}</span>
+                <span>{[event.neighborhood, event.city].filter(Boolean).filter(v => !isPincode(v)).join(', ')}</span>
               </div>
             </div>
           </div>

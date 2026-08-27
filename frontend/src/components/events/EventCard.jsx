@@ -5,6 +5,7 @@ import EventStatusBadge from './EventStatusBadge.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useEventRSVP } from '../../hooks/useEventRSVP.js'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
+import { isPincode } from '../../utils/eventDiscovery.js'
 
 export default function EventCard({
   event,
@@ -20,7 +21,13 @@ export default function EventCard({
   const [imageError, setImageError] = useState(false)
 
   const rsvpLabel = event.rsvpCount === 1 ? '1 person going' : `${event.rsvpCount} people going`
-  const locationLabel = [event.location, event.neighborhood, event.city].filter(Boolean).join(', ')
+
+  // Clean locations for UI display - hide pincodes
+  const cleanLocalityList = [event.neighborhood, event.city]
+    .filter(Boolean)
+    .filter(val => !isPincode(val));
+
+  const locationLabel = [event.location, ...cleanLocalityList].join(', ')
 
   const isOwner = currentUser?.userId === event.organizerId
   const canModify = isOwner && (event.startTime - Date.now() > 2 * 60 * 60 * 1000)
@@ -72,7 +79,7 @@ export default function EventCard({
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--brand)', marginTop: '2px' }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
         <span className="event-card__location-text">
           <strong>{event.location}</strong>
-          <small>{[event.neighborhood, event.city].filter(Boolean).join(' · ')}</small>
+          <small>{cleanLocalityList.join(' · ')}</small>
         </span>
       </div>
 

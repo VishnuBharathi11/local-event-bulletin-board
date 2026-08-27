@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, OverlayView, MarkerClusterer } from '@react-google-maps/api';
 import { useNavigate } from 'react-router-dom';
+import { isPincode } from '../../utils/eventDiscovery.js';
 import '../../styles/eventMap.css';
 
 const mapContainerStyle = {
@@ -245,7 +246,11 @@ export default function EventMap({
                   </span>
                 </div>
                 <p style={{ margin: '4px 0', fontSize: '13px' }}>📅 {new Date(selectedEvent.startTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                <p style={{ margin: '4px 0', fontSize: '13px' }}>📍 {selectedEvent.location}, {selectedEvent.city}</p>
+                <p style={{ margin: '4px 0', fontSize: '13px' }}>
+                  📍 {selectedEvent.location}
+                  {selectedEvent.city && !isPincode(selectedEvent.city) && `, ${selectedEvent.city}`}
+                  {selectedEvent.neighborhood && !isPincode(selectedEvent.neighborhood) && (selectedEvent.city === selectedEvent.neighborhood ? '' : `, ${selectedEvent.neighborhood}`)}
+                </p>
                 {selectedEvent.rsvpCount > 0 && (
                   <p style={{ margin: '4px 0', fontSize: '12px', color: 'var(--text-muted)' }}>👥 {selectedEvent.rsvpCount} going</p>
                 )}

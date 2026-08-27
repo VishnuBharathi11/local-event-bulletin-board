@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
+import { isPincode } from '../../utils/eventDiscovery.js'
 import {
   getDemandCount,
   getDemandMessage,
@@ -76,7 +77,7 @@ export default function EventRequestCard({
         </div>
         <div className="request-card__info-item">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-          <span>{request.location || 'Venue to be confirmed'} · {[request.neighborhood, request.city].filter(Boolean).join(', ')}</span>
+          <span>{request.location || 'Venue to be confirmed'} · {[request.neighborhood, request.city].filter(Boolean).filter(v => !isPincode(v)).join(', ')}</span>
         </div>
       </div>
 
