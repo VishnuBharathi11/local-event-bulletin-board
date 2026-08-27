@@ -23,6 +23,7 @@ function normalizeEventRequest(input = {}, requestId = input.requestId || '') {
     city: input.city ?? '',
     neighborhood: input.neighborhood ?? '',
     location: input.location ?? '',
+    district: input.district ?? '',
     startTime: Number(input.startTime ?? 0),
     endTime: Number(input.endTime ?? 0),
     demandCount: Number(input.demandCount ?? 0),
@@ -36,7 +37,7 @@ function normalizeEventRequest(input = {}, requestId = input.requestId || '') {
     longitude: input.longitude !== undefined && input.longitude !== null ? Number(input.longitude) : null,
   }
 
-  for (const field of ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'imageUrl', 'eventId']) {
+  for (const field of ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'district', 'organizerId', 'imageUrl', 'eventId']) {
     if (typeof request[field] !== 'string') throw new TypeError(`${field} must be a string`)
   }
 

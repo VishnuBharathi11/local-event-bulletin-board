@@ -12,7 +12,8 @@ export default function EventCard({
   isManagement = false,
   onEdit,
   onDelete,
-  isDeleting = false
+  isDeleting = false,
+  style = {}
 }) {
   const { authenticated, currentUser } = useAuth()
   const rsvp = useEventRSVP(event.eventId, authenticated)
@@ -35,7 +36,7 @@ export default function EventCard({
   }
 
   return (
-    <article className="event-card">
+    <article className="event-card" style={style}>
       {event.imageUrl && !imageError ? (
         <div className="event-card__image-wrap">
           <img

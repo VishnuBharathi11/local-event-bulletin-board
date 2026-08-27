@@ -11,7 +11,7 @@ const EVENT_CATEGORIES = Object.freeze([
 ])
 
 const DEFAULT_EVENT = Object.freeze({
-  eventId: '', title: '', description: '', category: '', city: '', neighborhood: '', location: '',
+  eventId: '', title: '', description: '', category: '', city: '', neighborhood: '', location: '', district: '',
   startTime: 0, endTime: 0, status: 'DRAFT', rsvpCount: 0, organizerId: '', createdAt: 0, expireAt: 0, conflictStatus: 'NONE',
   imageUrl: '',
   latitude: null,
@@ -26,7 +26,7 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
   const event = {
     eventId: String(eventId || ''), title: input.title ?? DEFAULT_EVENT.title, description: input.description ?? DEFAULT_EVENT.description,
     category: input.category ?? DEFAULT_EVENT.category, city: input.city ?? DEFAULT_EVENT.city, neighborhood: input.neighborhood ?? DEFAULT_EVENT.neighborhood,
-    location: input.location ?? DEFAULT_EVENT.location, startTime: input.startTime ?? DEFAULT_EVENT.startTime, endTime: input.endTime ?? DEFAULT_EVENT.endTime,
+    location: input.location ?? DEFAULT_EVENT.location, district: input.district ?? DEFAULT_EVENT.district, startTime: input.startTime ?? DEFAULT_EVENT.startTime, endTime: input.endTime ?? DEFAULT_EVENT.endTime,
     status: input.status ?? DEFAULT_EVENT.status, rsvpCount: input.rsvpCount ?? DEFAULT_EVENT.rsvpCount, organizerId: input.organizerId ?? DEFAULT_EVENT.organizerId,
     createdAt: input.createdAt ?? DEFAULT_EVENT.createdAt, expireAt: input.expireAt ?? DEFAULT_EVENT.expireAt, conflictStatus: input.conflictStatus ?? DEFAULT_EVENT.conflictStatus,
     imageUrl: input.imageUrl ?? DEFAULT_EVENT.imageUrl,
@@ -34,7 +34,7 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
     longitude: input.longitude !== undefined && input.longitude !== null ? Number(input.longitude) : null,
   }
 
-  const stringFields = ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'organizerId', 'conflictStatus', 'imageUrl']
+  const stringFields = ['title', 'description', 'category', 'city', 'neighborhood', 'location', 'district', 'organizerId', 'conflictStatus', 'imageUrl']
   for (const field of stringFields) if (typeof event[field] !== 'string') throw new TypeError(`${field} must be a string`)
   for (const field of ['startTime', 'endTime', 'createdAt', 'expireAt']) if (!isSafeInteger(event[field])) throw new TypeError(`${field} must be a safe integer`)
   if (!Number.isInteger(event.rsvpCount)) throw new TypeError('rsvpCount must be an integer')

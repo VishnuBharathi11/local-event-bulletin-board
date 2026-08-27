@@ -5,6 +5,7 @@ const authRoutes = require('./routes/authRoutes')
 const eventRoutes = require('./routes/eventRoutes')
 const rsvpRoutes = require('./routes/rsvpRoutes')
 const eventRequestRoutes = require('./routes/eventRequestRoutes')
+const locationRoutes = require('./routes/locationRoutes')
 
 function createApp() {
   const app = express()
@@ -25,6 +26,7 @@ function createApp() {
   app.use('/api', eventRoutes)
   app.use('/api', rsvpRoutes)
   app.use('/api', eventRequestRoutes)
+  app.use('/api/location', locationRoutes)
 
   return app
 }

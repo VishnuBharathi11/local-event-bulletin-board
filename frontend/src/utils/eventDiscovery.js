@@ -49,12 +49,20 @@ export function getCityOptions(events = []) {
   })
 }
 
-export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date()) {
+export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date(), detectedDistrict = null) {
   const activeEvents = getActiveEvents(events, now)
   const query = discovery.searchQuery.trim().toLowerCase()
 
   return activeEvents
     .filter((event) => {
+      // 1. District Filtering (Automatic)
+      // If a district is detected, only show events from that district by default.
+      // If selectedCity is 'All', we filter by district.
+      // If a specific city is selected, it must be within that district (city filter is updated below).
+      if (detectedDistrict && event.district && event.district !== detectedDistrict) {
+        return false
+      }
+
       const matchesSearch = query === '' || [
         event.title,
         event.description,

@@ -3,6 +3,7 @@ const { validateEventRequestForCreation } = require('../models/eventRequestModel
 const { normalizeEvent } = require('../models/eventModel')
 const conflictService = require('./conflictService')
 const imageService = require('./imageService')
+const { getDistrictFromCoords } = require('./geocodingService')
 
 async function getEventRequests(currentUserId) {
   const requests = await eventRequestRepository.getEventRequests()
@@ -31,6 +32,11 @@ async function createEventRequest(input, userId) {
     }
   }
   const request = validateEventRequestForCreation(input, userId)
+
+  if (request.latitude && request.longitude && !request.district) {
+    request.district = await getDistrictFromCoords(request.latitude, request.longitude) || ''
+  }
+
   return eventRequestRepository.createEventRequest(request)
 }
 
@@ -51,9 +57,14 @@ async function updateEventRequest(requestId, input, userId) {
     city: input.city || existing.city,
     neighborhood: input.neighborhood || existing.neighborhood,
     location: input.location || existing.location,
+    district: input.district || existing.district,
     startTime: Number(input.startTime) || existing.startTime,
     endTime: Number(input.endTime) || existing.endTime,
     demandThreshold: Number(input.demandThreshold) || existing.demandThreshold,
+  }
+
+  if (input.latitude && input.longitude && (input.latitude !== existing.latitude || input.longitude !== existing.longitude || !existing.district)) {
+    updates.district = await getDistrictFromCoords(input.latitude, input.longitude) || ''
   }
 
   if (input.imageUrl && input.imageUrl !== existing.imageUrl) {

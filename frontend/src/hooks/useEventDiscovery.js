@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useLocation } from '../context/LocationContext.jsx'
 import {
   createDiscoveryState,
   DEFAULT_DISCOVERY_STATE,
@@ -12,15 +13,23 @@ import {
 
 export function useEventDiscovery(rawEvents = []) {
   const { currentUser } = useAuth()
+  const { district, status: locationStatus, detectLocation } = useLocation()
   const [discovery, setDiscovery] = useState(() => createDiscoveryState())
   const now = new Date()
 
 
-  const activeEvents = useMemo(() => getActiveEvents(rawEvents, now), [rawEvents])
+  const activeEvents = useMemo(() => {
+    const active = getActiveEvents(rawEvents, now)
+    if (district) {
+      return active.filter(event => !event.district || event.district === district)
+    }
+    return active
+  }, [rawEvents, now, district])
+
   const cityOptions = useMemo(() => getCityOptions(activeEvents), [activeEvents])
   const events = useMemo(
-    () => filterAndSortEvents(rawEvents, discovery, now),
-    [rawEvents, discovery],
+    () => filterAndSortEvents(rawEvents, discovery, now, district),
+    [rawEvents, discovery, now, district],
   )
 
   const updateSearchQuery = useCallback((searchQuery) => {

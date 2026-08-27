@@ -2,6 +2,7 @@ const eventRepository = require('../repositories/eventRepository')
 const { normalizeEvent, validateEventForCreation } = require('../models/eventModel')
 const conflictService = require('./conflictService')
 const imageService = require('./imageService')
+const { getDistrictFromCoords } = require('./geocodingService')
 
 async function getEvents(currentUserId) {
   const events = await eventRepository.getActiveEvents()
@@ -38,6 +39,11 @@ async function handleImageUpload(input) {
 async function createEvent(input, userId) {
   await handleImageUpload(input)
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
+
+  if (event.latitude && event.longitude && !event.district) {
+    event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
+  }
+
   await conflictService.checkAndThrow(event)
   return eventRepository.saveEvent(event)
 }
@@ -45,6 +51,11 @@ async function createEvent(input, userId) {
 async function createEventAnyway(input, userId) {
   await handleImageUpload(input)
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
+
+  if (event.latitude && event.longitude && !event.district) {
+    event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
+  }
+
   const conflicts = await conflictService.checkConflicts(event)
   const createdEvent = await eventRepository.saveEvent(event)
   if (conflicts.length > 0) await conflictService.saveConflicts(conflicts, createdEvent.eventId)
@@ -84,6 +95,11 @@ async function saveEvent(input, userId) {
 
   await handleImageUpload(input)
   const event = normalizeEvent({ ...input, organizerId: existing.organizerId })
+
+  if (event.latitude && event.longitude && (event.latitude !== existing.latitude || event.longitude !== existing.longitude || !event.district)) {
+    event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
+  }
+
   return eventRepository.saveEvent(event)
 }
 

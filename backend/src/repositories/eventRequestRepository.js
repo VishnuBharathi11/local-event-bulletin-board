@@ -127,6 +127,7 @@ async function confirmEventRequest(requestId) {
       city: request.city,
       neighborhood: request.neighborhood,
       location: request.location,
+      district: request.district,
       startTime: request.startTime,
       endTime: request.endTime,
       status: 'PUBLISHED',

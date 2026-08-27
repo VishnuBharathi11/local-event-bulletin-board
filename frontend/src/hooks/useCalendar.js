@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getEvents } from '../services/eventService.js'
+import { useLocation } from '../context/LocationContext.jsx'
 import {
   addMonths,
   getCalendarEvents,
@@ -10,6 +11,7 @@ import {
 } from '../utils/calendar.js'
 
 export function useCalendar() {
+  const { district } = useLocation()
   const [state, setState] = useState({ status: 'loading', events: [], error: null })
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth())
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
@@ -34,8 +36,13 @@ export function useCalendar() {
   }, [])
 
   const activeEvents = useMemo(
-    () => state.events,
-    [state.events],
+    () => {
+      if (district) {
+        return state.events.filter(event => !event.district || event.district === district)
+      }
+      return state.events
+    },
+    [state.events, district],
   )
 
   const eventDays = useMemo(

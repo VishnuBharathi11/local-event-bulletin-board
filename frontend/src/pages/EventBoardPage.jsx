@@ -6,11 +6,13 @@ import DiscoveryControls from '../components/discovery/DiscoveryControls.jsx'
 import EventMap from '../components/map/EventMap.jsx'
 import { useEvents } from '../hooks/useEvents.js'
 import { useEventDiscovery } from '../hooks/useEventDiscovery.js'
+import { useLocation } from '../context/LocationContext.jsx'
 import '../styles/eventMap.css'
 
 export default function EventBoardPage() {
   const { status, events: rawEvents, error, reload } = useEvents()
   const discovery = useEventDiscovery(rawEvents)
+  const { district, status: locationStatus, detectLocation } = useLocation()
   const [viewMode, setViewMode] = useState('list')
 
   const CATEGORY_INFOS = {
@@ -93,6 +95,19 @@ export default function EventBoardPage() {
 
       {status === 'success' && (
         <>
+          <div className="location-status" style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            {locationStatus === 'detecting' && <span>Detecting your location...</span>}
+            {locationStatus === 'resolved' && district && <span>Showing events near <strong>{district}</strong></span>}
+            {locationStatus === 'denied' && <span>Location access denied. Showing all upcoming events.</span>}
+            {(locationStatus === 'error' || (locationStatus === 'resolved' && !district)) && <span>Unable to determine your district. Showing all events.</span>}
+            {(locationStatus === 'denied' || locationStatus === 'error') && (
+              <button onClick={detectLocation} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'underline' }}>
+                Retry Detection
+              </button>
+            )}
+          </div>
+
           <DiscoveryControls
             discovery={discovery.discovery}
             cityOptions={discovery.cityOptions}

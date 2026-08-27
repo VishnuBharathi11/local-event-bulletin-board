@@ -24,7 +24,7 @@
 .calendar__event-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
 .calendar__day--selected .calendar__event-dot { background: #fff; }
 
-.calendar__events { padding: 24px; border-top: 1px solid var(--border); background: #fafbfd; }
+.calendar__events { padding: clamp(20px, 4vw, 32px); border-top: 1px solid var(--border); background: var(--surface); }
 .calendar__events-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .calendar__events-heading .eyebrow { margin-bottom: 5px; }
 .calendar__events-heading h2 { margin: 0; color: #101828; font-size: clamp(20px, 3vw, 26px); line-height: 1.2; }

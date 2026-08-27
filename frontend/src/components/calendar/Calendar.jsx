@@ -96,14 +96,12 @@ export default function Calendar({
             <span>Try another date to discover local events.</span>
           </div>
         ) : (
-          <div className="event-grid">
+          <div className={`event-grid event-grid--${eventsForDate.length === 1 ? '1' : eventsForDate.length === 2 ? '2' : eventsForDate.length === 3 ? '3' : 'many'}`}>
             {eventsForDate.map((event) => (
-              <div
+              <EventCard
                 key={event.eventId}
-                style={{ opacity: isExpired(event, now) ? 0.6 : 1 }}
-              >
-                <EventCard event={event} />
-              </div>
+                event={event}
+              />
             ))}
           </div>
         )}
