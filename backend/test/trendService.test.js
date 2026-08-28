@@ -1,6 +1,6 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const { groupCounts, groupRsvps, calculateVelocity, rankHotCategories } = require('../src/services/trendService')
+const { groupCounts, groupRsvps, calculateVelocity, calculateRsvpVelocity, rankHotCategories } = require('../src/services/trendService')
 
 test('groupCounts ranks event activity deterministically', () => {
   const result = groupCounts([
@@ -28,7 +28,7 @@ test('groupRsvps sums RSVP counts by category', () => {
   ])
 })
 
-test('calculateVelocity compares event creation rates between two equal periods', () => {
+test('calculateVelocity compares activity rates between two equal periods', () => {
   const events = [
     { createdAt: 100 },
     { createdAt: 200 },
@@ -36,10 +36,23 @@ test('calculateVelocity compares event creation rates between two equal periods'
     { createdAt: 800 },
     { createdAt: 900 },
   ]
-  const result = calculateVelocity(events, 0, 1000)
-  assert.equal(result.firstPeriodEvents, 2)
-  assert.equal(result.secondPeriodEvents, 3)
+  const result = calculateVelocity(events, 'createdAt', 0, 1000)
+  assert.equal(result.firstPeriodCount, 2)
+  assert.equal(result.secondPeriodCount, 3)
   assert.equal(result.changePercent, 50)
+})
+
+test('calculateRsvpVelocity uses RSVP creation timestamps', () => {
+  const rsvps = [
+    { createdAt: 100 },
+    { createdAt: 200 },
+    { createdAt: 700 },
+    { createdAt: 800 },
+  ]
+  const result = calculateRsvpVelocity(rsvps, 0, 1000)
+  assert.equal(result.firstPeriodCount, 2)
+  assert.equal(result.secondPeriodCount, 2)
+  assert.equal(result.changePercent, 0)
 })
 
 test('rankHotCategories prioritizes RSVP activity and then event count', () => {
