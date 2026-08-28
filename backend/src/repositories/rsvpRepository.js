@@ -10,13 +10,6 @@ function getRSVPId(eventId, userId) {
   return `${eventId}_${userId}`
 }
 
-async function getRecentRSVPs(startTime, endTime = Date.now()) {
-  const snapshot = await getRSVPCollection().orderBy('createdAt', 'asc').get()
-  return snapshot.docs
-    .map((doc) => doc.data())
-    .filter((rsvp) => Number(rsvp.createdAt) >= startTime && Number(rsvp.createdAt) <= endTime)
-}
-
 async function hasUserRSVPd(eventId, userId) {
   const snapshot = await getRSVPCollection().doc(getRSVPId(eventId, userId)).get()
   return snapshot.exists
@@ -72,7 +65,6 @@ async function removeRSVP(eventId, userId) {
 module.exports = {
   RSVP_COLLECTION,
   getRSVPId,
-  getRecentRSVPs,
   hasUserRSVPd,
   rsvpToEvent,
   removeRSVP,
