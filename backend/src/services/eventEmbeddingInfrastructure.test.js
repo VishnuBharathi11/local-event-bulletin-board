@@ -53,8 +53,17 @@ test('canonicalization includes intended semantic fields', () => {
 
 test('canonicalization excludes volatile and internal fields', () => {
   const text = canonicalizeEvent(baseEvent)
-  for (const excluded of ['event-123', 'organizer-secret', 'signed-image-url', '42', '1770000000000', 'PUBLISHED']) {
-    assert.equal(text.includes(excluded), excluded === 'PUBLISHED' ? false : !text.includes(excluded))
+  for (const excluded of [
+    'event-123',
+    'organizer-secret',
+    'https://example.com/signed-image-url',
+    '42',
+    '1770000000000',
+    '1770003600000',
+    'PUBLISHED',
+    '1769000000000',
+  ]) {
+    assert.equal(text.includes(excluded), false)
   }
 })
 
@@ -147,8 +156,11 @@ test('Firestore metadata preserves existing event fields by using merge', async 
   admin.firestore.FieldValue.vector = (values) => ({ __vector: values })
   admin.firestore.FieldValue.serverTimestamp = () => ({ __serverTimestamp: true })
 
+  const vector = Array.from({ length: EMBEDDING_DIMENSIONS }, (_, index) => ((index % 17) - 8) / 100)
+
   try {
     const writes = []
+    const existingEvent = { ...baseEvent }
     const firestore = {
       collection: () => ({
         doc: (eventId) => ({
@@ -158,9 +170,9 @@ test('Firestore metadata preserves existing event fields by using merge', async 
     }
 
     const result = await saveEventEmbedding('event-123', {
-      vector: [0.1, 0.2, 0.3],
+      vector,
       embeddingModel: EMBEDDING_CONFIG.model,
-      embeddingDimensions: 3,
+      embeddingDimensions: EMBEDDING_CONFIG.dimensions,
       embeddingTaskType: EMBEDDING_CONFIG.taskType,
       embeddingConfigVersion: EMBEDDING_CONFIG.configVersion,
     }, firestore)
@@ -174,13 +186,23 @@ test('Firestore metadata preserves existing event fields by using merge', async 
       'embeddingUpdatedAt',
     ].sort())
     assert.deepEqual(writes[0].options, { merge: true })
-    assert.equal(writes[0].eventId, 'event-123')
-    assert.deepEqual(writes[0].data.embedding, { __vector: [0.1, 0.2, 0.3] })
+    assert.equal(writes[0].eventId, existingEvent.eventId)
+    assert.deepEqual(writes[0].data.embedding.__vector, vector)
     assert.equal(writes[0].data.embeddingModel, 'gemini-embedding-001')
-    assert.equal(writes[0].data.embeddingDimensions, 3)
+    assert.equal(writes[0].data.embeddingDimensions, 768)
     assert.equal(writes[0].data.embeddingTaskType, 'RETRIEVAL_DOCUMENT')
     assert.equal(writes[0].data.embeddingConfigVersion, 'phase5.1-v1')
     assert.deepEqual(writes[0].data.embeddingUpdatedAt, { __serverTimestamp: true })
+
+    assert.equal(existingEvent.title, 'Community Coding Workshop')
+    assert.equal(existingEvent.description, 'Hands-on JavaScript workshop for local developers.')
+    assert.equal(existingEvent.category, 'Workshops')
+    assert.equal(existingEvent.city, 'Coimbatore')
+    assert.equal(existingEvent.neighborhood, 'Gandhipuram')
+    assert.equal(existingEvent.location, 'Community Hall')
+    assert.equal(existingEvent.rsvpCount, 42)
+    assert.equal(existingEvent.organizerId, 'organizer-secret')
+    assert.equal(existingEvent.imageUrl, 'https://example.com/signed-image-url')
   } finally {
     admin.firestore.FieldValue.vector = originalVector
     admin.firestore.FieldValue.serverTimestamp = originalServerTimestamp
