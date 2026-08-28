@@ -1,5 +1,6 @@
 const chatbotService = require('../services/chatbotService')
 const geminiService = require('../services/geminiService')
+const chatbotOrchestrator = require('../services/chatbotOrchestrator')
 
 function handleError(res, error, operation) {
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
@@ -9,62 +10,26 @@ function handleError(res, error, operation) {
 }
 
 function getCapabilities(req, res) {
-  return res.json({
-    ...chatbotService.getCapabilities(),
-    gemini: {
-      enabled: geminiService.isConfigured(),
-      model: geminiService.DEFAULT_MODEL,
-      mode: 'grounded-explanation-only',
-    },
-  })
+  return res.json({ ...chatbotService.getCapabilities(), gemini: { enabled: geminiService.isConfigured(), model: geminiService.DEFAULT_MODEL, mode: 'conversational-tool-grounded' }, intents: Object.values(chatbotOrchestrator.INTENTS) })
 }
 
 async function chat(req, res) {
-  try { return res.json(await chatbotService.processMessage(req.body || {})) }
+  try { return res.json(await chatbotOrchestrator.orchestrate(req.body || {})) }
   catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
 }
 
 async function explainTrends(req, res) {
   try {
     const body = req.body || {}
-    const evidence = await chatbotService.getTrendAnalysis({
-      days: body.days,
-      category: body.category,
-      city: body.city,
-    })
+    const evidence = await chatbotService.getTrendAnalysis({ days: body.days, category: body.category, city: body.city })
     const explanation = await geminiService.explainTrendAnalysis(evidence, body.question)
-    return res.json({
-      mode: 'grounded-trend-explanation',
-      evidenceVersion: evidence.version,
-      evidence,
-      ...explanation,
-    })
-  } catch (error) {
-    return handleError(res, error, 'POST /api/chatbot/trends/explain')
-  }
+    return res.json({ mode: 'grounded-trend-explanation', evidenceVersion: evidence.version, evidence, ...explanation })
+  } catch (error) { return handleError(res, error, 'POST /api/chatbot/trends/explain') }
 }
 
-async function getUpcomingEvents(req, res) {
-  try { return res.json(await chatbotService.getUpcomingEvents(req.query || {})) }
-  catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/upcoming-events') }
-}
-
-async function getEventDetails(req, res) {
-  try {
-    const event = await chatbotService.getEventDetails(req.params.eventId)
-    if (!event) return res.status(404).json({ error: 'Event not found' })
-    return res.json(event)
-  } catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/events/:eventId') }
-}
-
-async function getCommunityDemand(req, res) {
-  try { return res.json(await chatbotService.getCommunityDemand(req.query || {})) }
-  catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/community-demand') }
-}
-
-async function getTrendAnalysis(req, res) {
-  try { return res.json(await chatbotService.getTrendAnalysis(req.query || {})) }
-  catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/trend-analysis') }
-}
+async function getUpcomingEvents(req, res) { try { return res.json(await chatbotService.getUpcomingEvents(req.query || {})) } catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/upcoming-events') } }
+async function getEventDetails(req, res) { try { const event = await chatbotService.getEventDetails(req.params.eventId); if (!event) return res.status(404).json({ error: 'Event not found' }); return res.json(event) } catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/events/:eventId') } }
+async function getCommunityDemand(req, res) { try { return res.json(await chatbotService.getCommunityDemand(req.query || {})) } catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/community-demand') } }
+async function getTrendAnalysis(req, res) { try { return res.json(await chatbotService.getTrendAnalysis(req.query || {})) } catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/trend-analysis') } }
 
 module.exports = { getCapabilities, chat, explainTrends, getUpcomingEvents, getEventDetails, getCommunityDemand, getTrendAnalysis }
