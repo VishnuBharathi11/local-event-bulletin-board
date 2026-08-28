@@ -1,5 +1,6 @@
 const eventRepository = require('../repositories/eventRepository')
 const eventRequestRepository = require('../repositories/eventRequestRepository')
+const rsvpRepository = require('../repositories/rsvpRepository')
 
 const DEFAULT_WINDOW_DAYS = 30
 const MAX_WINDOW_DAYS = 90
@@ -43,24 +44,35 @@ function groupRsvps(items, key) {
     .sort((a, b) => b.rsvps - a.rsvps || a.name.localeCompare(b.name))
 }
 
-function calculateVelocity(events, windowStart, windowEnd) {
+function calculateVelocity(items, timestampKey, windowStart, windowEnd) {
   const midpoint = windowStart + Math.floor((windowEnd - windowStart) / 2)
-  const first = events.filter((event) => Number(event.createdAt) >= windowStart && Number(event.createdAt) < midpoint).length
-  const second = events.filter((event) => Number(event.createdAt) >= midpoint && Number(event.createdAt) <= windowEnd).length
+  const first = items.filter((item) => Number(item[timestampKey]) >= windowStart && Number(item[timestampKey]) < midpoint).length
+  const second = items.filter((item) => Number(item[timestampKey]) >= midpoint && Number(item[timestampKey]) <= windowEnd).length
   const days = daysBetween(windowStart, midpoint)
   const currentDays = daysBetween(midpoint, windowEnd)
   const firstRate = first / days
   const secondRate = second / currentDays
   const changePercent = firstRate === 0 ? (secondRate > 0 ? 100 : 0) : Math.round(((secondRate - firstRate) / firstRate) * 100)
-  return { firstPeriodEvents: first, secondPeriodEvents: second, firstPeriodRatePerDay: Number(firstRate.toFixed(3)), secondPeriodRatePerDay: Number(secondRate.toFixed(3)), changePercent }
+  return { firstPeriodCount: first, secondPeriodCount: second, firstPeriodRatePerDay: Number(firstRate.toFixed(3)), secondPeriodRatePerDay: Number(secondRate.toFixed(3)), changePercent }
 }
 
-function buildTrendSignals(events, requests, now, windowStart, windowEnd) {
+function calculateRsvpVelocity(rsvps, windowStart, windowEnd) {
+  return calculateVelocity(rsvps, 'createdAt', windowStart, windowEnd)
+}
+
+function buildTrendSignals(events, requests, rsvps, now, windowStart, windowEnd) {
   const upcoming = events.filter((event) => Number(event.startTime) > now && Number(event.expireAt) > now)
+  const eventMap = new Map(events.map((event) => [event.eventId, event]))
+  const enrichedRsvps = rsvps
+    .map((rsvp) => ({ ...rsvp, event: eventMap.get(rsvp.eventId) }))
+    .filter((rsvp) => rsvp.event)
+
   const categoryActivity = groupCounts(events, 'category').slice(0, MAX_RESULTS)
   const locationActivity = groupCounts(events, 'city').slice(0, MAX_RESULTS)
   const categoryRsvps = groupRsvps(events, 'category').slice(0, MAX_RESULTS)
   const locationRsvps = groupRsvps(events, 'city').slice(0, MAX_RESULTS)
+  const rsvpCategoryActivity = groupCounts(enrichedRsvps.map((rsvp) => ({ category: rsvp.event.category })), 'category').slice(0, MAX_RESULTS)
+  const rsvpLocationActivity = groupCounts(enrichedRsvps.map((rsvp) => ({ city: rsvp.event.city })), 'city').slice(0, MAX_RESULTS)
 
   const totalRsvps = events.reduce((sum, event) => sum + Math.max(0, Number(event.rsvpCount) || 0), 0)
   const averageRsvps = events.length ? Number((totalRsvps / events.length).toFixed(2)) : 0
@@ -75,11 +87,14 @@ function buildTrendSignals(events, requests, now, windowStart, windowEnd) {
     communityRequestCount: requests.length,
     communityDemandTotal: demandTotal,
     thresholdReachedRequests: thresholdReached,
-    eventCreationVelocity: calculateVelocity(events, windowStart, windowEnd),
+    eventCreationVelocity: calculateVelocity(events, 'createdAt', windowStart, windowEnd),
+    rsvpVelocity: calculateRsvpVelocity(rsvps, windowStart, windowEnd),
     categoryActivity,
     locationActivity,
     categoryRsvps,
     locationRsvps,
+    rsvpCategoryActivity,
+    rsvpLocationActivity,
   }
 }
 
@@ -108,7 +123,13 @@ async function analyzeTrends({ days = DEFAULT_WINDOW_DAYS, category, city } = {}
   if (category) requests = requests.filter((request) => String(request.category).toLowerCase() === String(category).trim().toLowerCase())
   if (city) requests = requests.filter((request) => String(request.city).toLowerCase() === String(city).trim().toLowerCase())
 
-  const signals = buildTrendSignals(events, requests, now, windowStart, windowEnd)
+  let rsvps = await rsvpRepository.getRecentRSVPs(windowStart, windowEnd)
+  if (category || city) {
+    const eventIds = new Set(events.map((event) => event.eventId))
+    rsvps = rsvps.filter((rsvp) => eventIds.has(rsvp.eventId))
+  }
+
+  const signals = buildTrendSignals(events, requests, rsvps, now, windowStart, windowEnd)
   const hotCategories = rankHotCategories(signals.categoryActivity, signals.categoryRsvps)
   const demandCategories = groupRsvps(requests.map((request) => ({ category: request.category, rsvpCount: request.demandCount })), 'category')
   const demandLocations = groupRsvps(requests.map((request) => ({ city: request.city, rsvpCount: request.demandCount })), 'city')
@@ -141,6 +162,7 @@ module.exports = {
   groupCounts,
   groupRsvps,
   calculateVelocity,
+  calculateRsvpVelocity,
   rankHotCategories,
   analyzeTrends,
 }
