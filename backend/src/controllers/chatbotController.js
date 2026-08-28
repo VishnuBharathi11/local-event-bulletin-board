@@ -44,4 +44,12 @@ async function getCommunityDemand(req, res) {
   }
 }
 
-module.exports = { getCapabilities, chat, getUpcomingEvents, getEventDetails, getCommunityDemand }
+async function getTrendAnalysis(req, res) {
+  try {
+    return res.json(await chatbotService.getTrendAnalysis(req.query || {}))
+  } catch (error) {
+    return handleError(res, error, 'GET /api/chatbot/tools/trend-analysis')
+  }
+}
+
+module.exports = { getCapabilities, chat, getUpcomingEvents, getEventDetails, getCommunityDemand, getTrendAnalysis }
