@@ -6,6 +6,7 @@ const {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   QUERY_TASK_TYPE,
+  DISTANCE_RESULT_FIELD,
   validateLimit,
   validateDistanceMeasure,
   getQueryEmbeddingConfig,
@@ -43,7 +44,7 @@ test('distance measure validation accepts supported Firestore measures', () => {
   assert.throws(() => validateDistanceMeasure('MANHATTAN'), /COSINE, EUCLIDEAN, or DOT_PRODUCT/)
 })
 
-test('vector search uses the existing events embedding field and configured dimensions', async () => {
+test('vector search uses the current Firestore findNearest object contract and exposes numeric distance', async () => {
   const originalVector = admin.firestore.FieldValue.vector
   admin.firestore.FieldValue.vector = (values) => ({ __vector: values })
 
@@ -53,16 +54,16 @@ test('vector search uses the existing events embedding field and configured dime
     const docs = [
       {
         id: 'event-1',
-        data: () => ({ title: 'Music event', embeddingModel: EMBEDDING_CONFIG.model }),
-        get: (field) => field === '_vectorDistance' ? 0.08 : undefined,
+        data: () => ({ title: 'Music event', category: 'Music', city: 'Coimbatore' }),
+        get: (field) => field === DISTANCE_RESULT_FIELD ? 0.08 : undefined,
       },
     ]
     const firestore = {
       collection: (name) => {
         assert.equal(name, 'events')
         return {
-          findNearest: (field, queryVector, options) => {
-            calls.push({ field, queryVector, options })
+          findNearest: (options) => {
+            calls.push(options)
             return { get: async () => ({ docs }) }
           },
         }
@@ -72,19 +73,44 @@ test('vector search uses the existing events embedding field and configured dime
     const results = await findSimilarEventsByVector(vector, { limit: 5, distanceMeasure: 'cosine' }, firestore)
 
     assert.equal(calls.length, 1)
-    assert.equal(calls[0].field, 'embedding')
-    assert.deepEqual(calls[0].queryVector.__vector, vector)
-    assert.deepEqual(calls[0].options, {
+    assert.deepEqual(calls[0], {
+      vectorField: 'embedding',
+      queryVector: { __vector: vector },
       limit: 5,
       distanceMeasure: 'COSINE',
-      distanceResultField: '_vectorDistance',
+      distanceResultField: DISTANCE_RESULT_FIELD,
     })
-    assert.deepEqual(results, [{
-      eventId: 'event-1',
-      title: 'Music event',
-      embeddingModel: EMBEDDING_CONFIG.model,
-      distance: 0.08,
-    }])
+    assert.equal(results[0].eventId, 'event-1')
+    assert.equal(results[0].title, 'Music event')
+    assert.equal(results[0].category, 'Music')
+    assert.equal(results[0].city, 'Coimbatore')
+    assert.equal(results[0].distance, 0.08)
+    assert.equal(typeof results[0].distance, 'number')
+  } finally {
+    admin.firestore.FieldValue.vector = originalVector
+  }
+})
+
+test('missing Firestore distance is rejected instead of returning undefined', async () => {
+  const originalVector = admin.firestore.FieldValue.vector
+  admin.firestore.FieldValue.vector = (values) => ({ __vector: values })
+
+  try {
+    const vector = Array.from({ length: EMBEDDING_CONFIG.dimensions }, () => 0.01)
+    const firestore = {
+      collection: () => ({
+        findNearest: () => ({
+          get: async () => ({
+            docs: [{ id: 'event-1', data: () => ({ title: 'Music event' }), get: () => undefined }],
+          }),
+        }),
+      }),
+    }
+
+    await assert.rejects(
+      () => findSimilarEventsByVector(vector, {}, firestore),
+      (error) => error.code === 'FIRESTORE_VECTOR_DISTANCE_MISSING',
+    )
   } finally {
     admin.firestore.FieldValue.vector = originalVector
   }
@@ -109,7 +135,7 @@ test('similarity query generates a retrieval-query embedding before vector searc
   try {
     const firestore = {
       collection: () => ({
-        findNearest: () => ({
+        findNearest: (options) => ({
           get: async () => ({ docs: [{ id: 'event-1', data: () => ({ title: 'Music event' }), get: () => 0.1 }] }),
         }),
       }),
