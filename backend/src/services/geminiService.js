@@ -7,8 +7,7 @@ const MAX_EVIDENCE_CHARS = 18000
 let client
 
 function isConfigured() {
-  return Boolean(process.env.GOOGLE_CLOUD_PROJECT && process.env.GOOGLE_APPLICATION_CREDENTIALS)
-    || Boolean(process.env.GOOGLE_CLOUD_PROJECT && process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true')
+  return Boolean(process.env.GOOGLE_CLOUD_PROJECT)
 }
 
 function getClient() {
