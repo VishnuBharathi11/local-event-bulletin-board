@@ -7,9 +7,9 @@ Phase 5.2 adds the semantic similarity query layer on top of the Phase 5.1 Verte
 ```text
 Event / canonical text
         ↓
-Vertex AI embedding
+Vertex AI query embedding
         ↓
-Firestore vector query
+Firestore KNN vector query
         ↓
 nearest EventHive events
 ```
@@ -18,7 +18,7 @@ This phase provides reusable semantic similarity infrastructure only. It does no
 
 ## Existing Phase 5.1 foundation
 
-Phase 5.1 stores event embeddings in the existing `events` collection using the Firestore vector representation. The configured document embedding remains:
+Phase 5.1 stores event embeddings in the existing `events` collection using the Firestore vector representation. Stored event/document embeddings remain:
 
 ```text
 model:       gemini-embedding-001
@@ -27,14 +27,23 @@ dimensions:  768
 config:      phase5.1-v1
 ```
 
-The Phase 5.2 query layer uses the same dimensionality and model configuration so query vectors are compatible with the stored vectors. The query embedding should use a query-oriented task type supplied by the embedding API when the production query path is introduced.
+Phase 5.2 query embeddings use:
+
+```text
+model:       gemini-embedding-001
+task type:   RETRIEVAL_QUERY
+dimensions:  768
+config:      phase5.1-v1
+```
+
+The model and dimensionality remain compatible with the indexed event vectors while using the query-oriented task type for semantic retrieval.
 
 ## Semantic similarity service
 
 `backend/src/services/semanticSimilarityService.js` provides two server-side operations:
 
 - `findSimilarEventsByVector(queryVector, options, firestore)` — executes a Firestore KNN query against `events.embedding`.
-- `findSimilarEvents(canonicalText, options, firestore, embeddingGenerator)` — generates a query embedding and then performs the vector query.
+- `findSimilarEvents(canonicalText, options, firestore, embeddingGenerator)` — generates a `RETRIEVAL_QUERY` embedding and then performs the vector query.
 
 The service uses Firestore's `findNearest` operation and the existing `embedding` field.
 
@@ -47,7 +56,7 @@ distance measure: COSINE
 distance result field: _vectorDistance
 ```
 
-The service supports Firestore's `COSINE`, `EUCLIDEAN`, and `DOT_PRODUCT` distance measures. EventHive's default is `COSINE` because the initial semantic layer is intended to compare embedding direction rather than introduce a new application-specific distance formula.
+The service supports Firestore's `COSINE`, `EUCLIDEAN`, and `DOT_PRODUCT` distance measures. EventHive's default is `COSINE`.
 
 ## Query result
 
@@ -85,9 +94,7 @@ time overlap
        +
 location relationship
        +
-activity/domain similarity
-       +
-existing business rules
+existing activity/domain rules
 ```
 
 The semantic score must not by itself decide that two events are a conflict.
@@ -110,9 +117,11 @@ Only the intended semantic query text is embedded.
 
 - bounded result limits
 - supported distance measures
+- explicit query embedding configuration
 - use of the existing `events.embedding` field
 - Firestore vector query construction
 - configured 768-dimensional query vectors
+- `RETRIEVAL_QUERY` task type
 - query embedding before KNN search
 - returned event identity and vector distance
 - absence of event-document writes
