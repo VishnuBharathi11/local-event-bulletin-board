@@ -1,6 +1,6 @@
 const chatbotService = require('../services/chatbotService')
 const geminiService = require('../services/geminiService')
-const chatbotOrchestrator = require('../services/chatbotOrchestrator')
+const orchestrationService = require('../services/orchestrationService')
 
 function handleError(res, error, operation) {
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
@@ -10,12 +10,18 @@ function handleError(res, error, operation) {
 }
 
 function getCapabilities(req, res) {
-  return res.json({ ...chatbotService.getCapabilities(), gemini: { enabled: geminiService.isConfigured(), model: geminiService.DEFAULT_MODEL, mode: 'conversational-tool-grounded' }, intents: Object.values(chatbotOrchestrator.INTENTS) })
+  return res.json({
+    ...chatbotService.getCapabilities(),
+    phase4: { orchestration: true, supportedIntents: Object.values(orchestrationService.INTENTS), maxHistory: orchestrationService.MAX_HISTORY },
+    gemini: { enabled: geminiService.isConfigured(), model: geminiService.DEFAULT_MODEL, mode: 'grounded-conversational-orchestration' },
+  })
 }
 
 async function chat(req, res) {
-  try { return res.json(await chatbotOrchestrator.orchestrate(req.body || {})) }
-  catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
+  try {
+    const body = req.body || {}
+    return res.json(await orchestrationService.orchestrate({ message: body.message, history: body.history }))
+  } catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
 }
 
 async function explainTrends(req, res) {
