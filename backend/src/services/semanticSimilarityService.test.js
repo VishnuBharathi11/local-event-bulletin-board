@@ -5,8 +5,10 @@ const {
   DEFAULT_DISTANCE_MEASURE,
   DEFAULT_LIMIT,
   MAX_LIMIT,
+  QUERY_TASK_TYPE,
   validateLimit,
   validateDistanceMeasure,
+  getQueryEmbeddingConfig,
   findSimilarEventsByVector,
   findSimilarEvents,
 } = require('./semanticSimilarityService')
@@ -16,6 +18,13 @@ test('semantic similarity defaults are explicit', () => {
   assert.equal(DEFAULT_DISTANCE_MEASURE, 'COSINE')
   assert.equal(DEFAULT_LIMIT, 10)
   assert.equal(MAX_LIMIT, 20)
+  assert.equal(QUERY_TASK_TYPE, 'RETRIEVAL_QUERY')
+  assert.deepEqual(getQueryEmbeddingConfig(), {
+    model: EMBEDDING_CONFIG.model,
+    taskType: 'RETRIEVAL_QUERY',
+    dimensions: EMBEDDING_CONFIG.dimensions,
+    configVersion: EMBEDDING_CONFIG.configVersion,
+  })
 })
 
 test('similarity limit validation is bounded', () => {
@@ -81,7 +90,7 @@ test('vector search uses the existing events embedding field and configured dime
   }
 })
 
-test('similarity query generates a query embedding before vector search', async () => {
+test('similarity query generates a retrieval-query embedding before vector search', async () => {
   const vector = Array.from({ length: EMBEDDING_CONFIG.dimensions }, (_, index) => index / 1000)
   const embeddingCalls = []
   const fakeEmbeddingGenerator = async (canonicalText, config) => {
@@ -90,7 +99,7 @@ test('similarity query generates a query embedding before vector search', async 
       vector,
       embeddingModel: config.model,
       embeddingDimensions: config.dimensions,
-      embeddingTaskType: 'RETRIEVAL_QUERY',
+      embeddingTaskType: config.taskType,
       embeddingConfigVersion: config.configVersion,
     }
   }
@@ -100,7 +109,7 @@ test('similarity query generates a query embedding before vector search', async 
   try {
     const firestore = {
       collection: () => ({
-        findNearest: (field, queryVector) => ({
+        findNearest: () => ({
           get: async () => ({ docs: [{ id: 'event-1', data: () => ({ title: 'Music event' }), get: () => 0.1 }] }),
         }),
       }),
@@ -110,7 +119,9 @@ test('similarity query generates a query embedding before vector search', async 
     assert.equal(embeddingCalls.length, 1)
     assert.equal(embeddingCalls[0].canonicalText, 'Title: Music event')
     assert.equal(embeddingCalls[0].config.model, 'gemini-embedding-001')
+    assert.equal(embeddingCalls[0].config.taskType, 'RETRIEVAL_QUERY')
     assert.equal(embeddingCalls[0].config.dimensions, 768)
+    assert.equal(embeddingCalls[0].config.configVersion, EMBEDDING_CONFIG.configVersion)
     assert.deepEqual(results[0], { eventId: 'event-1', title: 'Music event', distance: 0.1 })
   } finally {
     admin.firestore.FieldValue.vector = originalVector
