@@ -144,11 +144,57 @@ async function getDetailedLocationFromCoords(lat, lng) {
 }
 
 /**
- * Legacy wrapper for single district string resolution.
+ * Resolves all major postal/locality areas belonging to a district.
  */
-async function getDistrictFromCoords(lat, lng) {
-  const { district } = await getDetailedLocationFromCoords(lat, lng);
-  return district;
+async function getPostalAreasForDistrict(district) {
+  const apiKey = process.env.GOOGLE_GEOCODING_API_KEY;
+  if (!apiKey) return [];
+
+  // Ambiguous query to force Google to return multiple sub-locations
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=neighborhoods+in+${encodeURIComponent(district)}+India&key=${apiKey}`;
+
+  return new Promise((resolve) => {
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.status !== 'OK' || !json.results) return resolve([]);
+
+          const areas = [];
+          const seen = new Set();
+
+          json.results.forEach((result) => {
+            let name = null;
+            let pincode = null;
+
+            result.address_components.forEach((comp) => {
+              // Capture neighborhood, sublocality, or locality
+              if (!name && (comp.types.includes('neighborhood') || comp.types.includes('sublocality') || comp.types.includes('locality'))) {
+                const n = comp.long_name;
+                if (n.toLowerCase() !== district.toLowerCase()) {
+                  name = n;
+                }
+              }
+              if (comp.types.includes('postal_code')) {
+                pincode = comp.long_name;
+              }
+            });
+
+            if (name && !seen.has(name.toLowerCase())) {
+              seen.add(name.toLowerCase());
+              areas.push({ name, pincode });
+            }
+          });
+
+          resolve(areas);
+        } catch {
+          resolve([]);
+        }
+      });
+    }).on('error', () => resolve([]));
+  });
 }
 
-module.exports = { getDistrictFromCoords, getDetailedLocationFromCoords };
+module.exports = { getDistrictFromCoords, getDetailedLocationFromCoords, getPostalAreasForDistrict };

@@ -43,23 +43,10 @@ export function getActiveEvents(events = [], now = new Date()) {
 
 export const isPincode = (val) => /^\d{5,6}$/.test(String(val).trim());
 
-export function getCityOptions(events = [], detectedDistrict = null) {
+export function getCityOptions(events = [], detectedDistrict = null, districtLocalities = []) {
   if (!detectedDistrict) return ['All'];
 
   const normalizedDetected = detectedDistrict.toLowerCase().trim();
-
-  // 1. Filter events to only those belonging to the user's detected district
-  const districtEvents = events.filter(event => {
-    if (event.district) {
-      const normalizedEventDistrict = event.district.toLowerCase().trim();
-      return normalizedEventDistrict === normalizedDetected ||
-             normalizedEventDistrict.includes(normalizedDetected) ||
-             normalizedDetected.includes(normalizedEventDistrict);
-    }
-    const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase();
-    return searchSpace.includes(normalizedDetected);
-  });
-
   const locations = new Set();
 
   const isLegitimateLocality = (name) => {
@@ -93,6 +80,25 @@ export function getCityOptions(events = [], detectedDistrict = null) {
     return true;
   };
 
+  // 1. Add all areas fetched from the reliable source (Google/Backend)
+  districtLocalities.forEach(area => {
+    if (area.name && isLegitimateLocality(area.name)) {
+      locations.add(area.name.trim());
+    }
+  });
+
+  // 2. Also keep locations from events for district consistency
+  const districtEvents = events.filter(event => {
+    if (event.district) {
+      const normalizedEventDistrict = event.district.toLowerCase().trim();
+      return normalizedEventDistrict === normalizedDetected ||
+             normalizedEventDistrict.includes(normalizedDetected) ||
+             normalizedDetected.includes(normalizedEventDistrict);
+    }
+    const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase();
+    return searchSpace.includes(normalizedDetected);
+  });
+
   districtEvents.forEach(event => {
     if (event.city && isLegitimateLocality(event.city)) {
       locations.add(event.city.trim());
@@ -107,7 +113,7 @@ export function getCityOptions(events = [], detectedDistrict = null) {
   return ['All', ...sortedLocations];
 }
 
-export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date(), detectedDistrict = null) {
+export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_STATE, now = new Date(), detectedDistrict = null, districtLocalities = []) {
   const activeEvents = getActiveEvents(events, now)
   const query = discovery.searchQuery.trim().toLowerCase()
   const selectedCity = discovery.selectedCity
@@ -118,7 +124,13 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
   if (selectedCity !== 'All') {
     allowedInternalValues.add(selectedCity.toLowerCase().trim());
 
-    // Scan all events to find associated pincodes/alternate names for internal matching
+    // 1. Check mapping from the dynamic district localities list
+    const area = districtLocalities.find(a => a.name && a.name.toLowerCase().trim() === selectedCity.toLowerCase().trim());
+    if (area && area.pincode) {
+      allowedInternalValues.add(area.pincode.toLowerCase().trim());
+    }
+
+    // 2. Scan all events to find associated pincodes/alternate names for internal matching
     activeEvents.forEach(e => {
       const city = String(e.city || '').toLowerCase().trim();
       const neighborhood = String(e.neighborhood || '').toLowerCase().trim();

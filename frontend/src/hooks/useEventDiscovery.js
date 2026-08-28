@@ -13,10 +13,9 @@ import {
 
 export function useEventDiscovery(rawEvents = []) {
   const { currentUser } = useAuth()
-  const { district, status: locationStatus, detectLocation } = useLocation()
+  const { district, localities, status: locationStatus, detectLocation } = useLocation()
   const [discovery, setDiscovery] = useState(() => createDiscoveryState())
   const now = new Date()
-
 
   const activeEvents = useMemo(() => {
     const active = getActiveEvents(rawEvents, now)
@@ -34,24 +33,16 @@ export function useEventDiscovery(rawEvents = []) {
       return searchSpace.includes(normalizedDetected)
     })
 
-    console.log("--- DISTRICT FILTER VERIFICATION ---")
-    console.log("DETECTED USER DISTRICT:", district)
-    console.log("TOTAL EVENTS RECEIVED:", active.length)
-    console.log("EVENTS AFTER DISTRICT FILTER:", filtered.length)
-    console.log("EVENTS EXCLUDED BY DISTRICT:", active.length - filtered.length)
-
     return filtered
   }, [rawEvents, now, district])
 
   const cityOptions = useMemo(() => {
-    const options = getCityOptions(activeEvents, district)
-    console.log("CITY OPTIONS GENERATED:", options)
-    return options
-  }, [activeEvents, district])
+    return getCityOptions(activeEvents, district, localities)
+  }, [activeEvents, district, localities])
 
   const events = useMemo(
-    () => filterAndSortEvents(activeEvents, discovery, now, district),
-    [activeEvents, discovery, now, district],
+    () => filterAndSortEvents(activeEvents, discovery, now, district, localities),
+    [activeEvents, discovery, now, district, localities],
   )
 
   const updateSearchQuery = useCallback((searchQuery) => {

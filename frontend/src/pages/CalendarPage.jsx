@@ -1,5 +1,6 @@
 import calendarHero from '../assets/calendar-hero.jpeg'
 import Calendar from '../components/calendar/Calendar.jsx'
+import LocationFilters from '../components/discovery/LocationFilters.jsx'
 import { useCalendar } from '../hooks/useCalendar.js'
 import { useLocation } from '../context/LocationContext.jsx'
 import '../styles/calendar.css'
@@ -57,6 +58,14 @@ export default function CalendarPage() {
             Retry Detection
           </button>
         )}
+      </div>
+
+      <div className="calendar-filters" style={{ marginBottom: '24px' }}>
+        <LocationFilters
+          city={calendar.selectedCity}
+          cities={calendar.cityOptions}
+          onCityChange={calendar.onCityChange}
+        />
       </div>
 
       <Calendar {...calendar} />

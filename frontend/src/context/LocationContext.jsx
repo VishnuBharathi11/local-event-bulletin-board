@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { getDistrictFromCoords } from '../services/locationService.js'
+import { getDistrictFromCoords, getLocalities } from '../services/locationService.js'
 
 const LocationContext = createContext()
 
 export function LocationProvider({ children }) {
   const [coords, setCoords] = useState(null)
+  const [localities, setLocalities] = useState([])
 
   const isInvalidName = (name) => {
     if (!name || typeof name !== 'string') return true;
@@ -116,8 +117,18 @@ export function LocationProvider({ children }) {
     }
   }, [status, detectLocation])
 
+  useEffect(() => {
+    if (status === 'resolved' && district) {
+      getLocalities(district)
+        .then(data => {
+          if (data.areas) setLocalities(data.areas)
+        })
+        .catch(err => console.error("Failed to fetch localities:", err))
+    }
+  }, [status, district])
+
   return (
-    <LocationContext.Provider value={{ coords, district, locality, status, detectLocation }}>
+    <LocationContext.Provider value={{ coords, district, locality, localities, status, detectLocation }}>
       {children}
     </LocationContext.Provider>
   )

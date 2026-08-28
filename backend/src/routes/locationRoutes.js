@@ -1,5 +1,5 @@
 const express = require('express');
-const { getDetailedLocationFromCoords } = require('../services/geocodingService');
+const { getDetailedLocationFromCoords, getPostalAreasForDistrict } = require('../services/geocodingService');
 
 const router = express.Router();
 
@@ -17,6 +17,22 @@ router.get('/district', async (req, res) => {
   } catch (error) {
     console.error('Failed to resolve location details:', error);
     return res.status(500).json({ error: 'Failed to resolve location information.' });
+  }
+});
+
+router.get('/areas', async (req, res) => {
+  const { district } = req.query;
+
+  if (!district) {
+    return res.status(400).json({ error: 'District is required.' });
+  }
+
+  try {
+    const areas = await getPostalAreasForDistrict(district);
+    return res.json({ areas });
+  } catch (error) {
+    console.error('Failed to resolve areas:', error);
+    return res.status(500).json({ error: 'Failed to resolve area information.' });
   }
 });
 
