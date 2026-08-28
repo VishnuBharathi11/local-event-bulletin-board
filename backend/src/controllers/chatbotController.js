@@ -1,6 +1,7 @@
 const chatbotService = require('../services/chatbotService')
 const geminiService = require('../services/geminiService')
 const orchestrationService = require('../services/orchestrationService')
+const conversationContext = require('../services/conversationContext')
 
 function handleError(res, error, operation) {
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
@@ -12,7 +13,7 @@ function handleError(res, error, operation) {
 function getCapabilities(req, res) {
   return res.json({
     ...chatbotService.getCapabilities(),
-    phase4: { orchestration: true, supportedIntents: Object.values(orchestrationService.INTENTS), maxHistory: orchestrationService.MAX_HISTORY },
+    phase4: { orchestration: true, contextVersion: conversationContext.CONTEXT_VERSION, responseVersion: 'phase4.3-response-v1', supportedIntents: Object.values(orchestrationService.INTENTS), maxHistory: conversationContext.MAX_HISTORY_TURNS, maxMessageChars: conversationContext.MAX_MESSAGE_CHARS },
     gemini: { enabled: geminiService.isConfigured(), model: geminiService.DEFAULT_MODEL, mode: 'grounded-conversational-orchestration' },
   })
 }
@@ -20,7 +21,7 @@ function getCapabilities(req, res) {
 async function chat(req, res) {
   try {
     const body = req.body || {}
-    return res.json(await orchestrationService.orchestrate({ message: body.message, history: body.history }))
+    return res.json(await orchestrationService.orchestrate({ message: body.message, history: body.history, conversationId: body.conversationId }))
   } catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
 }
 
