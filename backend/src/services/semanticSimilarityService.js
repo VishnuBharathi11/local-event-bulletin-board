@@ -1,12 +1,22 @@
 const admin = require('firebase-admin')
 const { getFirestore } = require('../config/firebaseAdmin')
-const { EMBEDDING_CONFIG } = require('./eventEmbeddingConfig')
+const { EMBEDDING_CONFIG, validateEmbeddingConfig } = require('./eventEmbeddingConfig')
 const { generateEventEmbedding } = require('./eventEmbeddingService')
 
 const EVENTS_COLLECTION = 'events'
 const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 20
 const DEFAULT_DISTANCE_MEASURE = 'COSINE'
+const QUERY_TASK_TYPE = 'RETRIEVAL_QUERY'
+
+function getQueryEmbeddingConfig() {
+  return validateEmbeddingConfig({
+    model: EMBEDDING_CONFIG.model,
+    taskType: QUERY_TASK_TYPE,
+    dimensions: EMBEDDING_CONFIG.dimensions,
+    configVersion: EMBEDDING_CONFIG.configVersion,
+  })
+}
 
 function validateLimit(limit = DEFAULT_LIMIT) {
   const value = Number(limit)
@@ -63,7 +73,8 @@ async function findSimilarEvents(canonicalText, options = {}, firestore = getFir
   if (typeof canonicalText !== 'string' || !canonicalText.trim()) {
     throw new TypeError('canonical event text is required')
   }
-  const embedding = await embeddingGenerator(canonicalText, EMBEDDING_CONFIG)
+  const queryConfig = getQueryEmbeddingConfig()
+  const embedding = await embeddingGenerator(canonicalText, queryConfig)
   return findSimilarEventsByVector(embedding.vector, options, firestore)
 }
 
@@ -72,6 +83,8 @@ module.exports = {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   DEFAULT_DISTANCE_MEASURE,
+  QUERY_TASK_TYPE,
+  getQueryEmbeddingConfig,
   validateLimit,
   validateDistanceMeasure,
   findSimilarEventsByVector,
