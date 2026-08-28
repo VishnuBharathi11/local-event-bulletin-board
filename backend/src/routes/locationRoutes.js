@@ -20,7 +20,7 @@ router.get('/district', async (req, res) => {
   }
 });
 
-router.get('/areas', async (req, res) => {
+router.get('/localities', async (req, res) => {
   const { district } = req.query;
 
   if (!district) {
@@ -29,10 +29,10 @@ router.get('/areas', async (req, res) => {
 
   try {
     const areas = await getPostalAreasForDistrict(district);
-    return res.json({ areas });
+    return res.json({ localities: areas });
   } catch (error) {
-    console.error('Failed to resolve areas:', error);
-    return res.status(500).json({ error: 'Failed to resolve area information.' });
+    console.error('Failed to resolve localities:', error);
+    return res.status(500).json({ error: 'Failed to resolve locality information.' });
   }
 });
 

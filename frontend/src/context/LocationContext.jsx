@@ -121,7 +121,7 @@ export function LocationProvider({ children }) {
     if (status === 'resolved' && district) {
       getLocalities(district)
         .then(data => {
-          if (data.areas) setLocalities(data.areas)
+          if (data.localities) setLocalities(data.localities)
         })
         .catch(err => console.error("Failed to fetch localities:", err))
     }

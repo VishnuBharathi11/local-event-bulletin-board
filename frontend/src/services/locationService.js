@@ -5,5 +5,5 @@ export function getDistrictFromCoords(lat, lng) {
 }
 
 export function getLocalities(district) {
-  return apiRequest(`/location/areas?district=${encodeURIComponent(district)}`)
+  return apiRequest(`/location/localities?district=${encodeURIComponent(district)}`)
 }
