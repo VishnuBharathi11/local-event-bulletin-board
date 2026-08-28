@@ -39,6 +39,16 @@ export default function EventBoardPage() {
   const categoryInfo = CATEGORY_INFOS[discovery.discovery.selectedCategory] || CATEGORY_INFOS.All
   const categorySlug = discovery.discovery.selectedCategory.toLowerCase().replace(/\s+/g, '-')
 
+  // Verification Logging for Map View data flow
+  if (viewMode === 'map' && status === 'success') {
+    const mapVisibleEvents = rawEvents.filter(e => e.latitude && e.longitude);
+    console.log("MAP VIEW TOTAL EVENTS RECEIVED =", rawEvents.length);
+    console.log("MAP VIEW EVENTS WITH VALID COORDINATES =", mapVisibleEvents.length);
+    if (mapVisibleEvents.length > 0) {
+      console.log("MAP EVENT LOCATIONS =", mapVisibleEvents.map(e => ({ title: e.title, city: e.city, lat: e.latitude, lng: e.longitude })));
+    }
+  }
+
   return (
     <section className={`event-page ${viewMode === 'list' ? 'event-page--list-padding' : ''}`}>
       {viewMode === 'list' && (
@@ -98,8 +108,8 @@ export default function EventBoardPage() {
                 <h1>Map View</h1>
               </header>
               <div className="event-map-view">
-                <EventMap events={discovery.districtEvents} height="650px" />
-                {discovery.districtEvents.some((event) => !event.latitude) && <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>* Some events don't have map locations yet and are not shown on the map.</p>}
+                <EventMap events={rawEvents} height="650px" />
+                {rawEvents.some((event) => !event.latitude) && <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>* Some events don't have map locations yet and are not shown on the map.</p>}
               </div>
             </div>
           )}

@@ -8,6 +8,7 @@ export function useEvents() {
     setState((current) => ({ ...current, status: 'loading', error: null }))
     try {
       const events = await getEvents()
+      console.log("USE_EVENTS HOOK: Received", events.length, "total events from API");
       setState({ status: 'success', events, error: null })
     } catch (error) {
       setState({ status: 'error', events: [], error: error.message })

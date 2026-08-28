@@ -1,29 +1,52 @@
 const chatbotService = require('../services/chatbotService')
+const geminiService = require('../services/geminiService')
 
 function handleError(res, error, operation) {
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
+  if (error.code === 'GEMINI_NOT_CONFIGURED') return res.status(503).json({ error: 'Gemini service is not configured' })
   console.error(`${operation} failed`, { message: error.message, code: error.code })
   return res.status(500).json({ error: 'Chatbot operation failed' })
 }
 
 function getCapabilities(req, res) {
-  return res.json(chatbotService.getCapabilities())
+  return res.json({
+    ...chatbotService.getCapabilities(),
+    gemini: {
+      enabled: geminiService.isConfigured(),
+      model: geminiService.DEFAULT_MODEL,
+      mode: 'grounded-explanation-only',
+    },
+  })
 }
 
 async function chat(req, res) {
+  try { return res.json(await chatbotService.processMessage(req.body || {})) }
+  catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
+}
+
+async function explainTrends(req, res) {
   try {
-    return res.json(await chatbotService.processMessage(req.body || {}))
+    const body = req.body || {}
+    const evidence = await chatbotService.getTrendAnalysis({
+      days: body.days,
+      category: body.category,
+      city: body.city,
+    })
+    const explanation = await geminiService.explainTrendAnalysis(evidence, body.question)
+    return res.json({
+      mode: 'grounded-trend-explanation',
+      evidenceVersion: evidence.version,
+      evidence,
+      ...explanation,
+    })
   } catch (error) {
-    return handleError(res, error, 'POST /api/chatbot/chat')
+    return handleError(res, error, 'POST /api/chatbot/trends/explain')
   }
 }
 
 async function getUpcomingEvents(req, res) {
-  try {
-    return res.json(await chatbotService.getUpcomingEvents(req.query || {}))
-  } catch (error) {
-    return handleError(res, error, 'GET /api/chatbot/tools/upcoming-events')
-  }
+  try { return res.json(await chatbotService.getUpcomingEvents(req.query || {})) }
+  catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/upcoming-events') }
 }
 
 async function getEventDetails(req, res) {
@@ -31,17 +54,17 @@ async function getEventDetails(req, res) {
     const event = await chatbotService.getEventDetails(req.params.eventId)
     if (!event) return res.status(404).json({ error: 'Event not found' })
     return res.json(event)
-  } catch (error) {
-    return handleError(res, error, 'GET /api/chatbot/tools/events/:eventId')
-  }
+  } catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/events/:eventId') }
 }
 
 async function getCommunityDemand(req, res) {
-  try {
-    return res.json(await chatbotService.getCommunityDemand(req.query || {}))
-  } catch (error) {
-    return handleError(res, error, 'GET /api/chatbot/tools/community-demand')
-  }
+  try { return res.json(await chatbotService.getCommunityDemand(req.query || {})) }
+  catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/community-demand') }
 }
 
-module.exports = { getCapabilities, chat, getUpcomingEvents, getEventDetails, getCommunityDemand }
+async function getTrendAnalysis(req, res) {
+  try { return res.json(await chatbotService.getTrendAnalysis(req.query || {})) }
+  catch (error) { return handleError(res, error, 'GET /api/chatbot/tools/trend-analysis') }
+}
+
+module.exports = { getCapabilities, chat, explainTrends, getUpcomingEvents, getEventDetails, getCommunityDemand, getTrendAnalysis }
