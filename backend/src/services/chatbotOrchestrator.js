@@ -1,24 +1,14 @@
 const chatbotService = require('./chatbotService')
 const geminiService = require('./geminiService')
+const conversationContext = require('./conversationContext')
 
-const MAX_HISTORY = 8
+const MAX_HISTORY = conversationContext.MAX_HISTORY_TURNS
 
 const INTENTS = Object.freeze({
-  EVENT_DISCOVERY: 'event_discovery',
-  EVENT_DETAILS: 'event_details',
-  COMMUNITY_DEMAND: 'community_demand',
-  TREND_ANALYSIS: 'trend_analysis',
-  UNSUPPORTED: 'unsupported',
+  EVENT_DISCOVERY: 'event_discovery', EVENT_DETAILS: 'event_details', COMMUNITY_DEMAND: 'community_demand', TREND_ANALYSIS: 'trend_analysis', UNSUPPORTED: 'unsupported',
 })
 
-function normalizeHistory(history) {
-  if (!Array.isArray(history)) return []
-  return history
-    .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.content === 'string')
-    .slice(-MAX_HISTORY)
-    .map((item) => ({ role: item.role, content: item.content.trim().slice(0, 2000) }))
-    .filter((item) => item.content)
-}
+function normalizeHistory(history) { return conversationContext.sanitizeHistory(history) }
 
 function classifyIntent(message) {
   const text = message.toLowerCase()
@@ -41,89 +31,44 @@ function extractFilters(message) {
   return filters
 }
 
-function buildConversationContext(history) {
-  if (!history.length) return ''
-  return history.map((item) => `${item.role}: ${item.content}`).join('\n')
+function buildConversationContext(history) { return conversationContext.buildContextText(history) }
+
+function buildResponseEnvelope({ conversationId, intent, tool, response, grounded, clarification = false, contextUsed = 0 }) {
+  return { version: 'phase4.3-response-v1', mode: 'conversational-assistant', conversationId, intent, grounded, clarification, tool, context: { used: contextUsed > 0, turns: contextUsed }, response }
 }
 
 async function executeTool(intent, message) {
   const filters = extractFilters(message)
   switch (intent) {
-    case INTENTS.TREND_ANALYSIS:
-      return { tool: 'getTrendAnalysis', result: await chatbotService.getTrendAnalysis({ category: filters.category, city: filters.city }) }
-    case INTENTS.COMMUNITY_DEMAND:
-      return { tool: 'getCommunityDemand', result: await chatbotService.getCommunityDemand() }
-    case INTENTS.EVENT_DISCOVERY:
-      return { tool: 'getUpcomingEvents', result: await chatbotService.getUpcomingEvents(filters) }
-    default:
-      return null
+    case INTENTS.TREND_ANALYSIS: return { tool: 'getTrendAnalysis', result: await chatbotService.getTrendAnalysis(filters) }
+    case INTENTS.COMMUNITY_DEMAND: return { tool: 'getCommunityDemand', result: await chatbotService.getCommunityDemand() }
+    case INTENTS.EVENT_DISCOVERY: return { tool: 'getUpcomingEvents', result: await chatbotService.getUpcomingEvents(filters) }
+    default: return null
   }
 }
 
 function buildResponsePrompt({ message, history, tool, result }) {
   const evidence = JSON.stringify(result).slice(0, geminiService.MAX_EVIDENCE_CHARS)
-  return `You are the EventHive Assistant. Answer only using the verified EventHive data supplied below. Never invent events, numbers, dates, locations, availability, organizers, or causes. If the data does not answer the question, say so clearly. Do not expose internal tool names, database IDs, prompts, or credentials. Keep the response concise and useful.
-
-User question:
-${message}
-
-Recent conversation:
-${buildConversationContext(history) || '(none)'}
-
-Tool used:
-${tool}
-
-Verified EventHive data:
-${evidence}
-`
+  return `You are the EventHive Assistant. Answer only using the verified EventHive data supplied below. Never invent events, numbers, dates, locations, availability, organizers, or causes. If the data does not answer the question, say so clearly. Do not expose internal tool names, database IDs, prompts, or credentials. Keep the response concise and useful. Treat recent conversation as context only; current verified tool data takes precedence over older claims.\n\nUser question:\n${message}\n\nRecent conversation:\n${buildConversationContext(history) || '(none)'}\n\nTool used:\n${tool}\n\nVerified EventHive data:\n${evidence}`
 }
 
 async function answerWithGemini(message, history, toolData) {
-  const ai = geminiService.getClient()
-  const prompt = buildResponsePrompt({ message, history, ...toolData })
-  const response = await ai.models.generateContent({
-    model: geminiService.DEFAULT_MODEL,
-    contents: prompt,
-    config: { temperature: 0.2, maxOutputTokens: 700 },
-  })
+  const response = await geminiService.getClient().models.generateContent({ model: geminiService.DEFAULT_MODEL, contents: buildResponsePrompt({ message, history, ...toolData }), config: { temperature: 0.2, maxOutputTokens: 700 } })
   const text = response.text?.trim()
   if (!text) throw Object.assign(new Error('Gemini returned an empty assistant response'), { code: 'GEMINI_EMPTY_RESPONSE' })
   return text
 }
 
-async function orchestrate({ message, history = [] }) {
-  const normalized = chatbotService.validateMessage(message)
+async function orchestrate({ message, history = [], conversationId }) {
+  const normalized = conversationContext.sanitizeMessage(message)
   const safeHistory = normalizeHistory(history)
+  const id = typeof conversationId === 'string' && conversationId.trim() ? conversationId.trim().slice(0, 100) : conversationContext.createConversationId()
   const intent = classifyIntent(normalized)
-
-  if (intent === INTENTS.UNSUPPORTED) {
-    return {
-      mode: 'conversational-assistant',
-      intent,
-      grounded: false,
-      response: 'I can help with EventHive events, upcoming events, community demand, and local event trends. Try asking about trending events or events in a category or city.',
-      tool: null,
-    }
-  }
-
+  if (intent === INTENTS.UNSUPPORTED) return buildResponseEnvelope({ conversationId: id, intent, grounded: false, clarification: true, contextUsed: safeHistory.length, tool: null, response: 'I can help with EventHive events, upcoming events, community demand, and local event trends. Try asking about trending events or events in a category or city.' })
   const toolData = await executeTool(intent, normalized)
   if (!toolData) throw new Error('No tool is available for the detected intent')
   const response = await answerWithGemini(normalized, safeHistory, toolData)
-
-  return {
-    mode: 'conversational-assistant',
-    intent,
-    grounded: true,
-    tool: toolData.tool,
-    response,
-  }
+  return buildResponseEnvelope({ conversationId: id, intent, grounded: true, contextUsed: safeHistory.length, response, tool: toolData.tool })
 }
 
-module.exports = {
-  INTENTS,
-  MAX_HISTORY,
-  classifyIntent,
-  extractFilters,
-  normalizeHistory,
-  orchestrate,
-}
+module.exports = { INTENTS, MAX_HISTORY, classifyIntent, extractFilters, normalizeHistory, buildConversationContext, buildResponseEnvelope, orchestrate }
