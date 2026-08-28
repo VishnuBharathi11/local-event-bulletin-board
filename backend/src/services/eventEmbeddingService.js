@@ -27,14 +27,15 @@ function getClient() {
   return client
 }
 
-async function generateEventEmbedding(canonicalText, config = EMBEDDING_CONFIG, ai = getClient()) {
+async function generateEventEmbedding(canonicalText, config = EMBEDDING_CONFIG, ai) {
   if (typeof canonicalText !== 'string' || !canonicalText.trim()) {
     throw new TypeError('canonical event text is required')
   }
 
   const embeddingConfig = validateEmbeddingConfig(config)
+  const vertexClient = ai || getClient()
 
-  const response = await ai.models.embedContent({
+  const response = await vertexClient.models.embedContent({
     model: embeddingConfig.model,
     contents: canonicalText,
     config: {
