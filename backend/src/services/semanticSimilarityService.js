@@ -8,6 +8,7 @@ const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 20
 const DEFAULT_DISTANCE_MEASURE = 'COSINE'
 const QUERY_TASK_TYPE = 'RETRIEVAL_QUERY'
+const DISTANCE_RESULT_FIELD = '_vectorDistance'
 
 function getQueryEmbeddingConfig() {
   return validateEmbeddingConfig({
@@ -55,18 +56,32 @@ async function findSimilarEventsByVector(queryVector, options = {}, firestore = 
     throw error
   }
 
-  const vectorQuery = collection.findNearest('embedding', vector, {
+  // The current Node.js Firestore vector-query API accepts the complete
+  // FindNearest configuration as one options object. This is important for
+  // distanceResultField to be included in the query returned by the SDK.
+  const vectorQuery = collection.findNearest({
+    vectorField: 'embedding',
+    queryVector: vector,
     limit,
     distanceMeasure,
-    distanceResultField: '_vectorDistance',
+    distanceResultField: DISTANCE_RESULT_FIELD,
   })
   const snapshot = await vectorQuery.get()
 
-  return snapshot.docs.map((doc) => ({
-    eventId: doc.id,
-    ...doc.data(),
-    distance: doc.get('_vectorDistance'),
-  }))
+  return snapshot.docs.map((doc) => {
+    const distance = doc.get(DISTANCE_RESULT_FIELD)
+    if (typeof distance !== 'number' || !Number.isFinite(distance)) {
+      const error = new Error(`Firestore vector query did not return a numeric ${DISTANCE_RESULT_FIELD}`)
+      error.code = 'FIRESTORE_VECTOR_DISTANCE_MISSING'
+      throw error
+    }
+
+    return {
+      eventId: doc.id,
+      ...doc.data(),
+      distance,
+    }
+  })
 }
 
 async function findSimilarEvents(canonicalText, options = {}, firestore = getFirestore(), embeddingGenerator = generateEventEmbedding) {
@@ -84,6 +99,7 @@ module.exports = {
   MAX_LIMIT,
   DEFAULT_DISTANCE_MEASURE,
   QUERY_TASK_TYPE,
+  DISTANCE_RESULT_FIELD,
   getQueryEmbeddingConfig,
   validateLimit,
   validateDistanceMeasure,
