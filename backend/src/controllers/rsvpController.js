@@ -16,6 +16,7 @@ async function createRSVP(req, res) {
     return res.status(200).json({ going: true })
   } catch (error) {
     if (error.code === 'EVENT_NOT_FOUND') return res.status(404).json({ error: 'Event not found.' })
+    if (error.code === 'EVENT_ONGOING' || error.code === 'EVENT_ENDED') return res.status(409).json({ error: error.message })
     return res.status(500).json({ error: 'Unable to RSVP to this event.' })
   }
 }

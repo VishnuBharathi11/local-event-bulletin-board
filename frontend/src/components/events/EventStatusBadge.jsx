@@ -1,7 +1,7 @@
 const STATUS_LABELS = {
   DRAFT: 'Draft',
   PUBLISHED: 'Published',
-  ACTIVE: 'Active',
+  ACTIVE: 'Ongoing',
   EXPIRED: 'Expired',
 }
 

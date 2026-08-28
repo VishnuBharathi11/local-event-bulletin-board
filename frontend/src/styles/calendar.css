@@ -354,3 +354,130 @@
     height: 140px;
   }
 }
+
+/* Calendar Page Two-Column Layout and Visual Polish */
+@media (min-width: 860px) {
+  .calendar {
+    display: grid !important;
+    grid-template-columns: 1.15fr 0.85fr !important;
+    align-items: stretch !important;
+  }
+
+  .calendar__datepicker {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .calendar__events {
+    border-left: 1px solid var(--border);
+    border-top: none !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .calendar__event-preview-list {
+    flex: 1;
+    max-height: 330px; /* limits height of list internally to fit calendar dimensions */
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .calendar__empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .calendar__event-preview-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .calendar__event-preview-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .calendar__event-preview-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+  .calendar__event-preview-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+/* Calendar Hero Layout & Composition */
+.calendar-hero {
+  background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%) !important; /* Soft light background */
+  border: 1px solid var(--brand-light) !important;
+  border-radius: 16px !important;
+  padding: 32px 40px !important;
+  box-shadow: 0 4px 20px rgb(94 46 168 / 6%) !important;
+  margin-bottom: 24px !important;
+}
+
+.calendar-hero .page-hero-layout__copy .eyebrow {
+  color: var(--brand) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 8px !important;
+}
+
+.calendar-hero h1 {
+  font-size: clamp(28px, 4vw, 36px) !important;
+  font-weight: 850 !important;
+  color: var(--brand-dark) !important;
+  margin: 0 0 10px 0 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.15 !important;
+}
+
+.calendar-hero .calendar-page__description {
+  font-size: 14.5px !important;
+  color: #475569 !important; /* Soft dark contrast slate */
+  line-height: 1.6 !important;
+  max-width: 600px !important;
+}
+
+.calendar-hero .page-hero-layout__image {
+  flex: 0 0 200px !important;
+  height: 150px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.calendar-hero .page-hero-layout__image img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  mix-blend-mode: multiply !important;
+  opacity: 0.95 !important;
+}
+
+/* Responsiveness overrides for Mobile Viewports */
+@media (max-width: 768px) {
+  .calendar-hero {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 24px 20px !important;
+    gap: 20px !important;
+  }
+
+  .calendar-hero .page-hero-layout__image {
+    display: flex !important; /* Keep illustration visible on mobile */
+    flex: 0 0 auto !important;
+    width: 120px !important;
+    height: 90px !important;
+    margin: 0 auto !important;
+  }
+
+  .calendar-hero .calendar-page__description {
+    max-width: 100% !important;
+  }
+}
+

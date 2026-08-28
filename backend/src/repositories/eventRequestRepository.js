@@ -9,9 +9,7 @@ function getRequestCollection() { return getFirestore().collection(EVENT_REQUEST
 function getInterestCollection() { return getFirestore().collection(INTEREST_COLLECTION) }
 
 function buildActiveEventRequestQuery(collection) {
-  return collection
-    .where('status', 'in', ACTIVE_REQUEST_STATUSES)
-    .orderBy('createdAt', 'desc')
+  return collection.where('status', 'in', ACTIVE_REQUEST_STATUSES).orderBy('createdAt', 'desc')
 }
 
 async function getEventRequests() {
@@ -20,12 +18,8 @@ async function getEventRequests() {
 }
 
 async function getUserEventRequests(userId) {
-  const snapshot = await getRequestCollection()
-    .where('organizerId', '==', userId)
-    .get()
-  return snapshot.docs
-    .map(fromFirestoreDocument)
-    .sort((a, b) => b.createdAt - a.createdAt)
+  const snapshot = await getRequestCollection().where('organizerId', '==', userId).get()
+  return snapshot.docs.map(fromFirestoreDocument).sort((a, b) => b.createdAt - a.createdAt)
 }
 
 async function getEventRequestById(requestId) {
@@ -50,17 +44,10 @@ async function updateEventRequest(requestId, updates) {
 async function deleteEventRequest(requestId) {
   const firestore = getFirestore()
   const requestRef = getRequestCollection().doc(requestId)
-
-  // Also cleanup interest data for this request
-  const interestSnapshot = await getInterestCollection()
-    .where('requestId', '==', requestId)
-    .get()
-
+  const interestSnapshot = await getInterestCollection().where('requestId', '==', requestId).get()
   await firestore.runTransaction(async (transaction) => {
     transaction.delete(requestRef)
-    interestSnapshot.docs.forEach((doc) => {
-      transaction.delete(doc.ref)
-    })
+    interestSnapshot.docs.forEach((doc) => transaction.delete(doc.ref))
   })
 }
 
@@ -80,13 +67,32 @@ async function expressInterest(requestId, userId) {
     if (!requestSnapshot.exists) throw new Error('Event request not found')
     if (!interestSnapshot.exists) {
       const request = fromFirestoreDocument(requestSnapshot)
+      if (request.status !== 'COLLECTING_DEMAND') throw Object.assign(new Error('Interest is not available for this request.'), { statusCode: 409 })
       const newCount = request.demandCount + 1
       transaction.set(interestRef, { interestId: `${requestId}_${userId}`, requestId, userId, createdAt: Date.now() })
-      transaction.update(requestRef, {
-        demandCount: newCount,
-        ...(newCount >= request.demandThreshold ? { status: 'THRESHOLD_REACHED' } : {}),
-      })
+      transaction.update(requestRef, { demandCount: newCount, ...(newCount >= request.demandThreshold ? { status: 'THRESHOLD_REACHED' } : {}) })
     }
+  })
+  return getEventRequestById(requestId)
+}
+
+async function removeInterest(requestId, userId) {
+  const firestore = getFirestore()
+  const interestRef = getInterestCollection().doc(`${requestId}_${userId}`)
+  const requestRef = getRequestCollection().doc(requestId)
+
+  await firestore.runTransaction(async (transaction) => {
+    const interestSnapshot = await transaction.get(interestRef)
+    if (!interestSnapshot.exists) return
+    const requestSnapshot = await transaction.get(requestRef)
+    if (!requestSnapshot.exists) throw new Error('Event request not found')
+    const request = fromFirestoreDocument(requestSnapshot)
+    if (request.status === 'CONFIRMED') throw Object.assign(new Error('Interest cannot be changed after confirmation.'), { statusCode: 409 })
+
+    const newCount = Math.max(Number(request.demandCount || 0) - 1, 0)
+    const nextStatus = request.status === 'THRESHOLD_REACHED' && newCount < request.demandThreshold ? 'COLLECTING_DEMAND' : request.status
+    transaction.delete(interestRef)
+    transaction.update(requestRef, { demandCount: newCount, status: nextStatus })
   })
   return getEventRequestById(requestId)
 }
@@ -95,27 +101,18 @@ async function confirmEventRequest(requestId) {
   const firestore = getFirestore()
   const requestRef = getRequestCollection().doc(requestId)
   let createdEvent = null
-
-  // Check if already confirmed outside transaction for optimization
   const initialSnapshot = await requestRef.get()
   const initialRequest = fromFirestoreDocument(initialSnapshot)
   if (initialRequest && initialRequest.status === 'CONFIRMED' && initialRequest.eventId) {
     const existingEventSnapshot = await firestore.collection('events').doc(initialRequest.eventId).get()
-    if (existingEventSnapshot.exists) {
-      return { ...existingEventSnapshot.data(), eventId: existingEventSnapshot.id }
-    }
+    if (existingEventSnapshot.exists) return { ...existingEventSnapshot.data(), eventId: existingEventSnapshot.id }
   }
 
   await firestore.runTransaction(async (transaction) => {
     const requestSnapshot = await transaction.get(requestRef)
     const request = fromFirestoreDocument(requestSnapshot)
     if (!request) throw new Error('Event request not found')
-
-    // Double check within transaction
-    if (request.status === 'CONFIRMED' && request.eventId) {
-      return
-    }
-
+    if (request.status === 'CONFIRMED' && request.eventId) return
     if (request.status !== 'THRESHOLD_REACHED') throw new Error('Event request has not reached the demand threshold')
 
     const eventRef = firestore.collection('events').doc()
@@ -142,17 +139,13 @@ async function confirmEventRequest(requestId) {
     }
     const { eventId: _eventId, ...eventFields } = createdEvent
     transaction.set(eventRef, eventFields)
-    transaction.update(requestRef, {
-      status: 'CONFIRMED',
-      eventId: eventRef.id,
-    })
+    transaction.update(requestRef, { status: 'CONFIRMED', eventId: eventRef.id })
   })
 
   if (!createdEvent && initialRequest.eventId) {
     const finalEventSnapshot = await firestore.collection('events').doc(initialRequest.eventId).get()
-    return { ...finalEventSnapshot.data(), eventId: finalEventSnapshot.id }
+    return { ...finalEventSnapshot.data(), eventId: initialRequest.eventId }
   }
-
   return createdEvent
 }
 
@@ -176,6 +169,7 @@ module.exports = {
   deleteEventRequest,
   hasUserExpressedInterest,
   expressInterest,
+  removeInterest,
   confirmEventRequest,
   declineEventRequest,
 }

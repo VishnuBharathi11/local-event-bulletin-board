@@ -5,6 +5,8 @@ import { getMyEventRequests, deleteEventRequest } from '../services/eventRequest
 import { getMyEvents, deleteEvent } from '../services/eventService.js'
 import EventRequestCard from '../components/community/EventRequestCard.jsx'
 import EventCard from '../components/events/EventCard.jsx'
+import Magnet from '../components/common/Magnet.jsx'
+import ClickSpark from '../components/common/ClickSpark.jsx'
 import '../styles/communityRequests.css'
 
 export default function ProfilePage() {
@@ -177,13 +179,17 @@ export default function ProfilePage() {
             <h2 style={{ margin: 0, fontSize: '32px', color: 'white' }}>{currentUser?.name}</h2>
             <p style={{ margin: '4px 0 0', opacity: 0.9, fontSize: '16px' }}>EventHive Member</p>
             <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
-              <button
-                className="secondary-button"
-                onClick={() => setIsEditMode(true)}
-                style={{ backgroundColor: 'white', border: 'none', color: 'var(--brand-dark)' }}
-              >
-                Edit Profile
-              </button>
+              <ClickSpark sparkColor="rgba(94, 46, 168, 0.4)">
+                <Magnet strength={0.08} range={35}>
+                  <button
+                    className="secondary-button"
+                    onClick={() => setIsEditMode(true)}
+                    style={{ backgroundColor: 'white', border: 'none', color: 'var(--brand-dark)', width: 'auto' }}
+                  >
+                    Edit Profile
+                  </button>
+                </Magnet>
+              </ClickSpark>
             </div>
           </div>
 
@@ -286,7 +292,11 @@ export default function ProfilePage() {
           <section id="my-events">
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ margin: 0 }}>Your Created Events</h2>
-              <Link className="primary-button" to="/events/new">Create Event</Link>
+              <ClickSpark style={{ width: 'auto' }}>
+                <Magnet strength={0.08} range={35} style={{ width: 'auto' }}>
+                  <Link className="primary-button" to="/events/new">Create Event</Link>
+                </Magnet>
+              </ClickSpark>
             </header>
 
             {loadingEvents && (
@@ -334,7 +344,11 @@ export default function ProfilePage() {
           <section id="my-requests">
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ margin: 0 }}>Your Event Requests</h2>
-              <Link className="primary-button" to="/community-requests/new">Request an Event</Link>
+              <ClickSpark style={{ width: 'auto' }}>
+                <Magnet strength={0.08} range={35} style={{ width: 'auto' }}>
+                  <Link className="primary-button" to="/community-requests/new">Request an Event</Link>
+                </Magnet>
+              </ClickSpark>
             </header>
 
             {loadingRequests && (
@@ -470,21 +484,29 @@ export default function ProfilePage() {
               )}
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setIsEditMode(false)}
-                  disabled={updateStatus === 'saving'}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={updateStatus === 'saving'}
-                >
-                  {updateStatus === 'saving' ? 'Saving Changes...' : 'Save Changes'}
-                </button>
+                <ClickSpark style={{ width: 'auto' }}>
+                  <Magnet strength={0.08} range={35} style={{ width: 'auto' }}>
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => setIsEditMode(false)}
+                      disabled={updateStatus === 'saving'}
+                    >
+                      Cancel
+                    </button>
+                  </Magnet>
+                </ClickSpark>
+                <ClickSpark style={{ width: 'auto' }}>
+                  <Magnet strength={0.08} range={35} style={{ width: 'auto' }}>
+                    <button
+                      type="submit"
+                      className="primary-button"
+                      disabled={updateStatus === 'saving'}
+                    >
+                      {updateStatus === 'saving' ? 'Saving Changes...' : 'Save Changes'}
+                    </button>
+                  </Magnet>
+                </ClickSpark>
               </div>
             </form>
           </div>
