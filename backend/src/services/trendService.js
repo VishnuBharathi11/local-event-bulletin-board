@@ -63,17 +63,13 @@ function calculateRsvpVelocity(rsvps, windowStart, windowEnd) {
 function buildTrendSignals(events, requests, rsvps, now, windowStart, windowEnd) {
   const upcoming = events.filter((event) => Number(event.startTime) > now && Number(event.expireAt) > now)
   const eventMap = new Map(events.map((event) => [event.eventId, event]))
-  const enrichedRsvps = rsvps
-    .map((rsvp) => ({ ...rsvp, event: eventMap.get(rsvp.eventId) }))
-    .filter((rsvp) => rsvp.event)
-
+  const enrichedRsvps = rsvps.map((rsvp) => ({ ...rsvp, event: eventMap.get(rsvp.eventId) })).filter((rsvp) => rsvp.event)
   const categoryActivity = groupCounts(events, 'category').slice(0, MAX_RESULTS)
   const locationActivity = groupCounts(events, 'city').slice(0, MAX_RESULTS)
   const categoryRsvps = groupRsvps(events, 'category').slice(0, MAX_RESULTS)
   const locationRsvps = groupRsvps(events, 'city').slice(0, MAX_RESULTS)
   const rsvpCategoryActivity = groupCounts(enrichedRsvps.map((rsvp) => ({ category: rsvp.event.category })), 'category').slice(0, MAX_RESULTS)
   const rsvpLocationActivity = groupCounts(enrichedRsvps.map((rsvp) => ({ city: rsvp.event.city })), 'city').slice(0, MAX_RESULTS)
-
   const totalRsvps = events.reduce((sum, event) => sum + Math.max(0, Number(event.rsvpCount) || 0), 0)
   const averageRsvps = events.length ? Number((totalRsvps / events.length).toFixed(2)) : 0
   const demandTotal = requests.reduce((sum, request) => sum + Math.max(0, Number(request.demandCount) || 0), 0)
@@ -100,11 +96,8 @@ function buildTrendSignals(events, requests, rsvps, now, windowStart, windowEnd)
 
 function rankHotCategories(categoryActivity, categoryRsvps) {
   const rsvpMap = new Map(categoryRsvps.map((item) => [item.name, item.rsvps]))
-  return categoryActivity.map((item) => ({
-    name: item.name,
-    eventCount: item.count,
-    rsvps: rsvpMap.get(item.name) || 0,
-  })).sort((a, b) => b.rsvps - a.rsvps || b.eventCount - a.eventCount || a.name.localeCompare(b.name)).slice(0, MAX_RESULTS)
+  return categoryActivity.map((item) => ({ name: item.name, eventCount: item.count, rsvps: rsvpMap.get(item.name) || 0 }))
+    .sort((a, b) => b.rsvps - a.rsvps || b.eventCount - a.eventCount || a.name.localeCompare(b.name)).slice(0, MAX_RESULTS)
 }
 
 async function analyzeTrends({ days = DEFAULT_WINDOW_DAYS, category, city } = {}) {
@@ -130,7 +123,6 @@ async function analyzeTrends({ days = DEFAULT_WINDOW_DAYS, category, city } = {}
   }
 
   const signals = buildTrendSignals(events, requests, rsvps, now, windowStart, windowEnd)
-  const hotCategories = rankHotCategories(signals.categoryActivity, signals.categoryRsvps)
   const demandCategories = groupRsvps(requests.map((request) => ({ category: request.category, rsvpCount: request.demandCount })), 'category')
   const demandLocations = groupRsvps(requests.map((request) => ({ city: request.city, rsvpCount: request.demandCount })), 'city')
 
@@ -141,7 +133,7 @@ async function analyzeTrends({ days = DEFAULT_WINDOW_DAYS, category, city } = {}
     filters: { category: category || null, city: city || null },
     signals,
     insights: {
-      hotCategories,
+      hotCategories: rankHotCategories(signals.categoryActivity, signals.categoryRsvps),
       highDemandCategories: demandCategories.slice(0, MAX_RESULTS),
       highDemandCities: demandLocations.slice(0, MAX_RESULTS),
       eventSupplyVsDemand: {
@@ -154,15 +146,4 @@ async function analyzeTrends({ days = DEFAULT_WINDOW_DAYS, category, city } = {}
   }
 }
 
-module.exports = {
-  DEFAULT_WINDOW_DAYS,
-  MAX_WINDOW_DAYS,
-  MAX_RESULTS,
-  safePositiveInteger,
-  groupCounts,
-  groupRsvps,
-  calculateVelocity,
-  calculateRsvpVelocity,
-  rankHotCategories,
-  analyzeTrends,
-}
+module.exports = { DEFAULT_WINDOW_DAYS, MAX_WINDOW_DAYS, MAX_RESULTS, safePositiveInteger, groupCounts, groupRsvps, calculateVelocity, calculateRsvpVelocity, rankHotCategories, analyzeTrends }

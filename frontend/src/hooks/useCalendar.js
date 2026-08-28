@@ -57,17 +57,6 @@ export function useCalendar() {
       if (area && area.pincode) {
         allowedInternalValues.add(area.pincode.toLowerCase().trim());
       }
-
-      calendarEvents.forEach(e => {
-        const city = String(e.city || '').toLowerCase().trim();
-        const neighborhood = String(e.neighborhood || '').toLowerCase().trim();
-        if (city === selectedCity.toLowerCase().trim()) {
-          if (neighborhood) allowedInternalValues.add(neighborhood);
-        }
-        if (neighborhood === selectedCity.toLowerCase().trim()) {
-          if (city) allowedInternalValues.add(city);
-        }
-      });
     }
 
     return calendarEvents.filter(event => {

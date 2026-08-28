@@ -1,25 +1,15 @@
 const eventRepository = require('../repositories/eventRepository')
 const eventRequestRepository = require('../repositories/eventRequestRepository')
 const { normalizeEvent } = require('../models/eventModel')
+const trendService = require('./trendService')
 
-const CHATBOT_VERSION = 'phase1-foundation-v1'
+const CHATBOT_VERSION = 'phase2-deterministic-trends-v1'
 
 const CHATBOT_TOOLS = Object.freeze([
-  {
-    name: 'getUpcomingEvents',
-    description: 'Return upcoming non-expired EventHive events, optionally filtered by category or city.',
-    readOnly: true,
-  },
-  {
-    name: 'getEventDetails',
-    description: 'Return details for a specific EventHive event.',
-    readOnly: true,
-  },
-  {
-    name: 'getCommunityDemand',
-    description: 'Return active community event requests and their current demand.',
-    readOnly: true,
-  },
+  { name: 'getUpcomingEvents', description: 'Return upcoming non-expired EventHive events, optionally filtered by category or city.', readOnly: true },
+  { name: 'getEventDetails', description: 'Return details for a specific EventHive event.', readOnly: true },
+  { name: 'getCommunityDemand', description: 'Return active community event requests and their current demand.', readOnly: true },
+  { name: 'getTrendAnalysis', description: 'Return deterministic EventHive trend metrics derived from event activity, RSVP velocity, category/location activity, and community demand.', readOnly: true },
 ])
 
 function validateMessage(message) {
@@ -86,10 +76,14 @@ async function getCommunityDemand({ limit = 10 } = {}) {
   }))
 }
 
+async function getTrendAnalysis(options = {}) {
+  return trendService.analyzeTrends(options)
+}
+
 function getCapabilities() {
   return {
     version: CHATBOT_VERSION,
-    mode: 'foundation',
+    mode: 'deterministic-trends',
     aiEnabled: false,
     readOnly: true,
     tools: CHATBOT_TOOLS,
@@ -97,7 +91,7 @@ function getCapabilities() {
       'event_discovery',
       'event_details',
       'community_demand',
-      'trend_analysis_future',
+      'trend_analysis',
       'semantic_similarity_future',
     ],
   }
@@ -107,10 +101,10 @@ async function processMessage({ message }) {
   const normalizedMessage = validateMessage(message)
   return {
     version: CHATBOT_VERSION,
-    mode: 'foundation',
+    mode: 'deterministic-trends',
     status: 'not_ready',
     message: normalizedMessage,
-    response: 'EventHive Assistant foundation is ready. Conversational AI will be enabled in the Gemini integration phase.',
+    response: 'EventHive Assistant is now backed by deterministic trend intelligence. Conversational AI explanation will be enabled in the Gemini phase.',
     availableTools: CHATBOT_TOOLS.map((tool) => tool.name),
   }
 }
@@ -123,5 +117,6 @@ module.exports = {
   getUpcomingEvents,
   getEventDetails,
   getCommunityDemand,
+  getTrendAnalysis,
   processMessage,
 }

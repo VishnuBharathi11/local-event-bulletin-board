@@ -133,12 +133,19 @@ export default function EventMap({
     mapRef.current = null;
   }, []);
 
-  const mapEvents = useMemo(() => events.filter(event =>
-    event.latitude !== null &&
-    event.longitude !== null &&
-    !isNaN(event.latitude) &&
-    !isNaN(event.longitude)
-  ), [events]);
+  const mapEvents = useMemo(() => {
+    const visible = events.filter(event =>
+      event.latitude !== null &&
+      event.longitude !== null &&
+      !isNaN(event.latitude) &&
+      !isNaN(event.longitude)
+    );
+    console.log("EVENT MAP: Received", events.length, "events, showing", visible.length, "on map");
+    if (visible.length > 0) {
+      console.log("MAP MARKER COORDINATES:", visible.map(e => ({ title: e.title, lat: e.latitude, lng: e.longitude })));
+    }
+    return visible;
+  }, [events]);
 
   const requestUserLocation = useCallback(() => {
     if (navigator.geolocation) {
