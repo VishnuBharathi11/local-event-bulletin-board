@@ -98,8 +98,8 @@ export default function EventBoardPage() {
                 <h1>Map View</h1>
               </header>
               <div className="event-map-view">
-                <EventMap events={discovery.districtEvents} height="650px" />
-                {discovery.districtEvents.some((event) => !event.latitude) && <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>* Some events don't have map locations yet and are not shown on the map.</p>}
+                <EventMap events={rawEvents} height="650px" />
+                {rawEvents.some((event) => !event.latitude) && <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>* Some events don't have map locations yet and are not shown on the map.</p>}
               </div>
             </div>
           )}
