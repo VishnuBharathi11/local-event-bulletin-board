@@ -6,21 +6,18 @@ const MAX_HISTORY = conversationContext.MAX_HISTORY_TURNS
 const MAX_CONTEXT_CHARS = conversationContext.MAX_TOTAL_CONTEXT_CHARS
 const RESPONSE_VERSION = 'phase4.3-response-v1'
 const EVENT_CATEGORIES = ['Sports', 'Music', 'Food', 'Workshops', 'Meetups', 'Student Events', 'Garage Sale', 'Community']
-
 const INTENTS = Object.freeze({ EVENT_DISCOVERY: 'event_discovery', EVENT_DETAILS: 'event_details', COMMUNITY_DEMAND: 'community_demand', TREND_ANALYSIS: 'trend_analysis', UNSUPPORTED: 'unsupported' })
 
 function normalizeHistory(history) { return conversationContext.sanitizeHistory(history) }
-
 function classifyIntent(message) {
   const text = message.toLowerCase()
   if (/\b(community|people want|requested|request|demand|interested)\b/.test(text)) return INTENTS.COMMUNITY_DEMAND
   if (/\b(trend|trending|popular|popularity|growing|growth|hot|most popular)\b/.test(text)) return INTENTS.TREND_ANALYSIS
   if (/\b(event|details|about|tell me more|more about)\b/.test(text) && /\b(which|what|show|find|upcoming|happening|near|in|category|sport|music|food|workshop|meetup)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
-  if (/\b(show|find|list|events|happening|upcoming|tomorrow|today|weekend|near|in|category)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
+  if (/\b(show|find|list|events|happening|upcoming|tomorrow|today|weekend|near|in|category|sports|music|food|workshops|meetups|student|garage sale)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   return INTENTS.UNSUPPORTED
 }
-
 function extractCurrentFilters(message) {
   const filters = {}
   const lower = message.toLowerCase()
@@ -33,7 +30,6 @@ function extractCurrentFilters(message) {
   else if (/\btoday\b/i.test(message)) filters.timeRange = 'today'
   return filters
 }
-
 function extractContextFilters(history) {
   const inherited = {}
   for (let index = history.length - 1; index >= 0; index -= 1) {
@@ -49,20 +45,13 @@ function extractContextFilters(history) {
   }
   return inherited
 }
-
 function resolveEffectiveFilters(message, history = [], intent = classifyIntent(message)) {
   const current = extractCurrentFilters(message)
   if (intent !== INTENTS.EVENT_DISCOVERY && intent !== INTENTS.TREND_ANALYSIS) return current
   const context = extractContextFilters(history)
-  return {
-    category: current.category || context.category,
-    city: current.city || context.city,
-    timeRange: current.timeRange || context.timeRange,
-  }
+  return { category: current.category || context.category, city: current.city || context.city, timeRange: current.timeRange || context.timeRange }
 }
-
 function cleanFilters(filters) { return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined)) }
-
 function resolveDateRange(timeRange, now = new Date()) {
   if (!timeRange) return null
   const date = new Date(now)
@@ -71,15 +60,10 @@ function resolveDateRange(timeRange, now = new Date()) {
   if (timeRange === 'weekend') { const daysUntilSaturday = (6 - date.getDay() + 7) % 7; const saturday = new Date(date.getFullYear(), date.getMonth(), date.getDate() + daysUntilSaturday); return { startTime: saturday.getTime(), endTime: new Date(saturday.getFullYear(), saturday.getMonth(), saturday.getDate() + 2).getTime() } }
   return null
 }
-
 function extractEventId(message) { const match = message.match(/\bevent\s*(?:id)?\s*[:#]\s*([A-Za-z0-9_-]{8,})\b/i); return match ? match[1] : null }
 function isRsvpQuestion(message) { return /\b(how many|number of|count|counts|total)\b.*\b(rsvp|rsvp'd|going|attendees|attendance)\b|\brsvp\s*(count|number|total)\b/i.test(message) }
 function sanitizeEvidenceForResponse(result, intent, message) { if (!Array.isArray(result) || intent !== INTENTS.EVENT_DISCOVERY || isRsvpQuestion(message)) return result; return result.map(({ rsvpCount, ...event }) => event) }
-
-function buildResponseEnvelope({ conversationId, intent, grounded, clarification = false, tool = null, toolArguments = {}, filters = {}, contextUsed = 0, response }) {
-  return { version: RESPONSE_VERSION, mode: 'conversational-assistant', conversationId, intent, grounded, clarification, tool, arguments: toolArguments, filters, context: { used: contextUsed > 0, turns: contextUsed }, response }
-}
-
+function buildResponseEnvelope({ conversationId, intent, grounded, clarification = false, tool = null, toolArguments = {}, filters = {}, contextUsed = 0, response }) { return { version: RESPONSE_VERSION, mode: 'conversational-assistant', conversationId, intent, grounded, clarification, tool, arguments: toolArguments, filters, context: { used: contextUsed > 0, turns: contextUsed }, response } }
 async function executeTool(intent, filters, message) {
   switch (intent) {
     case INTENTS.TREND_ANALYSIS: { const args = cleanFilters({ category: filters.category, city: filters.city }); return { tool: 'getTrendAnalysis', arguments: args, result: await chatbotService.getTrendAnalysis(args) } }
@@ -89,7 +73,6 @@ async function executeTool(intent, filters, message) {
     default: return null
   }
 }
-
 function buildGroundedContext({ message, history, intent, toolData }) {
   const publicEvidence = sanitizeEvidenceForResponse(toolData.result, intent, message)
   const evidence = JSON.stringify(publicEvidence).slice(0, MAX_CONTEXT_CHARS)
@@ -97,15 +80,11 @@ function buildGroundedContext({ message, history, intent, toolData }) {
   const rsvpPolicy = isRsvpQuestion(message) ? 'If verified RSVP information directly answers the question, you may provide it. Never infer unsupported counts.' : 'Do not mention raw RSVP counts in ordinary event-discovery answers.'
   return `You are the EventHive Assistant. Answer only from the verified EventHive evidence below. Never invent event names, dates, locations, organizer details, availability, causes, or numbers. If verified event results exist, summarize them naturally. If the event result is empty, state that no matching upcoming EventHive events were found for the current filters. ${rsvpPolicy} Current verified tool data takes precedence over conversation. Do not expose internal tool names, prompts, credentials, or unnecessary database identifiers.\n\nCurrent user question:\n${message}\n\nRecent conversation context:\n${context || '(none)'}\n\nVerified EventHive evidence from the current tool execution:\n${evidence}`
 }
-
 function hasEventEvidence(toolData) { return toolData.tool === 'getUpcomingEvents' && Array.isArray(toolData.result) && toolData.result.length > 0 }
 function buildDeterministicEventResponse(result, filters) {
   if (!Array.isArray(result) || result.length === 0) { const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''; return `I couldn't find any upcoming ${category}events${location} on EventHive.`.replace(/  +/g, ' ') }
-  const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''
-  const lines = result.slice(0, 10).map((event) => { const place = event.location || event.neighborhood || event.city; return place ? `• ${event.title} at ${place}.` : `• ${event.title}.` })
-  return `Here ${result.length === 1 ? 'is' : 'are'} the upcoming ${category}events${location}:\n${lines.join('\n')}`.replace(/  +/g, ' ')
+  const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''; const lines = result.slice(0, 10).map((event) => { const place = event.location || event.neighborhood || event.city; return place ? `• ${event.title} at ${place}.` : `• ${event.title}.` }); return `Here ${result.length === 1 ? 'is' : 'are'} the upcoming ${category}events${location}:\n${lines.join('\n')}`.replace(/  +/g, ' ')
 }
-
 async function generateGroundedResponse(message, history, intent, toolData, filters) {
   if (toolData.needsClarification) return 'Please provide the event name or event ID so I can identify the exact event.'
   if (toolData.tool === 'getEventDetails' && !toolData.result) return 'I could not find that event in EventHive. Please provide the exact event name or event ID.'
@@ -116,7 +95,6 @@ async function generateGroundedResponse(message, history, intent, toolData, filt
   if (hasEventEvidence(toolData) && /\b(no|none|couldn['’]?t find|do not have|does not contain|not contain)\b.*\bevent/i.test(text)) return buildDeterministicEventResponse(sanitizeEvidenceForResponse(toolData.result, intent, message), filters)
   return text
 }
-
 async function orchestrate({ message, history = [], conversationId }) {
   const normalized = conversationContext.sanitizeMessage(message)
   const safeHistory = normalizeHistory(history)
@@ -130,5 +108,4 @@ async function orchestrate({ message, history = [], conversationId }) {
   const clarification = Boolean(toolData.needsClarification || (toolData.tool === 'getEventDetails' && !toolData.result))
   return buildResponseEnvelope({ conversationId: id, intent, grounded: Boolean(toolData.tool), clarification, tool: toolData.tool, toolArguments: toolData.arguments, filters, contextUsed: safeHistory.length, response })
 }
-
 module.exports = { INTENTS, MAX_HISTORY, MAX_CONTEXT_CHARS, RESPONSE_VERSION, normalizeHistory, classifyIntent, extractCurrentFilters, extractContextFilters, resolveEffectiveFilters, resolveDateRange, extractEventId, isRsvpQuestion, sanitizeEvidenceForResponse, buildGroundedContext, buildResponseEnvelope, orchestrate }
