@@ -1,5 +1,6 @@
 const chatbotService = require('../services/chatbotService')
 const geminiService = require('../services/geminiService')
+const orchestrationService = require('../services/orchestrationService')
 
 function handleError(res, error, operation) {
   if (error instanceof TypeError) return res.status(400).json({ error: error.message })
@@ -11,37 +12,33 @@ function handleError(res, error, operation) {
 function getCapabilities(req, res) {
   return res.json({
     ...chatbotService.getCapabilities(),
+    phase4: {
+      orchestration: true,
+      supportedIntents: Object.values(orchestrationService.INTENTS),
+      maxHistory: orchestrationService.MAX_HISTORY,
+    },
     gemini: {
       enabled: geminiService.isConfigured(),
       model: geminiService.DEFAULT_MODEL,
-      mode: 'grounded-explanation-only',
+      mode: 'grounded-conversational-orchestration',
     },
   })
 }
 
 async function chat(req, res) {
-  try { return res.json(await chatbotService.processMessage(req.body || {})) }
-  catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
+  try {
+    const body = req.body || {}
+    return res.json(await orchestrationService.orchestrate({ message: body.message, history: body.history }))
+  } catch (error) { return handleError(res, error, 'POST /api/chatbot/chat') }
 }
 
 async function explainTrends(req, res) {
   try {
     const body = req.body || {}
-    const evidence = await chatbotService.getTrendAnalysis({
-      days: body.days,
-      category: body.category,
-      city: body.city,
-    })
+    const evidence = await chatbotService.getTrendAnalysis({ days: body.days, category: body.category, city: body.city })
     const explanation = await geminiService.explainTrendAnalysis(evidence, body.question)
-    return res.json({
-      mode: 'grounded-trend-explanation',
-      evidenceVersion: evidence.version,
-      evidence,
-      ...explanation,
-    })
-  } catch (error) {
-    return handleError(res, error, 'POST /api/chatbot/trends/explain')
-  }
+    return res.json({ mode: 'grounded-trend-explanation', evidenceVersion: evidence.version, evidence, ...explanation })
+  } catch (error) { return handleError(res, error, 'POST /api/chatbot/trends/explain') }
 }
 
 async function getUpcomingEvents(req, res) {
