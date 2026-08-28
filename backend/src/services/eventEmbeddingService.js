@@ -27,13 +27,12 @@ function getClient() {
   return client
 }
 
-async function generateEventEmbedding(canonicalText, config = EMBEDDING_CONFIG) {
+async function generateEventEmbedding(canonicalText, config = EMBEDDING_CONFIG, ai = getClient()) {
   if (typeof canonicalText !== 'string' || !canonicalText.trim()) {
     throw new TypeError('canonical event text is required')
   }
 
   const embeddingConfig = validateEmbeddingConfig(config)
-  const ai = getClient()
 
   const response = await ai.models.embedContent({
     model: embeddingConfig.model,
