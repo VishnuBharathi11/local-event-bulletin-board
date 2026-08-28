@@ -1,5 +1,4 @@
 const { canonicalizeEvent } = require('./eventCanonicalization')
-const { generateEventEmbedding } = require('./eventEmbeddingService')
 const { findSimilarEvents } = require('./semanticSimilarityService')
 const { buildSemanticConflictResult } = require('./semanticConflictService')
 
@@ -23,15 +22,13 @@ async function detectSemanticConflicts(proposedEvent, options = {}) {
   }
 
   const canonicalText = canonicalizeEvent(proposedEvent)
-  const embeddingGenerator = options.embeddingGenerator || generateEventEmbedding
   const similaritySearcher = options.similaritySearcher || findSimilarEvents
   const candidateLimit = options.candidateLimit || DEFAULT_CANDIDATE_LIMIT
 
-  const queryEmbedding = await embeddingGenerator(canonicalText)
   const candidates = await similaritySearcher(canonicalText, {
     limit: candidateLimit,
     distanceMeasure: 'COSINE',
-  }, options.firestore, async () => queryEmbedding)
+  }, options.firestore)
 
   const results = candidates
     .filter((candidate) => candidate.eventId !== proposedEvent.eventId)
