@@ -10,7 +10,9 @@ function stripEmbeddingMetadata(event = {}) {
 }
 
 function hasConflictSignal(conflict) {
-  return conflict.semanticEvidence || conflict.conflictScore >= conflict.conflictThreshold
+  // Semantic similarity is supporting evidence. The deterministic conflict
+  // threshold remains the decision boundary; semantics can strengthen it.
+  return conflict.conflictScore >= conflict.conflictThreshold
 }
 
 async function detectSemanticConflicts(proposedEvent, options = {}) {
