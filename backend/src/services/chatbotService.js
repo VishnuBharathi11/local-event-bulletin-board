@@ -3,7 +3,7 @@ const eventRequestRepository = require('../repositories/eventRequestRepository')
 const { normalizeEvent } = require('../models/eventModel')
 const trendService = require('./trendService')
 
-const CHATBOT_VERSION = 'phase2-deterministic-trends-v1'
+const CHATBOT_VERSION = 'phase4-1-conversational-orchestration-v1'
 
 const CHATBOT_TOOLS = Object.freeze([
   { name: 'getUpcomingEvents', description: 'Return upcoming non-expired EventHive events, optionally filtered by category or city.', readOnly: true },
@@ -22,23 +22,7 @@ function validateMessage(message) {
 
 function serializeEvent(event) {
   const normalized = normalizeEvent(event)
-  return {
-    eventId: normalized.eventId,
-    title: normalized.title,
-    description: normalized.description,
-    category: normalized.category,
-    city: normalized.city,
-    neighborhood: normalized.neighborhood,
-    location: normalized.location,
-    startTime: normalized.startTime,
-    endTime: normalized.endTime,
-    status: normalized.status,
-    rsvpCount: normalized.rsvpCount,
-    organizerId: normalized.organizerId,
-    imageUrl: normalized.imageUrl,
-    latitude: normalized.latitude,
-    longitude: normalized.longitude,
-  }
+  return { eventId: normalized.eventId, title: normalized.title, description: normalized.description, category: normalized.category, city: normalized.city, neighborhood: normalized.neighborhood, location: normalized.location, startTime: normalized.startTime, endTime: normalized.endTime, status: normalized.status, rsvpCount: normalized.rsvpCount, organizerId: normalized.organizerId, imageUrl: normalized.imageUrl, latitude: normalized.latitude, longitude: normalized.longitude }
 }
 
 async function getUpcomingEvents({ category, city, limit = 10 } = {}) {
@@ -54,69 +38,21 @@ async function getUpcomingEvents({ category, city, limit = 10 } = {}) {
 async function getEventDetails(eventId) {
   if (typeof eventId !== 'string' || !eventId.trim()) throw new TypeError('eventId is required')
   const event = await eventRepository.getEventById(eventId.trim())
-  if (!event) return null
-  return serializeEvent(event)
+  return event ? serializeEvent(event) : null
 }
 
 async function getCommunityDemand({ limit = 10 } = {}) {
   const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 20)
   const requests = await eventRequestRepository.getEventRequests()
-  return requests.slice(0, safeLimit).map((request) => ({
-    requestId: request.requestId,
-    title: request.title,
-    description: request.description,
-    category: request.category,
-    city: request.city,
-    neighborhood: request.neighborhood,
-    demandCount: request.demandCount,
-    demandThreshold: request.demandThreshold,
-    status: request.status,
-    startTime: request.startTime,
-    endTime: request.endTime,
-  }))
+  return requests.slice(0, safeLimit).map((request) => ({ requestId: request.requestId, title: request.title, description: request.description, category: request.category, city: request.city, neighborhood: request.neighborhood, demandCount: request.demandCount, demandThreshold: request.demandThreshold, status: request.status, startTime: request.startTime, endTime: request.endTime }))
 }
 
-async function getTrendAnalysis(options = {}) {
-  return trendService.analyzeTrends(options)
-}
+async function getTrendAnalysis(options = {}) { return trendService.analyzeTrends(options) }
 
 function getCapabilities() {
-  return {
-    version: CHATBOT_VERSION,
-    mode: 'deterministic-trends',
-    aiEnabled: false,
-    readOnly: true,
-    tools: CHATBOT_TOOLS,
-    supportedIntentGroups: [
-      'event_discovery',
-      'event_details',
-      'community_demand',
-      'trend_analysis',
-      'semantic_similarity_future',
-    ],
-  }
+  return { version: CHATBOT_VERSION, mode: 'conversational-tool-grounded', aiEnabled: true, readOnly: true, tools: CHATBOT_TOOLS, supportedIntentGroups: ['event_discovery', 'event_details', 'community_demand', 'trend_analysis', 'semantic_similarity_future'] }
 }
 
-async function processMessage({ message }) {
-  const normalizedMessage = validateMessage(message)
-  return {
-    version: CHATBOT_VERSION,
-    mode: 'deterministic-trends',
-    status: 'not_ready',
-    message: normalizedMessage,
-    response: 'EventHive Assistant is now backed by deterministic trend intelligence. Conversational AI explanation will be enabled in the Gemini phase.',
-    availableTools: CHATBOT_TOOLS.map((tool) => tool.name),
-  }
-}
+async function processMessage({ message }) { return { version: CHATBOT_VERSION, mode: 'conversational-tool-grounded', status: 'handled_by_orchestrator', message: validateMessage(message) } }
 
-module.exports = {
-  CHATBOT_VERSION,
-  CHATBOT_TOOLS,
-  validateMessage,
-  getCapabilities,
-  getUpcomingEvents,
-  getEventDetails,
-  getCommunityDemand,
-  getTrendAnalysis,
-  processMessage,
-}
+module.exports = { CHATBOT_VERSION, CHATBOT_TOOLS, validateMessage, getCapabilities, getUpcomingEvents, getEventDetails, getCommunityDemand, getTrendAnalysis, processMessage }
