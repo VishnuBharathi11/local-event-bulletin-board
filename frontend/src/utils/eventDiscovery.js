@@ -124,24 +124,11 @@ export function filterAndSortEvents(events = [], discovery = DEFAULT_DISCOVERY_S
   if (selectedCity !== 'All') {
     allowedInternalValues.add(selectedCity.toLowerCase().trim());
 
-    // 1. Check mapping from the dynamic district localities list
+    // 1. Check mapping from the dynamic district localities list (Authoritative)
     const area = districtLocalities.find(a => a.name && a.name.toLowerCase().trim() === selectedCity.toLowerCase().trim());
     if (area && area.pincode) {
       allowedInternalValues.add(area.pincode.toLowerCase().trim());
     }
-
-    // 2. Scan all events to find associated pincodes/alternate names for internal matching
-    activeEvents.forEach(e => {
-      const city = String(e.city || '').toLowerCase().trim();
-      const neighborhood = String(e.neighborhood || '').toLowerCase().trim();
-
-      if (city === selectedCity.toLowerCase().trim()) {
-        if (neighborhood) allowedInternalValues.add(neighborhood);
-      }
-      if (neighborhood === selectedCity.toLowerCase().trim()) {
-        if (city) allowedInternalValues.add(city);
-      }
-    });
   }
 
   return activeEvents

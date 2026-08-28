@@ -144,6 +144,14 @@ async function getDetailedLocationFromCoords(lat, lng) {
 }
 
 /**
+ * Legacy wrapper for single district string resolution.
+ */
+async function getDistrictFromCoords(lat, lng) {
+  const { district } = await getDetailedLocationFromCoords(lat, lng);
+  return district;
+}
+
+/**
  * Resolves all major postal/locality areas belonging to a district.
  */
 async function getPostalAreasForDistrict(district) {
