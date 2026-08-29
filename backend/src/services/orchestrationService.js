@@ -13,10 +13,13 @@ function normalizeHistory(history) { return conversationContext.sanitizeHistory(
 function classifyIntent(message) {
   const text = message.toLowerCase()
   if (/\b(community|people want|requested|request|demand|interested)\b/.test(text)) return INTENTS.COMMUNITY_DEMAND
-  if (/\b(similar|conceptually related|related to|semantically related|discover.*similar|find.*similar)\b/.test(text) && /\b(event|events|topic)\b/.test(text)) return INTENTS.SEMANTIC_EVENT_DISCOVERY
+  if (/\b(semantic trend|semantic trends|emerging trends|emerging topics|trend clusters|trend clustering)\b/.test(text)) return INTENTS.SEMANTIC_TREND_ANALYSIS
+  if (/\b(similar events?|events? similar to|similar to this event|related events? to this event|find similar)\b/.test(text)) return INTENTS.SIMILAR_EVENT_DISCOVERY
+  if (/\b(conflict|conflicts|overlap|clash)\b/.test(text) && /\bsemantic|similar\b/.test(text)) return INTENTS.SEMANTIC_CONFLICT_ANALYSIS
   if (/\b(trend|trending|popular|popularity|growing|growth|hot|most popular)\b/.test(text)) return INTENTS.TREND_ANALYSIS
   if (/\b(event|details|about|tell me more|more about)\b/.test(text) && /\b(which|what|show|find|upcoming|happening|near|in|category|sport|music|food|workshop|meetup)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
+  if (/\b(related|conceptually related|similar|semantically|discover)\b.*\bevents?\b|\bevents?\b.*\b(related|conceptually related|similar|semantically)\b/.test(text)) return INTENTS.SEMANTIC_EVENT_DISCOVERY
   if (/\b(show|find|list|events|happening|upcoming|tomorrow|today|weekend|near|in|category|sports|music|food|workshops|meetups|student|garage sale)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   return INTENTS.UNSUPPORTED
 }
@@ -29,10 +32,7 @@ function extractCurrentFilters(message) {
   const category = EVENT_CATEGORIES.find((value) => lower.includes(value.toLowerCase()))
   if (category) filters.category = category
   const cityMatch = message.match(/\b(?:in|near|around)\s+([A-Za-z][A-Za-z .'-]{2,40}?)(?=\?|$|\s+(?:this|next|tomorrow|today|on|for|during|weekend)\b)/i)
-  if (cityMatch) {
-    const candidateCity = cityMatch[1].trim()
-    if (!isSupportedCategory(candidateCity)) filters.city = candidateCity
-  }
+  if (cityMatch) { const candidateCity = cityMatch[1].trim(); if (!isSupportedCategory(candidateCity)) filters.city = candidateCity }
   if (/\b(this weekend|weekend)\b/i.test(message)) filters.timeRange = 'weekend'
   else if (/\btomorrow\b/i.test(message)) filters.timeRange = 'tomorrow'
   else if (/\btoday\b/i.test(message)) filters.timeRange = 'today'
@@ -72,13 +72,21 @@ function sanitizeEvidenceForResponse(result, intent, message) { if (!Array.isArr
 function buildResponseEnvelope({ conversationId, intent, grounded, clarification = false, tool = null, toolArguments = {}, filters = {}, contextUsed = 0, response }) { return { version: RESPONSE_VERSION, mode: 'conversational-assistant', conversationId, intent, grounded, clarification, tool, arguments: cleanFilters(toolArguments), filters: cleanFilters(filters), context: { used: contextUsed > 0, turns: contextUsed }, response } }
 async function executeTool(intent, filters, message) {
   switch (intent) {
+    case INTENTS.SEMANTIC_EVENT_DISCOVERY:
+      return { tool: 'semanticEventSearch', arguments: cleanFilters({ query: message, category: filters.category, city: filters.city, limit: 10 }), result: await aiIntelligenceService.semanticEventSearch(message, { category: filters.category, city: filters.city, limit: 10 }) }
+    case INTENTS.SIMILAR_EVENT_DISCOVERY: {
+      const eventId = extractEventId(message)
+      if (!eventId) return { tool: null, arguments: {}, result: null, needsClarification: true }
+      const event = await chatbotService.getEventDetails(eventId)
+      if (!event) return { tool: null, arguments: { eventId }, result: null, needsClarification: true }
+      return { tool: 'similarEventsForEvent', arguments: { eventId, limit: 10 }, result: await aiIntelligenceService.similarEventsForEvent(event, { limit: 10 }) }
+    }
+    case INTENTS.SEMANTIC_TREND_ANALYSIS:
+      return { tool: 'semanticTrendAnalysis', arguments: {}, result: await aiIntelligenceService.semanticTrendAnalysis({}) }
+    case INTENTS.SEMANTIC_CONFLICT_ANALYSIS: return { tool: 'semanticConflictAnalysis', arguments: {}, result: null, needsClarification: true }
     case INTENTS.TREND_ANALYSIS: { const args = cleanFilters({ category: filters.category, city: filters.city }); return { tool: 'getTrendAnalysis', arguments: args, result: await chatbotService.getTrendAnalysis(args) } }
     case INTENTS.COMMUNITY_DEMAND: return { tool: 'getCommunityDemand', arguments: {}, result: await chatbotService.getCommunityDemand({ limit: 20 }) }
     case INTENTS.EVENT_DISCOVERY: { const args = cleanFilters({ category: filters.category, city: filters.city, limit: 20 }); const events = await chatbotService.getUpcomingEvents(args); const dateRange = resolveDateRange(filters.timeRange); const result = dateRange ? events.filter((event) => Number(event.startTime) >= dateRange.startTime && Number(event.startTime) < dateRange.endTime) : events; return { tool: 'getUpcomingEvents', arguments: cleanFilters({ category: filters.category, city: filters.city, timeRange: filters.timeRange }), result } }
-    case INTENTS.SEMANTIC_EVENT_DISCOVERY: return { tool: 'semanticEventSearch', arguments: cleanFilters({ query: message, category: filters.category, city: filters.city }), result: await aiIntelligenceService.semanticEventSearch(message, { category: filters.category, city: filters.city, limit: 10 }) }
-    case INTENTS.SIMILAR_EVENT_DISCOVERY: { const eventId = extractEventId(message); if (!eventId) return { tool: null, arguments: {}, result: null, needsClarification: true }; return { tool: 'similarEventsForEvent', arguments: { eventId }, result: await aiIntelligenceService.similarEventsForEvent(eventId, { limit: 10 }) } }
-    case INTENTS.SEMANTIC_TREND_ANALYSIS: return { tool: 'semanticTrendAnalysis', arguments: {}, result: await aiIntelligenceService.semanticTrendAnalysis({}) }
-    case INTENTS.SEMANTIC_CONFLICT_ANALYSIS: return { tool: 'semanticConflictAnalysis', arguments: {}, result: null, needsClarification: true }
     case INTENTS.EVENT_DETAILS: { const eventId = extractEventId(message); if (!eventId) return { tool: null, arguments: {}, result: null, needsClarification: true }; return { tool: 'getEventDetails', arguments: { eventId }, result: await chatbotService.getEventDetails(eventId) } }
     default: return null
   }
