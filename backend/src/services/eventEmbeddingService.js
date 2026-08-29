@@ -6,7 +6,7 @@ const DEFAULT_LOCATION = process.env.GOOGLE_CLOUD_LOCATION || 'global'
 let client
 
 function isConfigured() {
-  return Boolean(process.env.GOOGLE_CLOUD_PROJECT)
+  return Boolean(process.env.GOOGLE_CLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID)
 }
 
 function getClient() {
@@ -17,9 +17,10 @@ function getClient() {
   }
 
   if (!client) {
+    const project = process.env.GOOGLE_CLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID
     client = new GoogleGenAI({
       vertexai: true,
-      project: process.env.GOOGLE_CLOUD_PROJECT,
+      project,
       location: DEFAULT_LOCATION,
     })
   }
