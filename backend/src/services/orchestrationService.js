@@ -7,18 +7,7 @@ const MAX_HISTORY = conversationContext.MAX_HISTORY_TURNS
 const MAX_CONTEXT_CHARS = conversationContext.MAX_TOTAL_CONTEXT_CHARS
 const RESPONSE_VERSION = 'phase4.3-response-v1'
 const EVENT_CATEGORIES = ['Sports', 'Music', 'Food', 'Workshops', 'Meetups', 'Student Events', 'Garage Sale', 'Community']
-const INTENTS = Object.freeze({
-  EVENT_DISCOVERY: 'event_discovery',
-  SEMANTIC_EVENT_DISCOVERY: 'semantic_event_discovery',
-  SIMILAR_EVENT_DISCOVERY: 'similar_event_discovery',
-  EVENT_DETAILS: 'event_details',
-  COMMUNITY_DEMAND: 'community_demand',
-  TREND_ANALYSIS: 'trend_analysis',
-  SEMANTIC_TREND_ANALYSIS: 'semantic_trend_analysis',
-  SEMANTIC_CONFLICT_ANALYSIS: 'semantic_conflict_analysis',
-  GENERAL_CONVERSATION: 'general_conversation',
-  UNSUPPORTED: 'unsupported',
-})
+const INTENTS = Object.freeze({ EVENT_DISCOVERY: 'event_discovery', SEMANTIC_EVENT_DISCOVERY: 'semantic_event_discovery', SIMILAR_EVENT_DISCOVERY: 'similar_event_discovery', EVENT_DETAILS: 'event_details', COMMUNITY_DEMAND: 'community_demand', TREND_ANALYSIS: 'trend_analysis', SEMANTIC_TREND_ANALYSIS: 'semantic_trend_analysis', SEMANTIC_CONFLICT_ANALYSIS: 'semantic_conflict_analysis', GENERAL_CONVERSATION: 'general_conversation', UNSUPPORTED: 'unsupported' })
 
 function normalizeHistory(history) { return conversationContext.sanitizeHistory(history) }
 function cleanFilters(filters = {}) { return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== '')) }
@@ -30,11 +19,11 @@ function classifyIntent(message) {
   if (/\b(semantic trend|semantic trends|emerging trends|emerging topics|trend clusters|trend clustering)\b/.test(text)) return INTENTS.SEMANTIC_TREND_ANALYSIS
   if (/\b(similar events?|events? similar to|similar to this event|related events? to this event|find similar)\b/.test(text)) return INTENTS.SIMILAR_EVENT_DISCOVERY
   if (/\b(conflict|conflicts|overlap|clash)\b/.test(text) && /\b(semantic|similar)\b/.test(text)) return INTENTS.SEMANTIC_CONFLICT_ANALYSIS
-  if (/\b(trend|trending|popular|popularity|growing|growth|hot|most popular)\b/.test(text)) return INTENTS.TREND_ANALYSIS
-  if (/\b(event|details|about|tell me more|more about)\b/.test(text) && /\b(which|what|show|find|upcoming|happening|near|in|category|sport|music|food|workshop|meetup)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
-  if (/^\s*(show|tell me about|give me details on)\s+(the|this)\b/.test(text) && /\bevent\b|\bmatch\b|\bmeetup\b|\bconcert\b|\bworkshop\b/.test(text)) return INTENTS.EVENT_DETAILS
-  if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/\b(related|conceptually related|semantically|discover)\b.*\bevents?\b|\bevents?\b.*\b(related|conceptually related|semantically)\b/.test(text)) return INTENTS.SEMANTIC_EVENT_DISCOVERY
+  if (/^\s*(show|tell me about|give me details on)\s+(the|this)\b/.test(text) && /\bevent\b|\bmatch\b|\bmeetup\b|\bconcert\b|\bworkshop\b/.test(text)) return INTENTS.EVENT_DETAILS
+  if (/\b(event|details|about|tell me more|more about)\b/.test(text) && /\b(which|what|show|find|upcoming|happening|near|in|category|sport|music|food|workshop|meetup)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
+  if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
+  if (/\b(trend|trending|popular|popularity|growing|growth|hot|most popular)\b/.test(text)) return INTENTS.TREND_ANALYSIS
   if (/\b(show|find|list|events|happening|upcoming|tomorrow|today|weekend|near|in|category|sports|music|food|workshops|meetups|student|garage sale)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   if (isGeneralConversation(text)) return INTENTS.GENERAL_CONVERSATION
   return INTENTS.UNSUPPORTED
