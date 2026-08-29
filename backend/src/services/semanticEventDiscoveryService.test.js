@@ -63,60 +63,55 @@ test('semantic result normalization exposes distance and cosine similarity witho
 
 test('searchSemantically delegates to Phase 5.2 and preserves deterministic filters', async () => {
   const calls = []
-  const original = require('./semanticSimilarityService').findSimilarEvents
-  require('./semanticSimilarityService').findSimilarEvents = async (queryText, options, firestore) => {
+  const fakeSearcher = async (queryText, options, firestore) => {
     calls.push({ queryText, options, firestore })
     return sampleResults
   }
 
-  try {
-    const fakeFirestore = { marker: true }
-    const result = await service.searchSemantically('music event', {
-      limit: 5,
-      category: 'Music',
-      city: 'Coimbatore',
-      firestore: fakeFirestore,
-    })
+  const fakeFirestore = { marker: true }
+  const result = await service.searchSemantically('music event', {
+    limit: 5,
+    category: 'Music',
+    city: 'Coimbatore',
+    firestore: fakeFirestore,
+  }, { searcher: fakeSearcher })
 
-    assert.deepEqual(calls[0], {
-      queryText: 'music event',
-      options: { limit: 5, distanceMeasure: 'COSINE' },
-      firestore: fakeFirestore,
-    })
-    assert.equal(result.length, 1)
-    assert.equal(result[0].eventId, 'music-1')
-    assert.equal(result[0].semanticSimilarity, 0.92)
-  } finally {
-    require('./semanticSimilarityService').findSimilarEvents = original
-  }
+  assert.deepEqual(calls[0], {
+    queryText: 'music event',
+    options: { limit: 5, distanceMeasure: 'COSINE' },
+    firestore: fakeFirestore,
+  })
+  assert.equal(result.length, 1)
+  assert.equal(result[0].eventId, 'music-1')
+  assert.equal(result[0].semanticSimilarity, 0.92)
 })
 
 test('findSimilarToEvent canonicalizes the event and removes itself from results', async () => {
-  const original = service.searchSemantically
   let capturedQuery
-  service.searchSemantically = async (query) => {
-    capturedQuery = query
+  const fakeSearcher = async (queryText) => {
+    capturedQuery = queryText
     return [
       { eventId: 'event-123', title: 'same event', distance: 0 },
       { eventId: 'event-456', title: 'related event', distance: 0.12 },
     ]
   }
 
-  try {
-    const result = await service.findSimilarToEvent({
-      eventId: 'event-123',
-      title: 'Community Coding Workshop',
-      description: 'Coding session',
-      category: 'Workshops',
-      city: 'Coimbatore',
-      neighborhood: 'Gandhipuram',
-      location: 'Community Hall',
-    })
+  const result = await service.findSimilarToEvent({
+    eventId: 'event-123',
+    title: 'Community Coding Workshop',
+    description: 'Coding session',
+    category: 'Workshops',
+    city: 'Coimbatore',
+    neighborhood: 'Gandhipuram',
+    location: 'Community Hall',
+  }, {}, { searcher: fakeSearcher })
 
-    assert.match(capturedQuery, /Title: Community Coding Workshop/)
-    assert.match(capturedQuery, /Category: Workshops/)
-    assert.deepEqual(result, [{ eventId: 'event-456', title: 'related event', distance: 0.12 }])
-  } finally {
-    service.searchSemantically = original
-  }
+  assert.match(capturedQuery, /Title: Community Coding Workshop/)
+  assert.match(capturedQuery, /Category: Workshops/)
+  assert.deepEqual(result, [{
+    eventId: 'event-456',
+    title: 'related event',
+    distance: 0.12,
+    semanticSimilarity: 0.88,
+  }])
 })
