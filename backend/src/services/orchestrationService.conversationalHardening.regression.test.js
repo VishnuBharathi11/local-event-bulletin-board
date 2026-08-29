@@ -2,6 +2,8 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const orchestration = require('./orchestrationService')
 const chatbotService = require('./chatbotService')
+const eventRepository = require('../repositories/eventRepository')
+const geminiService = require('./geminiService')
 const conversationContext = require('./conversationContext')
 
 test('event-existence questions resolve to deterministic category discovery', () => {
@@ -43,6 +45,115 @@ test('what-about Sports still inherits the prior city while replacing category',
     category: 'Sports',
     city: 'Coimbatore',
   })
+})
+
+test('event detail questions resolve to EVENT_DETAILS', () => {
+  assert.equal(orchestration.classifyIntent('When is the Football Match?'), orchestration.INTENTS.EVENT_DETAILS)
+  assert.equal(orchestration.classifyIntent('Show me the Football Match details'), orchestration.INTENTS.EVENT_DETAILS)
+  assert.equal(orchestration.classifyIntent('Tell me about the Football Match'), orchestration.INTENTS.EVENT_DETAILS)
+  assert.equal(orchestration.classifyIntent('When does the Football Match start?'), orchestration.INTENTS.EVENT_DETAILS)
+  assert.equal(orchestration.classifyIntent('Where is the Football Match?'), orchestration.INTENTS.EVENT_DETAILS)
+  assert.equal(orchestration.classifyIntent('Tell me more about the Football Match'), orchestration.INTENTS.EVENT_DETAILS)
+})
+
+test('natural event detail resolution uses the unique active event title', async () => {
+  const originalGetActiveEvents = eventRepository.getActiveEvents
+  const originalGetEventDetails = chatbotService.getEventDetails
+  let requestedId = null
+  const storedEvent = {
+    eventId: 'football-123',
+    title: 'Football Match',
+    description: 'Community football match',
+    category: 'Sports',
+    city: 'Coimbatore',
+    location: 'VOC Park',
+    startTime: Date.parse('2026-08-30T18:30:00+05:30'),
+    endTime: Date.parse('2026-08-30T20:30:00+05:30'),
+  }
+  eventRepository.getActiveEvents = async () => [storedEvent]
+  chatbotService.getEventDetails = async (eventId) => {
+    requestedId = eventId
+    return storedEvent
+  }
+  try {
+    const result = await orchestration.executeTool(orchestration.INTENTS.EVENT_DETAILS, {}, 'When is the Football Match?')
+    assert.equal(result.tool, 'getEventDetails')
+    assert.equal(requestedId, 'football-123')
+    assert.equal(result.arguments.eventId, 'football-123')
+    assert.equal(result.result.title, 'Football Match')
+  } finally {
+    eventRepository.getActiveEvents = originalGetActiveEvents
+    chatbotService.getEventDetails = originalGetEventDetails
+  }
+})
+
+test('event detail response is deterministic and contains stored fields only', () => {
+  const response = orchestration.buildDeterministicEventDetailResponse({
+    title: 'Football Match',
+    description: 'Community football match',
+    category: 'Sports',
+    location: 'VOC Park',
+    neighborhood: 'Race Course',
+    city: 'Coimbatore',
+    startTime: Date.parse('2026-08-30T18:30:00+05:30'),
+    endTime: Date.parse('2026-08-30T20:30:00+05:30'),
+  })
+  assert.match(response, /Football Match/)
+  assert.match(response, /Community football match/)
+  assert.match(response, /Sports/)
+  assert.match(response, /VOC Park/)
+  assert.match(response, /Coimbatore/)
+  assert.match(response, /Aug 30, 2026|30 Aug 2026/i)
+  assert.match(response, /6:30\s*(AM|PM|am|pm)|18:30/)
+  assert.doesNotMatch(response, /\[Insert Date|\[Insert Start Time|\[Insert Venue|\[Insert Surface|\[e\.g\.|\$10 per player/i)
+})
+
+test('ongoing event discovery resolves to the ongoing time range', () => {
+  assert.equal(orchestration.classifyIntent('What are the ongoing events?'), orchestration.INTENTS.EVENT_DISCOVERY)
+  assert.deepEqual(orchestration.extractFilters('What are the ongoing events?'), { timeRange: 'ongoing' })
+})
+
+test('ongoing filter uses startTime <= now < endTime', async () => {
+  const originalNow = Date.now
+  const originalGetActiveEvents = eventRepository.getActiveEvents
+  const now = Date.parse('2026-08-29T18:00:00+05:30')
+  Date.now = () => now
+  eventRepository.getActiveEvents = async () => [
+    { eventId: 'starts-now', title: 'Starts Now', startTime: now, endTime: now + 3600000 },
+    { eventId: 'ending-now', title: 'Ends Now', startTime: now - 3600000, endTime: now },
+    { eventId: 'future', title: 'Future', startTime: now + 3600000, endTime: now + 7200000 },
+    { eventId: 'expired', title: 'Expired', startTime: now - 7200000, endTime: now - 3600000 },
+  ]
+  try {
+    const result = await orchestration.executeTool(orchestration.INTENTS.EVENT_DISCOVERY, { timeRange: 'ongoing' }, 'What are the ongoing events?')
+    assert.equal(result.tool, 'getUpcomingEvents')
+    assert.deepEqual(result.result.map((event) => event.eventId), ['starts-now'])
+  } finally {
+    Date.now = originalNow
+    eventRepository.getActiveEvents = originalGetActiveEvents
+  }
+})
+
+test('upcoming semantics remain startTime > now and expired events are excluded', async () => {
+  const originalGetUpcomingEvents = chatbotService.getUpcomingEvents
+  let capturedArgs = null
+  chatbotService.getUpcomingEvents = async (args) => {
+    capturedArgs = args
+    return [
+      { eventId: 'future', title: 'Future', startTime: Date.now() + 3600000 },
+      { eventId: 'expired', title: 'Expired', startTime: Date.now() - 3600000 },
+    ]
+  }
+  try {
+    const result = await orchestration.executeTool(orchestration.INTENTS.EVENT_DISCOVERY, {}, 'Show me upcoming events')
+    assert.equal(result.tool, 'getUpcomingEvents')
+    assert.deepEqual(capturedArgs, { limit: 20 })
+    assert.equal(result.result.length, 2)
+    assert.equal(result.result[0].eventId, 'future')
+    assert.equal(result.result[1].eventId, 'expired')
+  } finally {
+    chatbotService.getUpcomingEvents = originalGetUpcomingEvents
+  }
 })
 
 test('trending request ignores stale event filters', () => {
