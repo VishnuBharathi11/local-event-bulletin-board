@@ -77,9 +77,9 @@ test('cluster summary is deterministic on tie-breaking', () => {
 
 test('semantic trend analysis loads embedded events and returns only meaningful clusters', async () => {
   const embeddedEvents = [
-    { id: 'event-1', data: () => ({ title: 'AI Workshop', description: 'AI', category: 'Workshops', city: 'Coimbatore', neighborhood: 'Central', location: 'Hall', embedding: vectorWith(0) }) },
-    { id: 'event-2', data: () => ({ title: 'GenAI Meetup', description: 'AI', category: 'Meetups', city: 'Coimbatore', neighborhood: 'Central', location: 'Hall', embedding: vectorWith(0) }) },
-    { id: 'event-3', data: () => ({ title: 'Football Match', description: 'sports', category: 'Sports', city: 'Coimbatore', neighborhood: 'Central', location: 'Ground', embedding: vectorWith(1) }) },
+    { id: 'event-1', exists: true, data: () => ({ title: 'AI Workshop', description: 'AI', category: 'Workshops', city: 'Coimbatore', neighborhood: 'Central', location: 'Hall', embedding: vectorWith(0) }) },
+    { id: 'event-2', exists: true, data: () => ({ title: 'GenAI Meetup', description: 'AI', category: 'Meetups', city: 'Coimbatore', neighborhood: 'Central', location: 'Hall', embedding: vectorWith(0) }) },
+    { id: 'event-3', exists: true, data: () => ({ title: 'Football Match', description: 'sports', category: 'Sports', city: 'Coimbatore', neighborhood: 'Central', location: 'Ground', embedding: vectorWith(1) }) },
   ]
   const firestore = {
     collection: () => ({
