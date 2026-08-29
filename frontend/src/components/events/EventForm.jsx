@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import TimePicker from '../common/TimePicker.jsx'
 import EventMapPicker from '../map/EventMapPicker.jsx'
-import { Sparkles } from 'lucide-react'
+import { Check, Sparkles } from 'lucide-react'
 import { generateEventDescription } from '../../services/eventService.js'
 import '../../styles/createEvent.css'
 
@@ -18,6 +18,7 @@ const CATEGORIES = [
 ]
 
 const DESCRIPTION_MAX_LENGTH = 500
+const DESCRIPTION_DEBOUNCE_MS = 850
 
 function initialForm() {
   return {
@@ -43,12 +44,28 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
   const [nowTick, setNowTick] = useState(Date.now())
   const [generatingDescription, setGeneratingDescription] = useState(false)
   const [descriptionAiError, setDescriptionAiError] = useState(null)
-  const [lastAiDescription, setLastAiDescription] = useState(false)
+  const [aiDescription, setAiDescription] = useState('')
+  const [descriptionManuallyEdited, setDescriptionManuallyEdited] = useState(Boolean(initialData?.description))
+  const [titleRevision, setTitleRevision] = useState(0)
+
+  const formRef = useRef(form)
+  const latestTitleRef = useRef(form.title || '')
+  const descriptionManuallyEditedRef = useRef(Boolean(initialData?.description))
+  const generationRequestRef = useRef(0)
+
+  formRef.current = form
+  latestTitleRef.current = form.title || latestTitleRef.current
+  descriptionManuallyEditedRef.current = descriptionManuallyEdited
 
   useEffect(() => {
-    if (initialData) {
-      setForm(initialData)
-    }
+    if (!initialData) return
+    setForm(initialData)
+    setAiDescription('')
+    setDescriptionAiError(null)
+    const hasDescription = Boolean(initialData.description)
+    setDescriptionManuallyEdited(hasDescription)
+    descriptionManuallyEditedRef.current = hasDescription
+    latestTitleRef.current = initialData.title || ''
   }, [initialData])
 
   useEffect(() => {
@@ -89,42 +106,95 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
     setError(null)
-    if (field === 'description') setLastAiDescription(false)
   }
 
-  async function handleGenerateDescription() {
-    if (generatingDescription || !form.title.trim()) {
-      if (!form.title.trim()) {
-        setDescriptionAiError('Enter an event title before generating a description.')
-      }
+  function handleTitleChange(event) {
+    const value = event.target.value
+    update('title', value)
+    latestTitleRef.current = value.trim()
+    setTitleRevision((revision) => revision + 1)
+    setDescriptionAiError(null)
+  }
+
+  function handleDescriptionChange(event) {
+    update('description', event.target.value)
+    descriptionManuallyEditedRef.current = true
+    setDescriptionManuallyEdited(true)
+  }
+
+  const requestDescription = useCallback(async ({ automatic = false } = {}) => {
+    const currentForm = formRef.current
+    const title = currentForm.title.trim()
+    if (!title) {
+      if (!automatic) setDescriptionAiError('Enter an event title before generating a description.')
       return
     }
+
+    const requestId = generationRequestRef.current + 1
+    generationRequestRef.current = requestId
+    const requestedTitle = title
+    const existingDescription = descriptionManuallyEditedRef.current
+      ? currentForm.description.trim()
+      : ''
 
     setGeneratingDescription(true)
     setDescriptionAiError(null)
 
     try {
       const result = await generateEventDescription({
-        title: form.title.trim(),
-        description: form.description.trim(),
-        category: form.category,
-        city: form.city.trim(),
-        neighborhood: form.neighborhood.trim(),
-        location: form.location.trim(),
+        title,
+        description: automatic ? '' : existingDescription,
+        category: currentForm.category,
+        city: currentForm.city.trim(),
+        neighborhood: currentForm.neighborhood.trim(),
+        location: currentForm.location.trim(),
       })
 
+      if (generationRequestRef.current !== requestId) return
+      if (latestTitleRef.current !== requestedTitle) return
       if (!result?.description || typeof result.description !== 'string' || result.description.length > DESCRIPTION_MAX_LENGTH) {
         throw new Error('The AI returned an invalid description. Please try again or enter one manually.')
       }
 
-      setForm((current) => ({ ...current, description: result.description }))
-      setLastAiDescription(true)
+      setAiDescription(result.description)
+
+      const latestForm = formRef.current
+      const canAutoInsert = automatic && !descriptionManuallyEditedRef.current && !latestForm.description.trim()
+      if (canAutoInsert) {
+        setForm((current) => current.title.trim() === requestedTitle && !descriptionManuallyEditedRef.current
+          ? { ...current, description: result.description }
+          : current)
+      }
       setError(null)
     } catch (generationError) {
-      setDescriptionAiError(generationError.message || 'Unable to generate a description right now. Please enter one manually.')
+      if (generationRequestRef.current === requestId) {
+        setDescriptionAiError(generationError.message || 'Unable to generate a description right now. Please enter one manually.')
+      }
     } finally {
-      setGeneratingDescription(false)
+      if (generationRequestRef.current === requestId) setGeneratingDescription(false)
     }
+  }, [])
+
+  useEffect(() => {
+    if (!titleRevision || !latestTitleRef.current || initialData) return undefined
+    const timer = window.setTimeout(() => {
+      requestDescription({ automatic: true })
+    }, DESCRIPTION_DEBOUNCE_MS)
+    return () => window.clearTimeout(timer)
+  }, [titleRevision, initialData, requestDescription])
+
+  function handleInsertDescription() {
+    if (!aiDescription || generatingDescription) return
+    setForm((current) => ({ ...current, description: aiDescription }))
+    descriptionManuallyEditedRef.current = false
+    setDescriptionManuallyEdited(false)
+    setDescriptionAiError(null)
+    setError(null)
+  }
+
+  async function handleRegenerateDescription() {
+    if (generatingDescription) return
+    await requestDescription({ automatic: false })
   }
 
   function handleImageChange(event) {
@@ -225,7 +295,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
 
           <div className="form-field">
             <label htmlFor="event-title">Event Title <span className="required-star">*</span></label>
-            <input id="event-title" value={form.title} onChange={(event) => update('title', event.target.value)} />
+            <input id="event-title" value={form.title} onChange={handleTitleChange} />
           </div>
 
           <div className="form-field">
@@ -238,21 +308,36 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
               rows="6"
               maxLength={DESCRIPTION_MAX_LENGTH}
               value={form.description}
-              onChange={(event) => update('description', event.target.value)}
+              onChange={handleDescriptionChange}
             />
-            <div className="event-description-ai">
+            <div className="event-description-ai" aria-live="polite">
               <button
                 type="button"
                 className="secondary-button event-description-ai__button"
-                onClick={handleGenerateDescription}
+                onClick={handleInsertDescription}
+                disabled={!aiDescription || generatingDescription}
+                aria-label="Insert AI-generated description"
+              >
+                <Check size={15} aria-hidden="true" />
+                Insert
+              </button>
+              <button
+                type="button"
+                className="secondary-button event-description-ai__button"
+                onClick={handleRegenerateDescription}
                 disabled={generatingDescription || !form.title.trim()}
                 aria-busy={generatingDescription}
+                aria-label="Regenerate AI event description"
               >
                 <Sparkles size={15} aria-hidden="true" />
-                {generatingDescription ? 'Generating description...' : (form.description || lastAiDescription ? 'Regenerate with AI' : 'Generate with AI')}
+                {generatingDescription ? 'Generating...' : 'Regenerate'}
               </button>
-              {form.description.trim() && !generatingDescription && !lastAiDescription && (
-                <span className="event-description-ai__hint">AI will improve your existing description.</span>
+              {generatingDescription && <span className="event-description-ai__hint">Generating description...</span>}
+              {!generatingDescription && aiDescription && descriptionManuallyEdited && (
+                <span className="event-description-ai__hint">AI suggestion ready. Insert to use it.</span>
+              )}
+              {!generatingDescription && aiDescription && !descriptionManuallyEdited && form.description === aiDescription && (
+                <span className="event-description-ai__hint">AI suggestion inserted. You can edit it or regenerate.</span>
               )}
               {descriptionAiError && <p className="event-description-ai__error" role="alert">{descriptionAiError}</p>}
             </div>
