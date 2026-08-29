@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { CalendarDays, Calendar, MessageSquare, User, ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/logo.jpeg'
-
+import ChatAssistant from '../components/ChatAssistant.jsx'
 const navigation = [
   { to: '/', label: 'Event Board', end: true, icon: CalendarDays },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
@@ -192,6 +192,7 @@ export default function AppShell() {
       <main className="app-main container">
         <Outlet />
       </main>
+      <ChatAssistant />
     </div>
   )
 }
