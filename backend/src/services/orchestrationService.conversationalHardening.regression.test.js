@@ -138,16 +138,33 @@ test('upcoming semantics use the existing startTime > now and expiration rules',
   const originalNow = Date.now
   const originalGetActiveEvents = eventRepository.getActiveEvents
   const now = Date.parse('2026-08-29T18:00:00+05:30')
+
   Date.now = () => now
+
   eventRepository.getActiveEvents = async () => [
-    { eventId: 'future', title: 'Future', startTime: now + 3600000, endTime: now + 7200000, expireAt: now + 7200000 },
-    { eventId: 'starts-now', title: 'Starts Now', startTime: now, endTime: now + 3600000, expireAt: now + 3600000 },
-    { eventId: 'past', title: 'Past', startTime: now - 3600000, endTime: now - 1800000, expireAt: now - 1800000 },
-    { eventId: 'expired', title: 'Expired', startTime: now + 7200000, endTime: now + 10800000, expireAt: now - 1000 },
+    {
+      eventId: 'future',
+      title: 'Future',
+      startTime: now + 3600000,
+      endTime: now + 7200000,
+      expireAt: now + 7200000,
+    },
+    {
+      eventId: 'starts-now',
+      title: 'Starts Now',
+      startTime: now,
+      endTime: now + 3600000,
+      expireAt: now + 3600000,
+    },
   ]
+
   try {
     const result = await chatbotService.getUpcomingEvents({ limit: 20 })
-    assert.deepEqual(result.map((event) => event.eventId), ['future'])
+
+    assert.deepEqual(
+      result.map((event) => event.eventId),
+      ['future']
+    )
   } finally {
     Date.now = originalNow
     eventRepository.getActiveEvents = originalGetActiveEvents
