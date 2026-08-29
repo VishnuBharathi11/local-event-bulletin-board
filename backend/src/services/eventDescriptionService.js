@@ -55,7 +55,7 @@ function buildShorteningPrompt(description, event) {
     location: event.location || undefined,
   }, null, 2)
 
-  return `Shorten the draft EventHive description below to ${MAX_DESCRIPTION_CHARS} characters or fewer while preserving its useful information.\n\nEVENT DATA:\n${facts}\n\nDRAFT:\n${description}\n\nRules:\n- Preserve only facts present in EVENT DATA or the DRAFT.\n- Do not add, infer, or invent information.\n- Keep the result natural and attendee-oriented.\n- Return only the shortened description.`
+  return `Revise the draft EventHive description below to be ${MIN_USEFUL_DESCRIPTION_CHARS}–${MAX_DESCRIPTION_CHARS} characters when possible while preserving its useful information.\n\nEVENT DATA:\n${facts}\n\nDRAFT:\n${description}\n\nRules:\n- Preserve only facts present in EVENT DATA or the DRAFT.\n- Do not add, infer, or invent information.\n- Keep the result natural, informative, and attendee-oriented.\n- Avoid generic filler.\n- Return only the revised description.`
 }
 
 function normalizeGeneratedText(text) {
@@ -114,7 +114,7 @@ async function generateDescription(payload, ai) {
   }
 
   description = await generateWithClient(buildShorteningPrompt(description, event), ai)
-  return assertFinalDescription(description)
+  return assertMeaningfulDescription(description, event)
 }
 
 module.exports = {
