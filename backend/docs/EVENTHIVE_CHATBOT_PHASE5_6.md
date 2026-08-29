@@ -25,6 +25,34 @@ Read-only chatbot orchestration
 Gemini grounded natural-language response
 ```
 
+## Conversational hardening
+
+The Phase 5.6 orchestration also provides a lightweight conversational-resolution layer. General greetings and introductory messages are handled without calling EventHive tools. Short follow-ups can use bounded in-memory conversation context identified by `conversationId`, while explicit new requests always take precedence over stored context.
+
+The contextual state is intentionally compact and non-sensitive. It may retain the last intent, tool, relevant event identifiers/titles, category, city, query, and compact event-result metadata. It is bounded in memory and is not persistent chat storage.
+
+Examples:
+
+```text
+User: What about Sports?
+Assistant: [verified Sports result]
+User: When?
+        ↓
+resolve the unique referenced event
+        ↓
+EVENT_DETAILS
+```
+
+```text
+User: Show me Music events in Coimbatore
+        ↓
+explicit new EVENT_DISCOVERY request
+        ↓
+previous context cannot override Music / Coimbatore
+```
+
+Natural date phrases such as `tomorrow`, `today`, `this weekend`, and `next week` continue to resolve deterministically before EventHive tool execution. Gemini remains responsible only for natural-language explanation.
+
 ## What changed
 
 The existing `POST /api/chatbot/chat` path can now route semantic requests to the already implemented Phase 5 services. No second chatbot server or orchestration architecture is introduced.
@@ -45,7 +73,7 @@ Phase 2 deterministic trend metrics remain authoritative for event counts, RSVP 
 
 ## Security
 
-All semantic services remain server-side. No Firebase credentials, ADC credentials, API keys, JWTs, cookies, or organizer credentials are sent to Gemini or the frontend. Chatbot tools remain read-only.
+All semantic and conversational services remain server-side. No Firebase credentials, ADC credentials, API keys, JWTs, cookies, or organizer credentials are sent to Gemini or the frontend. Chatbot tools remain read-only.
 
 ## Backward compatibility
 
@@ -76,6 +104,8 @@ Phase 5.6 does not modify event creation, updates, RSVP handling, authentication
        Event discovery      Clustering / similarity
               │                   │
               └─────────┬─────────┘
+                        │
+                 Conversation context
                         │
                  Chatbot orchestration
                         │
