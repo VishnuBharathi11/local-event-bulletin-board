@@ -28,12 +28,14 @@ function extractEmbedding(event) {
   if (Array.isArray(embedding)) return embedding
   if (!embedding || typeof embedding !== 'object') return null
 
-  // Firestore vector values can be materialized as VectorValue instances.
-  // Prefer the public SDK API, then support compatible serialized/object forms.
+  // Firestore vector values are materialized as VectorValue instances by the
+  // Node/Admin Firestore SDK. The public toArray() API exposes their numbers.
   if (typeof embedding.toArray === 'function') {
     const values = embedding.toArray()
     if (Array.isArray(values)) return values
   }
+
+  // Accept compatible plain-object representations used by SDK adapters/tests.
   if (Array.isArray(embedding.value)) return embedding.value
   if (Array.isArray(embedding.values)) return embedding.values
   if (Array.isArray(embedding._values)) return embedding._values
@@ -120,6 +122,7 @@ async function loadEmbeddedEvents(firestore = getFirestore(), limit = MAX_EVENTS
   const events = []
   const skipped = []
   for (const doc of snapshot.docs) {
+    const raw = doc.data()
     let event
     try {
       event = fromFirestoreDocument(doc)
@@ -129,9 +132,10 @@ async function loadEmbeddedEvents(firestore = getFirestore(), limit = MAX_EVENTS
     }
     if (!event) continue
 
-    // Read the stored vector from the normalized event representation so the
-    // same extraction path works for Firestore VectorValue and test/plain objects.
-    const vector = extractEmbedding(event)
+    // normalizeEvent intentionally preserves the application event contract and
+    // does not carry supplementary embedding metadata. Read the stored vector
+    // from the raw Firestore document so real VectorValue instances survive.
+    const vector = extractEmbedding(raw)
     if (!Array.isArray(vector) || vector.length !== EMBEDDING_CONFIG.dimensions) {
       skipped.push({ eventId: doc.id, reason: 'embedding missing or incompatible' })
       continue
