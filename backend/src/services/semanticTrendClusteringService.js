@@ -26,8 +26,17 @@ function validateEventLimit(value = DEFAULT_LIMIT) {
 function extractEmbedding(event) {
   const embedding = event?.embedding
   if (Array.isArray(embedding)) return embedding
-  if (embedding && Array.isArray(embedding.value)) return embedding.value
-  if (embedding && Array.isArray(embedding.values)) return embedding.values
+  if (!embedding || typeof embedding !== 'object') return null
+
+  // Firestore vector values can be materialized as VectorValue instances.
+  // Prefer the public SDK API, then support compatible serialized/object forms.
+  if (typeof embedding.toArray === 'function') {
+    const values = embedding.toArray()
+    if (Array.isArray(values)) return values
+  }
+  if (Array.isArray(embedding.value)) return embedding.value
+  if (Array.isArray(embedding.values)) return embedding.values
+  if (Array.isArray(embedding._values)) return embedding._values
   return null
 }
 
@@ -102,7 +111,7 @@ function clusterEvents(events, options = {}) {
     })
   }
 
-  return clusters.sort((a, b) => b.summary.size - a.summary.size || b.summary.averageSimilarity - a.summary.averageSimilarity || a.clusterId.localeCompare(b.clusterId))
+  return clusters.sort((a, b) => b.summary.size - a.summary.size || (b.summary.averageSimilarity || 0) - (a.summary.averageSimilarity || 0) || a.clusterId.localeCompare(b.clusterId))
 }
 
 async function loadEmbeddedEvents(firestore = getFirestore(), limit = MAX_EVENTS) {
@@ -111,7 +120,6 @@ async function loadEmbeddedEvents(firestore = getFirestore(), limit = MAX_EVENTS
   const events = []
   const skipped = []
   for (const doc of snapshot.docs) {
-    const raw = doc.data()
     let event
     try {
       event = fromFirestoreDocument(doc)
@@ -120,7 +128,10 @@ async function loadEmbeddedEvents(firestore = getFirestore(), limit = MAX_EVENTS
       continue
     }
     if (!event) continue
-    const vector = extractEmbedding(raw)
+
+    // Read the stored vector from the normalized event representation so the
+    // same extraction path works for Firestore VectorValue and test/plain objects.
+    const vector = extractEmbedding(event)
     if (!Array.isArray(vector) || vector.length !== EMBEDDING_CONFIG.dimensions) {
       skipped.push({ eventId: doc.id, reason: 'embedding missing or incompatible' })
       continue
