@@ -71,6 +71,7 @@ function extractContextFilters(history) {
 function resolveEffectiveFilters(message, history = [], intent = classifyIntent(message), state = null) {
   const current = extractCurrentFilters(message)
   if (intent !== INTENTS.EVENT_DISCOVERY && intent !== INTENTS.SEMANTIC_EVENT_DISCOVERY && intent !== INTENTS.TREND_ANALYSIS) return cleanFilters(current)
+  if (current.timeRange && !current.category && !current.city && intent === INTENTS.EVENT_DISCOVERY) return { timeRange: current.timeRange }
   const context = intent === INTENTS.TREND_ANALYSIS ? {} : extractContextFilters(history)
   if ((state?.intent === INTENTS.EVENT_DISCOVERY || state?.intent === INTENTS.SEMANTIC_EVENT_DISCOVERY) && !context.city && state.city && intent !== INTENTS.TREND_ANALYSIS) context.city = state.city
   return cleanFilters({ category: current.category || context.category, city: current.city || context.city, timeRange: current.timeRange || context.timeRange })
