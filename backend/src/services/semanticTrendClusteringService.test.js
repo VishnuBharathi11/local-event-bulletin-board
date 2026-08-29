@@ -75,6 +75,13 @@ test('cluster summary is deterministic on tie-breaking', () => {
   })
 })
 
+test('extractEmbedding reads a Firestore VectorValue through its public toArray API', () => {
+  const values = vectorWith(7)
+  const vectorValue = { toArray: () => [...values] }
+  assert.deepEqual(service.extractEmbedding({ embedding: vectorValue }), values)
+  assert.equal(service.extractEmbedding({ embedding: vectorValue }).length, EMBEDDING_CONFIG.dimensions)
+})
+
 test('semantic trend analysis loads embedded events and returns only meaningful clusters', async () => {
   const embeddedEvents = [
     { id: 'event-1', exists: true, data: () => ({ title: 'AI Workshop', description: 'AI', category: 'Workshops', city: 'Coimbatore', neighborhood: 'Central', location: 'Hall', embedding: vectorWith(0) }) },
