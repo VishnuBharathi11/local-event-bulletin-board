@@ -29,6 +29,22 @@ test('what-about category keeps explicit Sports and inherits only missing city c
   })
 })
 
+test('explicit temporal event request clears stale category and city context', () => {
+  const state = { intent: orchestration.INTENTS.EVENT_DISCOVERY, category: 'Music', city: 'Coimbatore' }
+  assert.deepEqual(orchestration.extractFilters('Events tomorrow'), { timeRange: 'tomorrow' })
+  assert.deepEqual(orchestration.resolveEffectiveFilters('Events tomorrow', [], orchestration.INTENTS.EVENT_DISCOVERY, state), {
+    timeRange: 'tomorrow',
+  })
+})
+
+test('what-about Sports still inherits the prior city while replacing category', () => {
+  const state = { intent: orchestration.INTENTS.EVENT_DISCOVERY, category: 'Music', city: 'Coimbatore' }
+  assert.deepEqual(orchestration.resolveEffectiveFilters('What about Sports?', [], orchestration.INTENTS.EVENT_DISCOVERY, state), {
+    category: 'Sports',
+    city: 'Coimbatore',
+  })
+})
+
 test('trending request ignores stale event filters', () => {
   const state = { intent: orchestration.INTENTS.EVENT_DISCOVERY, category: 'Music', city: 'Coimbatore' }
   assert.equal(orchestration.classifyIntent('What are the trending events?'), orchestration.INTENTS.TREND_ANALYSIS)
