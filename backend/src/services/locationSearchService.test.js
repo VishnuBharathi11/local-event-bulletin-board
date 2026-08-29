@@ -80,6 +80,7 @@ test('missing city and neighborhood remain empty rather than invented', () => {
     formatted_address: 'Some address',
     geometry: { location: { lat: 11, lng: 76 } },
     address_components: [
+      { long_name: 'Coimbatore District', types: ['administrative_area_level_2'] },
       { long_name: 'Tamil Nadu', types: ['administrative_area_level_1'] },
     ],
   })
