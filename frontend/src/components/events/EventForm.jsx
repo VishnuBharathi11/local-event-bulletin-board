@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import TimePicker from '../common/TimePicker.jsx'
 import EventMapPicker from '../map/EventMapPicker.jsx'
+import { Sparkles } from 'lucide-react'
+import { generateEventDescription } from '../../services/eventService.js'
 import '../../styles/createEvent.css'
 
 const CATEGORIES = [
@@ -14,6 +16,8 @@ const CATEGORIES = [
   'Garage Sale',
   'Community',
 ]
+
+const DESCRIPTION_MAX_LENGTH = 500
 
 function initialForm() {
   return {
@@ -37,6 +41,9 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
   const [form, setForm] = useState(initialData || initialForm)
   const [error, setError] = useState(null)
   const [nowTick, setNowTick] = useState(Date.now())
+  const [generatingDescription, setGeneratingDescription] = useState(false)
+  const [descriptionAiError, setDescriptionAiError] = useState(null)
+  const [lastAiDescription, setLastAiDescription] = useState(false)
 
   useEffect(() => {
     if (initialData) {
@@ -82,6 +89,42 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
     setError(null)
+    if (field === 'description') setLastAiDescription(false)
+  }
+
+  async function handleGenerateDescription() {
+    if (generatingDescription || !form.title.trim()) {
+      if (!form.title.trim()) {
+        setDescriptionAiError('Enter an event title before generating a description.')
+      }
+      return
+    }
+
+    setGeneratingDescription(true)
+    setDescriptionAiError(null)
+
+    try {
+      const result = await generateEventDescription({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        city: form.city.trim(),
+        neighborhood: form.neighborhood.trim(),
+        location: form.location.trim(),
+      })
+
+      if (!result?.description || typeof result.description !== 'string' || result.description.length > DESCRIPTION_MAX_LENGTH) {
+        throw new Error('The AI returned an invalid description. Please try again or enter one manually.')
+      }
+
+      setForm((current) => ({ ...current, description: result.description }))
+      setLastAiDescription(true)
+      setError(null)
+    } catch (generationError) {
+      setDescriptionAiError(generationError.message || 'Unable to generate a description right now. Please enter one manually.')
+    } finally {
+      setGeneratingDescription(false)
+    }
   }
 
   function handleImageChange(event) {
@@ -135,7 +178,6 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
       return
     }
 
-    // Convert local date/time strings to UTC timestamps for the API
     const [year, month, day] = form.date.split('-').map(Number)
     const [startHour, startMin] = form.startTime.split(':').map(Number)
     const [endHour, endMin] = form.endTime.split(':').map(Number)
@@ -187,8 +229,33 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
           </div>
 
           <div className="form-field">
-            <label htmlFor="event-description">Description <span className="required-star">*</span></label>
-            <textarea id="event-description" rows="6" value={form.description} onChange={(event) => update('description', event.target.value)} />
+            <div className="form-field__label-row">
+              <label htmlFor="event-description">Description <span className="required-star">*</span></label>
+              <span className="form-field__counter">{form.description.length} / {DESCRIPTION_MAX_LENGTH}</span>
+            </div>
+            <textarea
+              id="event-description"
+              rows="6"
+              maxLength={DESCRIPTION_MAX_LENGTH}
+              value={form.description}
+              onChange={(event) => update('description', event.target.value)}
+            />
+            <div className="event-description-ai">
+              <button
+                type="button"
+                className="secondary-button event-description-ai__button"
+                onClick={handleGenerateDescription}
+                disabled={generatingDescription || !form.title.trim()}
+                aria-busy={generatingDescription}
+              >
+                <Sparkles size={15} aria-hidden="true" />
+                {generatingDescription ? 'Generating description...' : (form.description || lastAiDescription ? 'Regenerate with AI' : 'Generate with AI')}
+              </button>
+              {form.description.trim() && !generatingDescription && !lastAiDescription && (
+                <span className="event-description-ai__hint">AI will improve your existing description.</span>
+              )}
+              {descriptionAiError && <p className="event-description-ai__error" role="alert">{descriptionAiError}</p>}
+            </div>
           </div>
 
           <div className="form-field">
@@ -309,8 +376,8 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
             latitude={form.latitude}
             longitude={form.longitude}
             onLocationChange={(lat, lng) => {
-              update('latitude', lat);
-              update('longitude', lng);
+              update('latitude', lat)
+              update('longitude', lng)
             }}
             initialCenter={form.latitude && form.longitude ? [form.latitude, form.longitude] : undefined}
             initialZoom={form.latitude && form.longitude ? 15 : undefined}
