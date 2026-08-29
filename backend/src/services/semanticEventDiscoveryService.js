@@ -61,17 +61,19 @@ function normalizeResults(results, options = {}) {
   }))
 }
 
-async function searchSemantically(query, options = {}) {
+async function searchSemantically(query, options = {}, dependencies = {}) {
   const queryText = buildQueryText(query)
   const limit = validateLimit(options.limit)
   const distanceMeasure = String(options.distanceMeasure || 'COSINE').toUpperCase()
-  const results = await findSimilarEvents(queryText, { limit, distanceMeasure }, options.firestore)
+  const searcher = dependencies.searcher || findSimilarEvents
+  const results = await searcher(queryText, { limit, distanceMeasure }, options.firestore)
   return normalizeResults(applyDeterministicFilters(results, options), { distanceMeasure })
 }
 
-async function findSimilarToEvent(event, options = {}) {
+async function findSimilarToEvent(event, options = {}, dependencies = {}) {
   if (!event || typeof event !== 'object' || Array.isArray(event)) throw new TypeError('event must be an object')
-  return (await searchSemantically(canonicalizeEvent(event), options)).filter((candidate) => candidate.eventId !== event.eventId)
+  const results = await searchSemantically(canonicalizeEvent(event), options, dependencies)
+  return results.filter((candidate) => candidate.eventId !== event.eventId)
 }
 
 module.exports = { DEFAULT_LIMIT, MAX_LIMIT, validateLimit, stripEmbeddingMetadata, normalizeDistance, distanceToSimilarity, buildQueryText, applyDeterministicFilters, normalizeResults, searchSemantically, findSimilarToEvent }
