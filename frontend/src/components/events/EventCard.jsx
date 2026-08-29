@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, MapPin, User } from 'lucide-react'
+import { CalendarDays, MapPin, User, Share2 } from 'lucide-react'
 import CategoryBadge from './CategoryBadge.jsx'
 import EventStatusBadge from './EventStatusBadge.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -8,6 +8,7 @@ import { useEventRSVP } from '../../hooks/useEventRSVP.js'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
 import { isPincode } from '../../utils/eventDiscovery.js'
 import { getEventLifecycleStatus, getNextEventLifecycleBoundary } from '../../utils/eventLifecycle.js'
+import { shareEvent } from '../../utils/eventShare.js'
 
 export default function EventCard({
   event,
@@ -22,6 +23,7 @@ export default function EventCard({
   const rsvp = useEventRSVP(event.eventId, authenticated, event.rsvpCount)
   const [imageError, setImageError] = useState(false)
   const [lifecycleStatus, setLifecycleStatus] = useState(() => getEventLifecycleStatus(event))
+  const [shareFeedback, setShareFeedback] = useState('')
 
   useEffect(() => {
     let timerId
@@ -62,6 +64,21 @@ export default function EventCard({
 
   async function handleNotGoing() {
     await rsvp.setNotGoing()
+  }
+
+  async function handleShare(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const result = await shareEvent(event)
+      if (result?.message) {
+        setShareFeedback(result.message)
+        setTimeout(() => setShareFeedback(''), 2500)
+      }
+    } catch {
+      setShareFeedback('Unable to share')
+      setTimeout(() => setShareFeedback(''), 2500)
+    }
   }
 
   return (
@@ -108,28 +125,46 @@ export default function EventCard({
 
       <div className="event-card__footer">
         <span className="event-card__rsvp">{rsvpLabel}</span>
-        {isManagement ? (
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {canModify && <button className="secondary-button" type="button" onClick={onEdit} style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}>Edit</button>}
-            {canModify && <button className="button-danger" type="button" disabled={isDeleting} onClick={onDelete} style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}>{isDeleting ? 'Deleting...' : 'Delete'}</button>}
-            {!canModify && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Locked</span>}
-          </div>
-        ) : authenticated ? (
-          !isOwner && (
-            <div className="event-card__rsvp-action">
-              {isOngoing ? (
-                <button className="secondary-button" type="button" disabled style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>Ongoing</button>
-              ) : rsvp.going ? (
-                <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing} style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>{rsvp.isBusy ? '…' : 'Going'}</button>
-              ) : (
-                <button className="primary-button" type="button" disabled={rsvp.isBusy} onClick={handleGoing} style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>{rsvp.isBusy ? '…' : "I'm Going"}</button>
-              )}
+        <div className="event-card__actions">
+          {isManagement ? (
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {canModify && <button className="secondary-button" type="button" onClick={onEdit} style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}>Edit</button>}
+              {canModify && <button className="button-danger" type="button" disabled={isDeleting} onClick={onDelete} style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}>{isDeleting ? 'Deleting...' : 'Delete'}</button>}
+              {!canModify && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Locked</span>}
             </div>
-          )
-        ) : (
-          <Link className="secondary-link" to="/login" style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>Login</Link>
-        )}
+          ) : authenticated ? (
+            !isOwner && (
+              <div className="event-card__rsvp-action">
+                {isOngoing ? (
+                  <button className="secondary-button" type="button" disabled style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>Ongoing</button>
+                ) : rsvp.going ? (
+                  <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing} style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>{rsvp.isBusy ? '…' : 'Going'}</button>
+                ) : (
+                  <button className="primary-button" type="button" disabled={rsvp.isBusy} onClick={handleGoing} style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>{rsvp.isBusy ? '…' : "I'm Going"}</button>
+                )}
+              </div>
+            )
+          ) : (
+            <Link className="secondary-link" to="/login" style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>Login</Link>
+          )}
+
+          <button
+            type="button"
+            className="event-card__share-btn"
+            onClick={handleShare}
+            aria-label="Share event"
+            title={shareFeedback || "Share event"}
+          >
+            <Share2 size={15} strokeWidth={2} />
+          </button>
+        </div>
       </div>
+
+      {shareFeedback && (
+        <p className="event-card__share-toast" role="status" aria-live="polite">
+          {shareFeedback}
+        </p>
+      )}
 
       {rsvp.status === 'error' && <p className="action-message action-message--error" role="alert">{rsvp.error}</p>}
       <Link className="event-card__link" to={`/events/${encodeURIComponent(event.eventId)}`}>View Event <span aria-hidden="true">→</span></Link>

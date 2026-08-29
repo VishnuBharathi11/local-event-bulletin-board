@@ -33,14 +33,25 @@ export async function shareEvent(event) {
   const content = buildEventShareContent(event)
 
   if (typeof navigator.share === 'function') {
-    await navigator.share(content)
-    return { method: 'share', message: 'Event share sheet opened.' }
+    try {
+      await navigator.share({
+        title: content.title,
+        text: content.title,
+        url: content.url,
+      })
+      return { method: 'share', message: 'Event share sheet opened.' }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return { method: 'cancelled', message: '' }
+      }
+      // If Web Share fails, proceed to clipboard fallback
+    }
   }
 
-  if (!navigator.clipboard?.writeText) {
-    throw new Error('Sharing is unavailable because this browser does not support Web Share or clipboard access.')
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(content.url)
+    return { method: 'clipboard', message: 'Event link copied!' }
   }
 
-  await navigator.clipboard.writeText(content.text)
-  return { method: 'clipboard', message: 'Event share text copied to the clipboard.' }
+  throw new Error('Sharing is unavailable because this browser does not support Web Share or clipboard access.')
 }

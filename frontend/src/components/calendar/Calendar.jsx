@@ -6,12 +6,14 @@ import {
   Bookmark,
   Clock,
   MapPin,
-  ArrowRight
+  ArrowRight,
+  Share2,
 } from 'lucide-react'
 import CategoryBadge from '../events/CategoryBadge.jsx'
 import EventStatusBadge from '../events/EventStatusBadge.jsx'
 import { formatEventTimeRange } from '../../utils/dateTime.js'
 import { getCalendarCells, formatMonthYear, formatSelectedDate, WEEKDAYS, isExpired } from '../../utils/calendar.js'
+import { shareEvent } from '../../utils/eventShare.js'
 
 export default function Calendar({
   currentMonth,
@@ -140,17 +142,32 @@ export default function Calendar({
                         <CategoryBadge category={event.category} />
                         <EventStatusBadge status={event.status} />
                       </div>
-                      <button
-                        type="button"
-                        className="calendar-event-preview-card__bookmark"
-                        aria-label="Bookmark event"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Bookmark size={17} />
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          className="calendar-event-preview-card__share"
+                          aria-label="Share event"
+                          title="Share event"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            await shareEvent(event);
+                          }}
+                        >
+                          <Share2 size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="calendar-event-preview-card__bookmark"
+                          aria-label="Bookmark event"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <Bookmark size={17} />
+                        </button>
+                      </div>
                     </div>
                     <h3 className="calendar-event-preview-card__title">{event.title}</h3>
                     <div className="calendar-event-preview-card__meta">

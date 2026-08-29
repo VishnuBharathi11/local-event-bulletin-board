@@ -2775,49 +2775,61 @@ em {
   cursor: not-allowed !important;
 }
 
-/* Button Articulation & Interactive Transitions */
+/* Button Articulation & Interactive Transitions — Aligned with Community Requests styling */
 .primary-button, 
 .secondary-button, 
 .button-danger,
+.event-card__share-btn,
 .calendar__nav-button,
 .calendar__today-button {
-  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
   position: relative;
+  border-radius: 9px !important;
+  font-weight: 700 !important;
 }
 
 .primary-button {
-  background-color: var(--brand) !important;
+  background-color: #6d28d9 !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 4px rgba(94, 46, 168, 0.08) !important;
+  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.22) !important;
+  border: 1px solid transparent !important;
 }
 
 .primary-button:hover:not(:disabled) {
-  background-color: var(--brand-dark) !important;
+  background-color: #5b21b6 !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 8px rgba(94, 46, 168, 0.16) !important;
+  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.3) !important;
 }
 
 .primary-button:active:not(:disabled) {
   transform: translateY(1px) !important;
-  box-shadow: 0 1px 2px rgba(94, 46, 168, 0.08) !important;
+  box-shadow: 0 2px 6px rgba(109, 40, 217, 0.2) !important;
+}
+
+.primary-button:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .secondary-button,
 .calendar__nav-button,
 .calendar__today-button {
   background-color: #ffffff !important;
-  border: 1px solid var(--border) !important;
-  color: var(--brand) !important;
-  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.02) !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #6d28d9 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 
 .secondary-button:hover:not(:disabled),
 .calendar__nav-button:hover:not(:disabled),
 .calendar__today-button:hover:not(:disabled) {
-  background-color: var(--brand-light) !important;
-  border-color: var(--brand-secondary) !important;
+  background-color: #f3e8ff !important;
+  border-color: #c4b5fd !important;
+  color: #5b21b6 !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 3px 6px rgba(23, 32, 51, 0.05) !important;
+  box-shadow: 0 3px 8px rgba(109, 40, 217, 0.12) !important;
 }
 
 .secondary-button:active:not(:disabled),
@@ -2827,13 +2839,41 @@ em {
   box-shadow: 0 1px 2px rgba(23, 32, 51, 0.02) !important;
 }
 
+.secondary-button:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.event-card__share-btn {
+  background-color: #ffffff !important;
+  border: 1px solid #6d28d9 !important;
+  color: #6d28d9 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 6px rgba(109, 40, 217, 0.12) !important;
+}
+
+.event-card__share-btn:hover {
+  background-color: #f3e8ff !important;
+  border-color: #5b21b6 !important;
+  color: #5b21b6 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 10px rgba(109, 40, 217, 0.2) !important;
+}
+
+.event-card__share-btn:active {
+  transform: translateY(1px) !important;
+}
+
 /* Accessibility Focus States */
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .button-danger:focus-visible,
+.event-card__share-btn:focus-visible,
 .calendar__nav-button:focus-visible,
 .calendar__today-button:focus-visible {
-  outline: 3px solid rgba(151, 110, 212, 0.4) !important;
+  outline: 3px solid rgba(109, 40, 217, 0.4) !important;
   outline-offset: 2px !important;
 }
 

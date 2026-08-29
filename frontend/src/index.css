@@ -308,8 +308,37 @@ button { border: 0; }
 .event-card__location-text small { overflow: hidden; color: var(--text-muted); font-size: 11px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .event-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 12px; }
 .event-card__rsvp { color: #516078; font-size: 12px; font-weight: 650; }
+.event-card__actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .event-card__rsvp-action { flex: 0 0 auto; }
-.event-card__rsvp-action .primary-button, .event-card__rsvp-action .secondary-button { min-height: 40px; padding: 8px 13px; }
+.event-card__rsvp-action .primary-button, .event-card__rsvp-action .secondary-button { min-height: 36px; padding: 7px 12px; font-size: 12.5px; }
+.event-card__share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  border: 1px solid var(--brand);
+  color: var(--brand);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.event-card__share-btn:hover {
+  background: var(--brand-light);
+  border-color: var(--brand-dark);
+  color: var(--brand-dark);
+}
+.event-card__share-toast {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--brand);
+  text-align: right;
+}
 .event-card__link { display: inline-flex; align-items: center; gap: 5px; margin-top: 13px; color: var(--brand); font-size: 14px; font-weight: 750; text-decoration: none; }
 .event-card__link:hover { text-decoration: underline; }
 .event-card__link:focus-visible { width: fit-content; }

@@ -400,12 +400,13 @@
   flex-wrap: wrap;
 }
 
+.calendar-event-preview-card__share,
 .calendar-event-preview-card__bookmark {
   background: none;
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #5E2EA8;
+  color: #6D28D9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -414,9 +415,10 @@
   flex-shrink: 0;
 }
 
+.calendar-event-preview-card__share:hover,
 .calendar-event-preview-card__bookmark:hover {
   background: #F3E8FF;
-  color: #4C1D95;
+  color: #5B21B6;
 }
 
 .calendar-event-preview-card__title {
