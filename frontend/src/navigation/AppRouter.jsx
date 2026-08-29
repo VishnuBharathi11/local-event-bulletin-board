@@ -7,6 +7,7 @@ import CalendarPage from '../pages/CalendarPage.jsx'
 import CommunityRequestsPage from '../pages/CommunityRequestsPage.jsx'
 import CreateEventRequestPage from '../pages/CreateEventRequestPage.jsx'
 import EventRequestDetailsPage from '../pages/EventRequestDetailsPage.jsx'
+import HowItWorksPage from '../pages/HowItWorksPage.jsx'
 import ProfilePage from '../pages/ProfilePage.jsx'
 import LoginPage from '../pages/LoginPage.jsx'
 import RegisterPage from '../pages/RegisterPage.jsx'
@@ -27,11 +28,14 @@ export default function AppRouter() {
       <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
       <Route element={<AppShell />}>
         <Route path="/" element={<EventBoardPage />} />
+        <Route path="/event-board" element={<EventBoardPage />} />
         <Route path="/events/new" element={<ProtectedRoute><CreateEventPage /></ProtectedRoute>} />
         <Route path="/events/edit/:eventId" element={<ProtectedRoute><CreateEventPage /></ProtectedRoute>} />
         <Route path="/events/:eventId" element={<EventDetailsPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/community-requests" element={<CommunityRequestsPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/community-requests/how-it-works" element={<HowItWorksPage />} />
         <Route path="/community-requests/new" element={<ProtectedRoute><CreateEventRequestPage /></ProtectedRoute>} />
         <Route path="/community-requests/edit/:requestId" element={<ProtectedRoute><CreateEventRequestPage /></ProtectedRoute>} />
         <Route path="/community-requests/:requestId" element={<EventRequestDetailsPage />} />

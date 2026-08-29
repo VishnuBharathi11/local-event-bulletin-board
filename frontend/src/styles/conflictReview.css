@@ -149,7 +149,7 @@
   font-size: 18px;
   font-weight: 800;
   color: var(--text-strong);
-  font-family: 'Outfit', sans-serif;
+  font-family: inherit;
 }
 
 .conflict-metric-card__value--text {

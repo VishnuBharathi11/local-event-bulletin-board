@@ -506,7 +506,7 @@ export default function CreateEventRequestPage() {
   }
 
   return (
-    <section className="request-form">
+    <section className="create-request-page">
       <div className="create-request-layout">
         {/* LEFT COLUMN: VISUAL INTRO */}
         <div className="create-request-layout__visual">
@@ -514,23 +514,22 @@ export default function CreateEventRequestPage() {
             <Link
               className="back-link"
               to={isEdit ? '/profile' : '/community-requests'}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}
             >
               <ArrowLeft size={16} /> {isEdit ? 'Back to Profile' : 'Community Requests'}
             </Link>
-            <div className="create-request-visual__content" style={{ marginTop: '24px' }}>
+            <div className="create-request-visual__content">
               <p className="eyebrow">
-                {isEdit ? 'Edit Request' : 'Request Event'}
+                {isEdit ? 'Edit Request' : 'New Request'}
               </p>
 
-              <h1 style={{ marginTop: '8px' }}>
-                {isEdit ? 'Update your request' : 'Tell the community what should happen'}
+              <h1>
+                {isEdit ? 'Update Request' : 'Request New Event'}
               </h1>
 
               <p className="create-request-description">
                 {isEdit
                   ? 'Refine the details of your event request. Changes will be reflected immediately.'
-                  : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
+                  : 'Tell the community about an event you want to see happen. If enough people show interest, an organizer can confirm and publish it.'
                 }
               </p>
             </div>
@@ -540,375 +539,253 @@ export default function CreateEventRequestPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: FORM CARD */}
         <div className="create-request-layout__form">
           <form
             className="event-form create-event-form"
             onSubmit={handleSubmit}
             noValidate
           >
-        <div className="form-grid">
-          <div className="form-field">
-            <label htmlFor="user-name">
-              Name
-            </label>
-
-            <input
-              id="user-name"
-              value={currentUser?.name || ''}
-              readOnly
-              className="input--readonly"
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="user-email">
-              Email
-            </label>
-
-            <input
-              id="user-email"
-              value={currentUser?.email || ''}
-              readOnly
-              className="input--readonly"
-            />
-          </div>
-        </div>
-
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">What should happen?</h2>
-            <p className="create-event-form__section-description">Describe the event idea you are proposing to the community.</p>
-          </div>
-          <div className="form-field">
-            <label htmlFor="request-title">
-            Proposed title <span className="required-star">*</span>
-          </label>
-
-          <input
-            id="request-title"
-            value={form.title}
-            onChange={(event) =>
-              update(
-                'title',
-                event.target.value
-              )
-            }
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="request-description">
-            Description <span className="required-star">*</span>
-          </label>
-
-          <textarea
-            id="request-description"
-            value={
-              form.description
-            }
-            onChange={(event) =>
-              update(
-                'description',
-                event.target.value
-              )
-            }
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="request-category">
-            Category <span className="required-star">*</span>
-          </label>
-
-          <select
-            id="request-category"
-            value={form.category}
-            onChange={(event) =>
-              update(
-                'category',
-                event.target.value
-              )
-            }
-          >
-            <option value="">
-              Select category
-            </option>
-
-            {categories.map(
-              (category) => (
-                <option
-                  key={category}
-                  value={category}
-                >
-                  {category}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-        </div>
-
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">How much interest is needed?</h2>
-            <p className="create-event-form__section-description">Set a target. Once met, organizers will review the proposal.</p>
-          </div>
-          <div className="form-field request-min-participants-field">
-            <label htmlFor="request-min-participants" className="community-target-label">
-              COMMUNITY SUPPORT TARGET
-            </label>
-            <span className="community-target-description">Minimum people needed to show interest</span>
-            <input
-              id="request-min-participants"
-              type="number"
-              min="1"
-              value={form.demandThreshold}
-              onChange={(event) =>
-                update(
-                  'demandThreshold',
-                  event.target.value
-                )
-              }
-              placeholder="Enter minimum number of people"
-            />
-          </div>
-        </div>
-
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">When?</h2>
-            <p className="create-event-form__section-description">Suggest a date and time for the proposed event.</p>
-          </div>
-          <div className="form-grid form-grid--date-time">
-          <div className="form-field">
-            <label htmlFor="request-date">
-              Suggested date <span className="required-star">*</span>
-            </label>
-
-            <input
-              id="request-date"
-              type="date"
-              min={today}
-              value={form.date}
-              onChange={
-                handleDateChange
-              }
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="request-start">
-              Start time <span className="required-star">*</span>
-            </label>
-
-            <TimePicker
-              id="request-start"
-              label="start time"
-              value={
-                form.startTime
-              }
-              onChange={(value) =>
-                update(
-                  'startTime',
-                  value
-                )
-              }
-              minimumMinutes={
-                startMinimumMinutes
-              }
-              disabled={
-                !form.date
-              }
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="request-end">
-              End time <span className="required-star">*</span>
-            </label>
-
-            <TimePicker
-              id="request-end"
-              label="end time"
-              value={
-                form.endTime
-              }
-              onChange={(value) =>
-                update(
-                  'endTime',
-                  value
-                )
-              }
-              minimumMinutes={
-                endMinimumMinutes
-              }
-              disabled={
-                !form.date ||
-                !form.startTime
-              }
-              align="right"
-            />
-          </div>
-        </div>
-        </div>
-
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">Event Image</h2>
-            <p className="create-event-form__section-description">Provide a cover image to help attract community interest.</p>
-          </div>
-          <div className="form-field">
-          <label htmlFor="request-image">
-            Event Image <span className="required-star">*</span>
-          </label>
-
-          <div className="image-upload">
-            {!form.imageUrl ? (
-              <label htmlFor="request-image" className="image-upload__label">
-                <input
-                  id="request-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="image-upload__input"
-                />
-                <div className="image-upload__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-                <div className="image-upload__text">
-                  <strong>Click to upload image</strong>
-                  <span>PNG, JPG or JPEG (max. 5MB)</span>
-                </div>
-              </label>
-            ) : (
-              <div className="image-upload__preview-wrap">
-                <img src={form.imageUrl} alt="Preview" className="image-upload__preview" />
-                <button
-                  type="button"
-                  className="image-upload__clear"
-                  onClick={clearImage}
-                  title="Remove image"
-                  aria-label="Remove image"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
+            <fieldset className="create-event-form__section">
+              <div className="create-event-form__section-header">
+                <h2 className="create-event-form__section-title">Basic Information</h2>
+                <p className="create-event-form__section-description">Describe the event idea you are proposing to the community.</p>
               </div>
-            )}
-          </div>
-        </div>
-        </div>
 
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">Where?</h2>
-            <p className="create-event-form__section-description">Suggest a neighborhood or venue location.</p>
-          </div>
-          <div className="form-field">
-          <label htmlFor="request-location">
-            Suggested venue <span className="required-star">*</span>
-          </label>
+              <div className="create-event-form__fields">
+                <div className="form-grid">
+                  <div className="form-field">
+                    <label htmlFor="user-name">Name</label>
+                    <input id="user-name" value={currentUser?.name || ''} readOnly className="input--readonly" />
+                  </div>
 
-          <input
-            id="request-location"
-            value={
-              form.location
-            }
-            onChange={(event) =>
-              update(
-                'location',
-                event.target.value
-              )
-            }
-          />
-        </div>
+                  <div className="form-field">
+                    <label htmlFor="user-email">Email</label>
+                    <input id="user-email" value={currentUser?.email || ''} readOnly className="input--readonly" />
+                  </div>
+                </div>
 
-        <div className="form-grid form-grid--location">
-          <div className="form-field">
-            <label htmlFor="request-city">
-              City <span className="required-star">*</span>
-            </label>
+                <div className="form-field">
+                  <label htmlFor="request-title">Proposed title <span className="required-star">*</span></label>
+                  <input
+                    id="request-title"
+                    value={form.title}
+                    onChange={(event) => update('title', event.target.value)}
+                    placeholder="e.g., Neighborhood Weekend Cleanup"
+                  />
+                </div>
 
-            <input
-              id="request-city"
-              value={form.city}
-              onChange={(event) =>
-                update(
-                  'city',
-                  event.target.value
-                )
-              }
-            />
-          </div>
+                <div className="form-field">
+                  <label htmlFor="request-description">Description <span className="required-star">*</span></label>
+                  <textarea
+                    id="request-description"
+                    rows="6"
+                    value={form.description}
+                    onChange={(event) => update('description', event.target.value)}
+                    placeholder="What is this event about?"
+                  />
+                </div>
 
-          <div className="form-field">
-            <label htmlFor="request-neighborhood">
-              Neighborhood <span className="required-star">*</span>
-            </label>
+                <div className="form-field">
+                  <label htmlFor="request-category">Category <span className="required-star">*</span></label>
+                  <select
+                    id="request-category"
+                    value={form.category}
+                    onChange={(event) => update('category', event.target.value)}
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <input
-              id="request-neighborhood"
-              value={
-                form.neighborhood
-              }
-              onChange={(event) =>
-                update(
-                  'neighborhood',
-                  event.target.value
-                )
-              }
-            />
-          </div>
-        </div>
-        </div>
+                <div className="form-field">
+                  <label htmlFor="request-image">Event Image <span className="required-star">*</span></label>
+                  <div className="image-upload">
+                    {!form.imageUrl ? (
+                      <label htmlFor="request-image" className="image-upload__label">
+                        <input
+                          id="request-image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="image-upload__input"
+                        />
+                        <div className="image-upload__icon" aria-hidden="true">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                        </div>
+                        <div className="image-upload__text">
+                          <strong>Click to upload image</strong>
+                          <span>PNG, JPG or JPEG (max. 5MB)</span>
+                        </div>
+                      </label>
+                    ) : (
+                      <div className="image-upload__preview-wrap">
+                        <img src={form.imageUrl} alt="Preview" className="image-upload__preview" />
+                        <button
+                          type="button"
+                          className="image-upload__clear"
+                          onClick={clearImage}
+                          title="Remove image"
+                          aria-label="Remove image"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </fieldset>
 
-        <div className="form-field" style={{ marginTop: '16px' }}>
-          <label>Suggested Location on Map</label>
-          <EventMapPicker
-            latitude={form.latitude}
-            longitude={form.longitude}
-            onLocationChange={(lat, lng) => {
-              update('latitude', lat);
-              update('longitude', lng);
-            }}
-            initialCenter={form.latitude && form.longitude ? [form.latitude, form.longitude] : undefined}
-            initialZoom={form.latitude && form.longitude ? 15 : undefined}
-          />
-          {!form.latitude && (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
-              Selecting a map location helps others find your request.
-            </p>
-          )}
-        </div>
+            <fieldset className="create-event-form__section">
+              <div className="create-event-form__section-header">
+                <h2 className="create-event-form__section-title">Community Interest</h2>
+                <p className="create-event-form__section-description">Set a target. Once met, organizers will review the proposal.</p>
+              </div>
+              <div className="create-event-form__fields">
+                <div className="form-field request-min-participants-field">
+                  <label htmlFor="request-min-participants" className="community-target-label">
+                    COMMUNITY SUPPORT TARGET
+                  </label>
+                  <span className="community-target-description">Minimum people needed to show interest</span>
+                  <input
+                    id="request-min-participants"
+                    type="number"
+                    min="1"
+                    value={form.demandThreshold}
+                    onChange={(event) => update('demandThreshold', event.target.value)}
+                    placeholder="Enter minimum number of people"
+                  />
+                </div>
+              </div>
+            </fieldset>
 
-        {error && (
-          <p
-            className="form-error"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+            <fieldset className="create-event-form__section">
+              <div className="create-event-form__section-header">
+                <h2 className="create-event-form__section-title">Date &amp; Time</h2>
+                <p className="create-event-form__section-description">Suggest a date and time for the proposed event.</p>
+              </div>
+              <div className="create-event-form__fields create-event-form__fields--date-time">
+                <div className="form-field">
+                  <label htmlFor="request-date">Suggested date <span className="required-star">*</span></label>
+                  <input
+                    id="request-date"
+                    type="date"
+                    min={today}
+                    value={form.date}
+                    onChange={handleDateChange}
+                  />
+                </div>
 
-        <button
-          className="primary-button"
-          type="submit"
-          disabled={
-            status === 'saving'
-          }
-        >
-          {status === 'saving'
-            ? (isEdit ? 'Updating…' : 'Submitting…')
-            : (isEdit ? 'Update Request' : 'Submit Request')}
-        </button>
-      </form>
+                <div className="form-field">
+                  <label htmlFor="request-start">Start time <span className="required-star">*</span></label>
+                  <TimePicker
+                    id="request-start"
+                    label="start time"
+                    value={form.startTime}
+                    onChange={(value) => update('startTime', value)}
+                    minimumMinutes={startMinimumMinutes}
+                    disabled={!form.date}
+                    date={form.date}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="request-end">End time <span className="required-star">*</span></label>
+                  <TimePicker
+                    id="request-end"
+                    label="end time"
+                    value={form.endTime}
+                    onChange={(value) => update('endTime', value)}
+                    minimumMinutes={endMinimumMinutes}
+                    disabled={!form.date || !form.startTime}
+                    align="right"
+                    date={form.date}
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="create-event-form__section">
+              <div className="create-event-form__section-header">
+                <h2 className="create-event-form__section-title">Location</h2>
+                <p className="create-event-form__section-description">Suggest a neighborhood or venue location.</p>
+              </div>
+              <div className="create-event-form__fields">
+                <div className="form-field">
+                  <label htmlFor="request-location">Suggested venue <span className="required-star">*</span></label>
+                  <input
+                    id="request-location"
+                    value={form.location}
+                    onChange={(event) => update('location', event.target.value)}
+                    placeholder="e.g., Central Park Pavilion"
+                  />
+                </div>
+
+                <div className="form-grid form-grid--location">
+                  <div className="form-field">
+                    <label htmlFor="request-city">City <span className="required-star">*</span></label>
+                    <input
+                      id="request-city"
+                      value={form.city}
+                      onChange={(event) => update('city', event.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label htmlFor="request-neighborhood">Neighborhood <span className="required-star">*</span></label>
+                    <input
+                      id="request-neighborhood"
+                      value={form.neighborhood}
+                      onChange={(event) => update('neighborhood', event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-field" style={{ marginTop: '16px' }}>
+                  <label>Suggested Location on Map</label>
+                  <EventMapPicker
+                    latitude={form.latitude}
+                    longitude={form.longitude}
+                    onLocationChange={(lat, lng) => {
+                      update('latitude', lat);
+                      update('longitude', lng);
+                    }}
+                    initialCenter={form.latitude && form.longitude ? [form.latitude, form.longitude] : undefined}
+                    initialZoom={form.latitude && form.longitude ? 15 : undefined}
+                  />
+                  {!form.latitude && (
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                      Selecting a map location helps others find your request.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {error && <p className="form-error" role="alert">{error}</p>}
+
+            <div className="create-event-form__actions" style={{ padding: '0', borderTop: 'none', background: 'transparent' }}>
+              <button
+                className="primary-button"
+                type="submit"
+                style={{ width: '100%', minHeight: '48px' }}
+                disabled={status === 'saving'}
+              >
+                {status === 'saving'
+                  ? (isEdit ? 'Updating…' : 'Submitting…')
+                  : (isEdit ? 'Update Request' : 'Submit Request')}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </section>

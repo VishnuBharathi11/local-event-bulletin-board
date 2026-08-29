@@ -21,8 +21,8 @@ function initialForm() {
     description: '',
     category: '',
     date: '',
-    startTime: '17:00',
-    endTime: '19:00',
+    startTime: '',
+    endTime: '',
     location: '',
     city: '',
     neighborhood: '',
@@ -264,6 +264,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
               onChange={(value) => update('startTime', value)}
               minimumMinutes={startMinimumMinutes}
               disabled={!form.date}
+              date={form.date}
             />
           </div>
           <div className="form-field">
@@ -276,6 +277,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
               minimumMinutes={endMinimumMinutes}
               disabled={!form.date || !form.startTime}
               align="right"
+              date={form.date}
             />
           </div>
         </div>

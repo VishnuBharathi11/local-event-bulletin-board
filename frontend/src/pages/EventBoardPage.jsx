@@ -83,7 +83,12 @@ export default function EventBoardPage() {
                 {(locationStatus === 'denied' || locationStatus === 'error') && <button onClick={detectLocation} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'underline' }}>Retry Detection</button>}
               </div>
 
-              <DiscoveryControls discovery={discovery.discovery} cityOptions={discovery.cityOptions} actions={discovery} />
+              <DiscoveryControls
+                discovery={discovery.discovery}
+                cityOptions={discovery.cityOptions}
+                actions={discovery}
+                categoryCounts={discovery.categoryCounts}
+              />
 
               <div className="event-board__map-action-wrap">
                 <button className="primary-button event-board__see-map-btn" type="button" onClick={() => setViewMode('map')} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
@@ -102,16 +107,7 @@ export default function EventBoardPage() {
               )}
             </>
           ) : (
-            <div className="event-map-page">
-              <header className="event-map-page__header">
-                <button className="secondary-button event-map-page__back-btn" type="button" onClick={() => setViewMode('list')}>← List View</button>
-                <h1>Map View</h1>
-              </header>
-              <div className="event-map-view">
-                <EventMap events={rawEvents} height="650px" />
-                {rawEvents.some((event) => !event.latitude) && <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-muted)' }}>* Some events don't have map locations yet and are not shown on the map.</p>}
-              </div>
-            </div>
+            <EventMap events={rawEvents} onBackToList={() => setViewMode('list')} />
           )}
         </>
       )}

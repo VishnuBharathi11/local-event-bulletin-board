@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, Clock3, MapPin } from 'lucide-react'
+import { CalendarDays, MapPin, User } from 'lucide-react'
 import CategoryBadge from './CategoryBadge.jsx'
 import EventStatusBadge from './EventStatusBadge.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -19,14 +19,9 @@ export default function EventCard({
   style = {}
 }) {
   const { authenticated, currentUser } = useAuth()
-  const rsvp = useEventRSVP(event.eventId, authenticated)
+  const rsvp = useEventRSVP(event.eventId, authenticated, event.rsvpCount)
   const [imageError, setImageError] = useState(false)
-  const [rsvpCount, setRsvpCount] = useState(Number(event.rsvpCount) || 0)
   const [lifecycleStatus, setLifecycleStatus] = useState(() => getEventLifecycleStatus(event))
-
-  useEffect(() => {
-    setRsvpCount(Number(event.rsvpCount) || 0)
-  }, [event.rsvpCount])
 
   useEffect(() => {
     let timerId
@@ -51,8 +46,9 @@ export default function EventCard({
     }
   }, [event.eventId, event.startTime, event.endTime, event.expireAt, onExpired])
 
-  if (lifecycleStatus === 'EXPIRED') return null
+  if (lifecycleStatus === 'EXPIRED' && !isManagement) return null
 
+  const rsvpCount = rsvp.hasCount ? rsvp.rsvpCount : (Number(event.rsvpCount) || 0)
   const rsvpLabel = rsvpCount === 1 ? '1 person going' : `${rsvpCount} people going`
   const cleanLocalityList = [event.neighborhood, event.city].filter(Boolean).filter(val => !isPincode(val))
   const locationLabel = [event.location, ...cleanLocalityList].join(', ')
@@ -61,13 +57,11 @@ export default function EventCard({
   const isOngoing = lifecycleStatus === 'ACTIVE'
 
   async function handleGoing() {
-    const success = await rsvp.setGoing()
-    if (success) setRsvpCount((current) => current + 1)
+    await rsvp.setGoing()
   }
 
   async function handleNotGoing() {
-    const success = await rsvp.setNotGoing()
-    if (success) setRsvpCount((current) => Math.max(current - 1, 0))
+    await rsvp.setNotGoing()
   }
 
   return (
@@ -87,20 +81,25 @@ export default function EventCard({
         <EventStatusBadge status={lifecycleStatus} />
       </div>
 
-      <h2 className="event-card__title">{event.title}</h2>
+      <h2 className="event-card__title" title={event.title}>{event.title}</h2>
 
       <div className="event-card__organizer" aria-label={`Organizer ${event.organizerName || 'Event Organizer'}`}>
-        <span>Organizer</span>
-        <strong>{event.organizerName || 'Event Organizer'}</strong>
+        <User size={13} aria-hidden="true" />
+        <span className="event-card__organizer-label">By</span>
+        <strong className="event-card__organizer-name">{event.organizerName || 'Event Organizer'}</strong>
       </div>
 
       <div className="event-card__info-block">
-        <p className="event-card__info-item"><CalendarDays size={14} aria-hidden="true" /><span>{formatDate(event.startTime)}</span></p>
-        <p className="event-card__info-item"><Clock3 size={14} aria-hidden="true" /><span>{formatEventTimeRange(event.startTime, event.endTime)}</span></p>
+        <div className="event-card__info-item">
+          <CalendarDays size={13} aria-hidden="true" />
+          <span className="event-card__datetime">
+            {formatDate(event.startTime)} · {formatEventTimeRange(event.startTime, event.endTime)}
+          </span>
+        </div>
       </div>
 
       <div className="event-card__location" title={locationLabel}>
-        <MapPin size={16} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--brand)', marginTop: '2px' }} />
+        <MapPin size={15} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--brand)', marginTop: '1px' }} />
         <span className="event-card__location-text">
           <strong>{event.location}</strong>
           <small>{cleanLocalityList.join(' · ')}</small>
@@ -110,25 +109,25 @@ export default function EventCard({
       <div className="event-card__footer">
         <span className="event-card__rsvp">{rsvpLabel}</span>
         {isManagement ? (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {canModify && <button className="secondary-button" type="button" onClick={onEdit}>Edit</button>}
-            {canModify && <button className="button-danger" type="button" disabled={isDeleting} onClick={onDelete} style={{ minHeight: '38px', padding: '0 12px', fontSize: '13px' }}>{isDeleting ? 'Deleting...' : 'Delete'}</button>}
-            {!canModify && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Locked</span>}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {canModify && <button className="secondary-button" type="button" onClick={onEdit} style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}>Edit</button>}
+            {canModify && <button className="button-danger" type="button" disabled={isDeleting} onClick={onDelete} style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}>{isDeleting ? 'Deleting...' : 'Delete'}</button>}
+            {!canModify && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Locked</span>}
           </div>
         ) : authenticated ? (
           !isOwner && (
             <div className="event-card__rsvp-action">
               {isOngoing ? (
-                <button className="secondary-button" type="button" disabled>Ongoing</button>
+                <button className="secondary-button" type="button" disabled style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>Ongoing</button>
               ) : rsvp.going ? (
-                <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing}>{rsvp.isBusy ? 'Updating…' : 'Going'}</button>
+                <button className="secondary-button" type="button" disabled={rsvp.isBusy} onClick={handleNotGoing} style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>{rsvp.isBusy ? '…' : 'Going'}</button>
               ) : (
-                <button className="primary-button" type="button" disabled={rsvp.isBusy} onClick={handleGoing}>{rsvp.isBusy ? 'Updating…' : "I'm Going"}</button>
+                <button className="primary-button" type="button" disabled={rsvp.isBusy} onClick={handleGoing} style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>{rsvp.isBusy ? '…' : "I'm Going"}</button>
               )}
             </div>
           )
         ) : (
-          <Link className="secondary-link" to="/login">Login to RSVP</Link>
+          <Link className="secondary-link" to="/login" style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}>Login</Link>
         )}
       </div>
 
