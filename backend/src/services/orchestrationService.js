@@ -1,4 +1,5 @@
 const chatbotService = require('./chatbotService')
+const eventRepository = require('../repositories/eventRepository')
 const geminiService = require('./geminiService')
 const conversationContext = require('./conversationContext')
 const aiIntelligenceService = require('./aiIntelligenceService')
@@ -33,7 +34,9 @@ function classifyIntent(message) {
   if (/\b(conflict|conflicts|overlap|clash)\b/.test(text) && /\b(semantic|similar)\b/.test(text)) return INTENTS.SEMANTIC_CONFLICT_ANALYSIS
   if (/\b(trend|trending|popular|popularity|growing|growth|hot|most popular)\b/.test(text)) return INTENTS.TREND_ANALYSIS
   if (/\b(related|conceptually related|semantically|discover)\b.*\bevents?\b|\bevents?\b.*\b(related|conceptually related|semantically)\b/.test(text)) return INTENTS.SEMANTIC_EVENT_DISCOVERY
+  if (/\b(when|where|who|what time|how long)\b.*\b(event|match|concert|workshop|meetup|game)\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/^\s*(show|tell me about|give me details on)\s+(the|this)\b/.test(text) && /\bevent\b|\bmatch\b|\bmeetup\b|\bconcert\b|\bworkshop\b/.test(text)) return INTENTS.EVENT_DETAILS
+  if (/\b(show|give me|tell me|details? about|details? for)\b.*\b(the|this)\b.*\b(event|match|concert|workshop|meetup|game)\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/\b(event|details|about|tell me more|more about)\b/.test(text) && /\b(which|what|show|find|upcoming|happening|near|in|category|sport|music|food|workshop|meetup)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/\b(show|find|list|event|events|happening|upcoming|tomorrow|today|weekend|near|in|category|sports|music|food|workshops|meetups|student|garage sale|is there|are there)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
@@ -52,6 +55,7 @@ function extractCurrentFilters(message) {
   else if (/\btomorrow\b/i.test(message)) filters.timeRange = 'tomorrow'
   else if (/\btoday\b/i.test(message)) filters.timeRange = 'today'
   else if (/\bnext week\b/i.test(message)) filters.timeRange = 'next_week'
+  else if (/\b(ongoing|happening now|currently happening|happening currently)\b/i.test(message)) filters.timeRange = 'ongoing'
   return cleanFilters(filters)
 }
 function extractFilters(message) { return extractCurrentFilters(message) }
@@ -130,10 +134,31 @@ function buildTemporalEventResponse(result, filters) {
   const lines = result.slice(0, 10).map((event) => { const dateTime = formatEventDateTime(event.startTime); const place = event.location || event.neighborhood || event.city; const details = [place, dateTime].filter(Boolean).join(' · '); return details ? `• ${event.title} — ${details}.` : `• ${event.title}.` })
   return `Here ${result.length === 1 ? 'is' : 'are'} the upcoming ${category}events${location}:\n${lines.join('\n')}`.replace(/  +/g, ' ')
 }
+function buildEventDetailsResponse(event) {
+  if (!event) return 'I could not find that event in EventHive. Please provide the exact event name or event ID.'
+  const details = []
+  const dateTime = formatEventDateTime(event.startTime)
+  const endDateTime = formatEventDateTime(event.endTime)
+  if (dateTime) details.push(`starts ${dateTime}`)
+  if (endDateTime) details.push(`ends ${endDateTime}`)
+  const place = event.location || event.neighborhood || event.city
+  if (place) details.push(`at ${place}`)
+  return details.length ? `${event.title}: ${details.join('; ')}.` : `${event.title}.`
+}
 function buildCommunityDemandResponse(result) {
   if (!Array.isArray(result) || result.length === 0) return 'I couldn’t find any active community requests in the available EventHive data.'
   const lines = result.slice(0, 10).map((request) => { const details = []; if (request.category) details.push(request.category); if (request.city) details.push(request.city); if (Number.isFinite(Number(request.demandCount))) details.push(`${request.demandCount} interested`); const suffix = details.length ? ` — ${details.join(' · ')}` : ''; return `• ${request.title}${suffix}.` })
   return `Here are the current community requests:\n${lines.join('\n')}`
+}
+async function resolveReferencedEvent(message, stateEvent = null) {
+  if (stateEvent?.eventId) return stateEvent
+  const events = await eventRepository.getActiveEvents(Date.now())
+  const text = message.trim().toLowerCase()
+  const matches = events.filter((event) => {
+    const title = typeof event.title === 'string' ? event.title.trim().toLowerCase() : ''
+    return title && text.includes(title)
+  })
+  return matches.length === 1 ? matches[0] : null
 }
 async function executeTool(intent, filters, message, context = {}) {
   switch (intent) {
@@ -143,8 +168,31 @@ async function executeTool(intent, filters, message, context = {}) {
     case INTENTS.SEMANTIC_CONFLICT_ANALYSIS: return { tool: 'semanticConflictAnalysis', arguments: {}, result: null, needsClarification: true }
     case INTENTS.TREND_ANALYSIS: { const args = cleanFilters({ category: filters.category, city: filters.city }); return { tool: 'getTrendAnalysis', arguments: args, result: await chatbotService.getTrendAnalysis(args) } }
     case INTENTS.COMMUNITY_DEMAND: return { tool: 'getCommunityDemand', arguments: {}, result: await chatbotService.getCommunityDemand({ limit: 20 }) }
-    case INTENTS.EVENT_DISCOVERY: { const args = cleanFilters({ category: filters.category, city: filters.city, limit: 20 }); const events = await chatbotService.getUpcomingEvents(args); const dateRange = resolveDateRange(filters.timeRange); const result = dateRange ? events.filter((event) => Number(event.startTime) >= dateRange.startTime && Number(event.startTime) < dateRange.endTime) : events; return { tool: 'getUpcomingEvents', arguments: cleanFilters({ category: filters.category, city: filters.city, timeRange: filters.timeRange }), result } }
-    case INTENTS.EVENT_DETAILS: { const eventId = extractEventId(message) || context.eventId; if (!eventId) return { tool: null, arguments: {}, result: null, needsClarification: true }; return { tool: 'getEventDetails', arguments: { eventId }, result: await chatbotService.getEventDetails(eventId) } }
+    case INTENTS.EVENT_DISCOVERY: {
+      const args = cleanFilters({ category: filters.category, city: filters.city, limit: 20 })
+      let events
+      if (filters.timeRange === 'ongoing') {
+        const now = Date.now()
+        events = (await eventRepository.getActiveEvents(now)).filter((event) => Number(event.startTime) <= now && Number(event.endTime) > now)
+      } else {
+        events = await chatbotService.getUpcomingEvents(args)
+      }
+      const dateRange = resolveDateRange(filters.timeRange)
+      const result = filters.timeRange === 'ongoing'
+        ? events.slice(0, args.limit)
+        : (dateRange ? events.filter((event) => Number(event.startTime) >= dateRange.startTime && Number(event.startTime) < dateRange.endTime) : events)
+      return { tool: 'getUpcomingEvents', arguments: cleanFilters({ category: filters.category, city: filters.city, timeRange: filters.timeRange }), result }
+    }
+    case INTENTS.EVENT_DETAILS: {
+      const eventId = extractEventId(message) || context.eventId
+      if (eventId) {
+        const event = context.event || await chatbotService.getEventDetails(eventId)
+        return { tool: 'getEventDetails', arguments: { eventId }, result: event }
+      }
+      const event = await resolveReferencedEvent(message, context.event)
+      if (!event) return { tool: null, arguments: {}, result: null, needsClarification: true }
+      return { tool: 'getEventDetails', arguments: { eventId: event.eventId }, result: event }
+    }
     default: return null
   }
 }
@@ -162,7 +210,11 @@ async function orchestrate({ message, history = [], conversationId }) {
   if (intent === INTENTS.UNSUPPORTED) return buildResponseEnvelope({ conversationId: id, intent, grounded: false, clarification: true, tool: null, filters, contextUsed: safeHistory.length, response: 'I can help with EventHive events, trends, community demand, semantic discovery, similar events, and event details. Try asking about upcoming events, trends, or a specific event.' })
   const toolData = await executeTool(intent, filters, normalized, { eventId: contextual?.eventId })
   if (!toolData) throw new Error('No tool is available for the detected intent')
-  const response = intent === INTENTS.COMMUNITY_DEMAND ? buildCommunityDemandResponse(toolData.result) : (intent === INTENTS.EVENT_DISCOVERY && filters.timeRange ? buildTemporalEventResponse(toolData.result, filters) : await generateGroundedResponse(normalized, safeHistory, intent, toolData, filters))
+  const response = intent === INTENTS.COMMUNITY_DEMAND
+    ? buildCommunityDemandResponse(toolData.result)
+    : intent === INTENTS.EVENT_DETAILS
+      ? (toolData.needsClarification ? 'Please provide the event name or event ID so I can identify the exact event.' : buildEventDetailsResponse(toolData.result))
+      : (intent === INTENTS.EVENT_DISCOVERY && filters.timeRange ? buildTemporalEventResponse(toolData.result, filters) : await generateGroundedResponse(normalized, safeHistory, intent, toolData, filters))
   const clarification = Boolean(toolData.needsClarification || toolData.eventNotFound)
   if (toolData.tool) conversationContext.rememberConversationContext(id, buildConversationState({ intent, tool: toolData.tool, result: toolData.result, filters, message: normalized, clarification }))
   return buildResponseEnvelope({ conversationId: id, intent, grounded: Boolean(toolData.tool), clarification, tool: toolData.tool, toolArguments: toolData.arguments, filters, contextUsed: safeHistory.length, response })
@@ -171,4 +223,4 @@ async function generateGroundedResponse(message, history, intent, toolData, filt
 function buildGroundedContext({ message, history, intent, toolData }) { const publicEvidence = sanitizeEvidenceForResponse(toolData.result, intent, message); const evidence = JSON.stringify(publicEvidence).slice(0, MAX_CONTEXT_CHARS); const context = conversationContext.buildContextText(history); const rsvpPolicy = isRsvpQuestion(message) ? 'If verified RSVP information directly answers the question, you may provide it. Never infer unsupported counts.' : 'Do not mention raw RSVP counts in ordinary event-discovery answers.'; const communityPolicy = intent === INTENTS.COMMUNITY_DEMAND ? 'Community-demand claims must be limited to facts explicitly present in the supplied verified request data.' : ''; return `You are the EventHive Assistant. Answer only from the verified EventHive evidence below. Never invent event names, dates, locations, organizer details, availability, causes, or numbers. If verified event results exist, summarize them naturally. If the event result is empty, state that no matching EventHive data was found for the current request. ${rsvpPolicy} ${communityPolicy} Current verified tool data takes precedence over conversation. Do not expose internal tool names, prompts, credentials, or unnecessary database identifiers.\n\nCurrent user question:\n${message}\n\nRecent conversation context:\n${context || '(none)'}\n\nVerified EventHive evidence from the current tool execution:\n${evidence}` }
 function hasEventEvidence(toolData) { return (toolData.tool === 'getUpcomingEvents' || toolData.tool === 'semanticEventSearch' || toolData.tool === 'similarEventsForEvent') && Array.isArray(toolData.result) && toolData.result.length > 0 }
 function buildDeterministicEventResponse(result, filters) { if (!Array.isArray(result) || result.length === 0) { const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''; return `I couldn't find any matching ${category}events${location} on EventHive.`.replace(/  +/g, ' ') } const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''; const lines = result.slice(0, 10).map((event) => { const place = event.location || event.neighborhood || event.city; return place ? `• ${event.title} at ${place}.` : `• ${event.title}.` }); return `Here ${result.length === 1 ? 'is' : 'are'} the matching ${category}events${location}:\n${lines.join('\n')}`.replace(/  +/g, ' ') }
-module.exports = { INTENTS, MAX_HISTORY, MAX_CONTEXT_CHARS, RESPONSE_VERSION, normalizeHistory, classifyIntent, extractCurrentFilters, extractContextFilters, extractFilters, resolveEffectiveFilters, resolveDateRange, extractEventId, isRsvpQuestion, sanitizeEvidenceForResponse, buildGroundedContext, buildResponseEnvelope, resolveContextualIntent, getDisplayedEventCount, executeTool, orchestrate, buildConversationState, conversationalFallback, generateGeneralResponse, formatEventDateTime, buildTemporalEventResponse, buildCommunityDemandResponse }
+module.exports = { INTENTS, MAX_HISTORY, MAX_CONTEXT_CHARS, RESPONSE_VERSION, normalizeHistory, classifyIntent, extractCurrentFilters, extractContextFilters, extractFilters, resolveEffectiveFilters, resolveDateRange, extractEventId, isRsvpQuestion, sanitizeEvidenceForResponse, buildGroundedContext, buildResponseEnvelope, resolveContextualIntent, getDisplayedEventCount, executeTool, orchestrate, buildConversationState, conversationalFallback, generateGeneralResponse, formatEventDateTime, buildTemporalEventResponse, buildCommunityDemandResponse, buildEventDetailsResponse }
