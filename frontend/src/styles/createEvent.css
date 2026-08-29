@@ -258,3 +258,32 @@
     margin-inline: 16px;
   }
 }
+
+.event-description-ai {
+  margin-top: 10px;
+}
+
+.event-description-ai__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-description-ai__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 14px;
+}
+
+.event-description-ai__hint {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+.event-description-ai__error {
+  margin: 7px 0 0;
+  font-size: 12px;
+}
