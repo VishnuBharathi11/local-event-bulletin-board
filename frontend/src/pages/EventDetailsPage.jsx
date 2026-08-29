@@ -3,10 +3,12 @@ import { useEffect, useState, useRef } from 'react'
 import {
   ArrowLeft,
   CalendarDays,
+  Clock3,
   FileText,
   MapPin,
   User,
   Users,
+  Share2,
 } from 'lucide-react'
 import CategoryBadge from '../components/events/CategoryBadge.jsx'
 import EventStatusBadge from '../components/events/EventStatusBadge.jsx'
@@ -20,6 +22,7 @@ import {
   getEventLifecycleStatus,
   getNextEventLifecycleBoundary,
 } from '../utils/eventLifecycle.js'
+import { shareEvent } from '../utils/eventShare.js'
 import '../styles/eventDetails.css'
 
 export default function EventDetailsPage() {
@@ -32,6 +35,7 @@ export default function EventDetailsPage() {
     getEventLifecycleStatus(event)
   )
   const [imageError, setImageError] = useState(false)
+  const [shareFeedback, setShareFeedback] = useState('')
 
   const leftCardRef = useRef(null)
   const [leftHeight, setLeftHeight] = useState(null)
@@ -140,6 +144,21 @@ export default function EventDetailsPage() {
     }
   }
 
+  async function handleShare(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const result = await shareEvent(event)
+      if (result?.message) {
+        setShareFeedback(result.message)
+        setTimeout(() => setShareFeedback(''), 2500)
+      }
+    } catch {
+      setShareFeedback('Unable to share')
+      setTimeout(() => setShareFeedback(''), 2500)
+    }
+  }
+
   return (
     <article className="event-details">
       <div className="event-details__container">
@@ -188,13 +207,14 @@ export default function EventDetailsPage() {
               </span>
             </div>
 
-            {/* Date and Time Row */}
+            {/* Date and Time Rows */}
             <div className="event-details__datetime-row">
               <CalendarDays size={15} strokeWidth={2.2} className="event-details__datetime-icon" />
-              <span>
-                {formatDate(event.startTime)} ·{' '}
-                {formatEventTimeRange(event.startTime, event.endTime)}
-              </span>
+              <span>{formatDate(event.startTime)}</span>
+            </div>
+            <div className="event-details__datetime-row" style={{ marginTop: '6px' }}>
+              <Clock3 size={15} strokeWidth={2.2} className="event-details__datetime-icon" />
+              <span>{formatEventTimeRange(event.startTime, event.endTime)}</span>
             </div>
 
             {/* Location Container Box (without View on Map button) */}
@@ -210,46 +230,64 @@ export default function EventDetailsPage() {
               </div>
             </div>
 
-            {/* Attendee / Going Section (Clean Text + Functional Going Button) */}
+            {/* Attendee / Going Section (Clean Text + Functional Going Button + Share Button) */}
             <div className="event-details__attendee-row">
               <div className="event-details__attendee-info">
                 <Users size={16} strokeWidth={2.2} />
                 <span>{rsvpLabel}</span>
               </div>
 
-              {/* Functional Going Button */}
-              <div className="event-details__going-btn-wrap">
-                {isOwner ? (
-                  <span className="event-details__going-btn" style={{ cursor: 'default' }}>
-                    Organizer
-                  </span>
-                ) : isOngoing ? (
-                  <button
-                    type="button"
-                    className="event-details__going-btn"
-                    disabled
-                  >
-                    <span>Ongoing</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={`event-details__going-btn ${rsvp.going ? 'event-details__going-btn--active' : ''}`}
-                    disabled={rsvp.isBusy}
-                    onClick={handleGoingToggle}
-                    title={authenticated ? (rsvp.going ? 'Click to cancel RSVP' : 'Click to RSVP') : 'Login to RSVP'}
-                  >
-                    <span>
-                      {rsvp.isBusy
-                        ? '…'
-                        : rsvp.going
-                        ? 'Going'
-                        : "I'm Going"}
+              {/* Action Buttons: Going Button + Share Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="event-details__going-btn-wrap">
+                  {isOwner ? (
+                    <span className="event-details__going-btn" style={{ cursor: 'default' }}>
+                      Organizer
                     </span>
-                  </button>
-                )}
+                  ) : isOngoing ? (
+                    <button
+                      type="button"
+                      className="event-details__going-btn"
+                      disabled
+                    >
+                      <span>Ongoing</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={`event-details__going-btn ${rsvp.going ? 'event-details__going-btn--active' : ''}`}
+                      disabled={rsvp.isBusy}
+                      onClick={handleGoingToggle}
+                      title={authenticated ? (rsvp.going ? 'Click to cancel RSVP' : 'Click to RSVP') : 'Login to RSVP'}
+                    >
+                      <span>
+                        {rsvp.isBusy
+                          ? '…'
+                          : rsvp.going
+                          ? 'Going'
+                          : "I'm Going"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="event-details__share-btn"
+                  onClick={handleShare}
+                  aria-label="Share event"
+                  title={shareFeedback || "Share event"}
+                >
+                  <Share2 size={16} strokeWidth={2} />
+                </button>
               </div>
             </div>
+
+            {shareFeedback && (
+              <p className="event-card__share-toast" role="status" aria-live="polite">
+                {shareFeedback}
+              </p>
+            )}
 
             {rsvp.status === 'error' && (
               <p className="action-message action-message--error" role="alert">

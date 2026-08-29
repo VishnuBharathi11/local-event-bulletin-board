@@ -5,16 +5,18 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
 })
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
+const timeFormatter = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',
   minute: '2-digit',
+  hour12: true,
 })
 
-const fullDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const fullDateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
+  hour12: true,
 })
 
 function toDate(timestamp) {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getEvents } from '../services/eventService.js'
+import { useLocation } from '../context/LocationContext.jsx'
 import {
   addMonths,
   getCalendarEvents,
@@ -10,6 +11,7 @@ import {
 } from '../utils/calendar.js'
 
 export function useCalendar() {
+  const { district } = useLocation()
   const [state, setState] = useState({ status: 'loading', events: [], error: null })
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth())
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
@@ -34,8 +36,23 @@ export function useCalendar() {
   }, [])
 
   const activeEvents = useMemo(() => {
-    return getCalendarEvents(state.events)
-  }, [state.events])
+    const unexpired = getCalendarEvents(state.events)
+    if (!district) return unexpired
+
+    const normalizedDetected = district.toLowerCase().trim()
+    return unexpired.filter((event) => {
+      if (event.district) {
+        const normalizedEventDistrict = event.district.toLowerCase().trim()
+        return (
+          normalizedEventDistrict === normalizedDetected ||
+          normalizedEventDistrict.includes(normalizedDetected) ||
+          normalizedDetected.includes(normalizedEventDistrict)
+        )
+      }
+      const searchSpace = `${event.city || ''} ${event.neighborhood || ''} ${event.location || ''}`.toLowerCase()
+      return searchSpace.includes(normalizedDetected)
+    })
+  }, [state.events, district])
 
   const eventDays = useMemo(
     () => getEventDaysForMonth(activeEvents, currentMonth),

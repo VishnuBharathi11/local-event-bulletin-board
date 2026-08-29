@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, MapPin, User, Share2 } from 'lucide-react'
+import { CalendarDays, Clock3, MapPin, User, Share2 } from 'lucide-react'
 import CategoryBadge from './CategoryBadge.jsx'
 import EventStatusBadge from './EventStatusBadge.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -110,7 +110,13 @@ export default function EventCard({
         <div className="event-card__info-item">
           <CalendarDays size={13} aria-hidden="true" />
           <span className="event-card__datetime">
-            {formatDate(event.startTime)} · {formatEventTimeRange(event.startTime, event.endTime)}
+            {formatDate(event.startTime)}
+          </span>
+        </div>
+        <div className="event-card__info-item">
+          <Clock3 size={13} aria-hidden="true" />
+          <span className="event-card__datetime">
+            {formatEventTimeRange(event.startTime, event.endTime)}
           </span>
         </div>
       </div>

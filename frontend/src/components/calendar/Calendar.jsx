@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
-  Bookmark,
   Clock,
   MapPin,
   ArrowRight,
@@ -45,9 +44,6 @@ export default function Calendar({
 
           <div className="calendar__month-heading">
             <h2>{formatMonthYear(currentMonth)}</h2>
-            <button className="calendar__today-button" type="button" onClick={onToday}>
-              Today
-            </button>
           </div>
 
           <button
@@ -142,32 +138,19 @@ export default function Calendar({
                         <CategoryBadge category={event.category} />
                         <EventStatusBadge status={event.status} />
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <button
-                          type="button"
-                          className="calendar-event-preview-card__share"
-                          aria-label="Share event"
-                          title="Share event"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            await shareEvent(event);
-                          }}
-                        >
-                          <Share2 size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          className="calendar-event-preview-card__bookmark"
-                          aria-label="Bookmark event"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                        >
-                          <Bookmark size={17} />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="calendar-event-preview-card__share"
+                        aria-label="Share event"
+                        title="Share event"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          await shareEvent(event);
+                        }}
+                      >
+                        <Share2 size={16} />
+                      </button>
                     </div>
                     <h3 className="calendar-event-preview-card__title">{event.title}</h3>
                     <div className="calendar-event-preview-card__meta">
