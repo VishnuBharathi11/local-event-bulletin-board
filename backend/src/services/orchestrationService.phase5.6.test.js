@@ -1,6 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const service = require('./orchestrationService')
+const aiIntelligenceService = require('./aiIntelligenceService')
 
 test('semantic discovery intent routes semantic event search', () => {
   assert.equal(service.classifyIntent('Find events related to football for students'), service.INTENTS.SEMANTIC_EVENT_DISCOVERY)
@@ -15,9 +16,9 @@ test('similar-event intent routes similar event discovery', () => {
 })
 
 test('executeTool delegates semantic discovery to the unified intelligence service', async () => {
-  const original = require('./chatbotService').semanticEventSearch
+  const original = aiIntelligenceService.semanticEventSearch
   let captured
-  require('./chatbotService').semanticEventSearch = async (query, options) => {
+  aiIntelligenceService.semanticEventSearch = async (query, options) => {
     captured = { query, options }
     return [{ eventId: 'event-1', title: 'Football Workshop', distance: 0.1, semanticSimilarity: 0.9 }]
   }
@@ -28,18 +29,24 @@ test('executeTool delegates semantic discovery to the unified intelligence servi
     assert.equal(captured.options.city, 'Coimbatore')
     assert.equal(result.result[0].semanticSimilarity, 0.9)
   } finally {
-    require('./chatbotService').semanticEventSearch = original
+    aiIntelligenceService.semanticEventSearch = original
   }
 })
 
 test('semantic trend tool remains read-only and delegated', async () => {
-  const original = require('./chatbotService').semanticTrendAnalysis
-  require('./chatbotService').semanticTrendAnalysis = async () => ({ clusters: [{ clusterId: 'semantic-1', summary: { size: 2 } }] })
+  const original = aiIntelligenceService.semanticTrendAnalysis
+  let called = false
+  aiIntelligenceService.semanticTrendAnalysis = async (options) => {
+    called = true
+    assert.deepEqual(options, {})
+    return { clusters: [{ clusterId: 'semantic-1', summary: { size: 2 } }] }
+  }
   try {
     const result = await service.executeTool(service.INTENTS.SEMANTIC_TREND_ANALYSIS, {}, 'What semantic trends are emerging?')
+    assert.equal(called, true)
     assert.equal(result.tool, 'semanticTrendAnalysis')
     assert.equal(result.result.clusters[0].summary.size, 2)
   } finally {
-    require('./chatbotService').semanticTrendAnalysis = original
+    aiIntelligenceService.semanticTrendAnalysis = original
   }
 })
