@@ -7,6 +7,7 @@ const rsvpRoutes = require('./routes/rsvpRoutes')
 const eventRequestRoutes = require('./routes/eventRequestRoutes')
 const locationRoutes = require('./routes/locationRoutes')
 const chatbotRoutes = require('./routes/chatbotRoutes')
+const aiRoutes = require('./routes/aiRoutes')
 
 function createApp() {
   const app = express()
@@ -29,6 +30,7 @@ function createApp() {
   app.use('/api', eventRequestRoutes)
   app.use('/api/location', locationRoutes)
   app.use('/api', chatbotRoutes)
+  app.use('/api', aiRoutes)
 
   return app
 }
