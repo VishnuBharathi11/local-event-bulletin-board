@@ -127,8 +127,17 @@ export function LocationProvider({ children }) {
     }
   }, [status, district])
 
+  const clearLocation = useCallback(() => {
+    setDistrict(null)
+    setLocality(null)
+    setCoords(null)
+    setLocalities([])
+    localStorage.removeItem('detected_district')
+    localStorage.removeItem('detected_locality')
+  }, [])
+
   return (
-    <LocationContext.Provider value={{ coords, district, locality, localities, status, detectLocation }}>
+    <LocationContext.Provider value={{ coords, district, locality, localities, status, detectLocation, clearLocation }}>
       {children}
     </LocationContext.Provider>
   )

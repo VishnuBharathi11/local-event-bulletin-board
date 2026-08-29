@@ -1,26 +1,26 @@
 import { MapPin, Info } from 'lucide-react'
 import EventMapPicker from '../map/EventMapPicker.jsx'
 
-export default function Step03Location({ form, update, errors = {} }) {
+export default function RequestStep03Location({ form, update, errors = {} }) {
   return (
-    <div className="create-step-content" role="region" aria-labelledby="step3-title">
+    <div className="create-step-content" role="region" aria-labelledby="request-step3-title">
       <div className="create-step-header">
         <div className="create-step-header__title-row">
           <MapPin size={22} className="create-step-header__icon" />
-          <h2 id="step3-title" className="create-step-title">Location</h2>
+          <h2 id="request-step3-title" className="create-step-title">Location</h2>
         </div>
-        <p className="create-step-desc">Tell attendees where the event will take place.</p>
+        <p className="create-step-desc">Suggest a venue, neighborhood, or exact map location for the event.</p>
       </div>
 
       <div className="create-step-form">
         <div className="form-group">
-          <label htmlFor="event-location">
+          <label htmlFor="request-location">
             Venue / Exact Location <span className="required-star">*</span>
           </label>
           <input
-            id="event-location"
+            id="request-location"
             type="text"
-            placeholder="Enter venue name or exact address"
+            placeholder="e.g., Central Park Pavilion or Downtown Community Center"
             value={form.location || ''}
             onChange={(e) => update('location', e.target.value)}
             className={`form-input ${errors.location ? 'form-input--error' : ''}`}
@@ -30,11 +30,11 @@ export default function Step03Location({ form, update, errors = {} }) {
 
         <div className="form-row-2">
           <div className="form-group">
-            <label htmlFor="event-city">
+            <label htmlFor="request-city">
               City <span className="required-star">*</span>
             </label>
             <input
-              id="event-city"
+              id="request-city"
               type="text"
               placeholder="Enter city"
               value={form.city || ''}
@@ -45,11 +45,11 @@ export default function Step03Location({ form, update, errors = {} }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="event-neighborhood">
+            <label htmlFor="request-neighborhood">
               Neighborhood (Optional)
             </label>
             <input
-              id="event-neighborhood"
+              id="request-neighborhood"
               type="text"
               placeholder="Enter neighborhood"
               value={form.neighborhood || ''}
@@ -62,8 +62,9 @@ export default function Step03Location({ form, update, errors = {} }) {
         {/* Map Selection Section */}
         <div className="form-group" style={{ marginTop: '12px' }}>
           <label>
-            Select on Map <span className="required-star">*</span>
+            Select on Map
           </label>
+          
           <EventMapPicker
             latitude={form.latitude}
             longitude={form.longitude}
@@ -75,13 +76,11 @@ export default function Step03Location({ form, update, errors = {} }) {
             initialZoom={form.latitude && form.longitude ? 15 : undefined}
           />
 
-          {/* Info Hint below Map */}
-          <div className="create-step-info-hint">
+          {/* Info Hint below Map and Actions */}
+          <div className="create-step-info-hint" style={{ marginTop: '6px' }}>
             <Info size={16} />
             <span>Drag or zoom the map and click on the exact location to pin it.</span>
           </div>
-
-          {errors.map && <span className="form-field-error" style={{ display: 'block', marginTop: '6px' }}>{errors.map}</span>}
         </div>
       </div>
     </div>

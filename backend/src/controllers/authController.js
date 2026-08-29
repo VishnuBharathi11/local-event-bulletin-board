@@ -6,17 +6,30 @@ function isProduction() {
 }
 
 function cookieOptions() {
+  const isProd = isProduction()
+  const sameSite = process.env.AUTH_COOKIE_SAMESITE || (isProd ? 'None' : 'Lax')
+  const secure = isProd || sameSite === 'None'
   return [
     'HttpOnly',
     'Path=/',
     `Max-Age=${Math.floor(authService.SESSION_MAX_AGE_MS / 1000)}`,
-    `SameSite=${process.env.AUTH_COOKIE_SAMESITE || (isProduction() ? 'None' : 'Lax')}`,
-    ...(isProduction() ? ['Secure'] : []),
+    `SameSite=${sameSite}`,
+    ...(secure ? ['Secure'] : []),
   ].join('; ')
 }
 
 function clearCookieOptions() {
-  return ['HttpOnly', 'Path=/', 'Max-Age=0', 'SameSite=Lax', ...(isProduction() ? ['Secure'] : [])].join('; ')
+  const isProd = isProduction()
+  const sameSite = process.env.AUTH_COOKIE_SAMESITE || (isProd ? 'None' : 'Lax')
+  const secure = isProd || sameSite === 'None'
+  return [
+    'HttpOnly',
+    'Path=/',
+    'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+    'Max-Age=0',
+    `SameSite=${sameSite}`,
+    ...(secure ? ['Secure'] : []),
+  ].join('; ')
 }
 
 function handleError(res, error) {

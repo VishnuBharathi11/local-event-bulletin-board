@@ -268,6 +268,7 @@
 
 .create-event-panel-right--scrollable,
 .create-event-panel-right--step3,
+.create-event-panel-right--step4,
 .create-event-panel-right--step5 {
   height: 620px;
   max-height: min(650px, calc(100vh - 90px));
@@ -291,7 +292,8 @@
   min-height: 0;
 }
 
-.create-event-panel-right--step3 .create-event-step-wrapper {
+.create-event-panel-right--step3 .create-event-step-wrapper,
+.create-event-panel-right--step4 .create-event-step-wrapper {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -301,15 +303,18 @@
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.create-event-panel-right--step3 .create-event-step-wrapper::-webkit-scrollbar {
+.create-event-panel-right--step3 .create-event-step-wrapper::-webkit-scrollbar,
+.create-event-panel-right--step4 .create-event-step-wrapper::-webkit-scrollbar {
   width: 6px;
 }
 
-.create-event-panel-right--step3 .create-event-step-wrapper::-webkit-scrollbar-track {
+.create-event-panel-right--step3 .create-event-step-wrapper::-webkit-scrollbar-track,
+.create-event-panel-right--step4 .create-event-step-wrapper::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.create-event-panel-right--step3 .create-event-step-wrapper::-webkit-scrollbar-thumb {
+.create-event-panel-right--step3 .create-event-step-wrapper::-webkit-scrollbar-thumb,
+.create-event-panel-right--step4 .create-event-step-wrapper::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
@@ -629,11 +634,53 @@
 }
 
 /* Map Picker Container embed */
+.map-picker-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .map-picker-embedded-wrap {
+  width: 100%;
+  height: 280px;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   overflow: hidden;
+  background: #e2e8f0;
+  position: relative;
   margin-top: 2px;
+}
+
+.map-picker-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.map-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.map-picker-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #6d28d9;
 }
 
 /* Image Upload Dropzone */
@@ -641,9 +688,10 @@
   border: 1.5px dashed #c4b5fd;
   border-radius: 12px;
   background: #faf8ff;
-  padding: 24px 20px;
+  padding: 18px 20px;
   text-align: center;
   transition: border-color 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
 }
 
 .event-upload-dropzone:hover {
@@ -702,12 +750,18 @@
   position: relative;
   display: inline-block;
   max-width: 100%;
+  border-radius: 8px;
+  line-height: 0;
 }
 
 .event-upload-preview-img {
-  max-height: 160px;
+  max-height: 120px;
+  width: auto;
+  max-width: 100%;
   border-radius: 8px;
   object-fit: cover;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .event-upload-clear-btn {
@@ -720,9 +774,19 @@
   background: #ef4444;
   color: #ffffff;
   border: 2px solid #ffffff;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.event-upload-clear-btn:hover {
+  background: #dc2626;
+  transform: scale(1.1);
 }
 
 /* Review 2x2 Grid */
@@ -1006,5 +1070,81 @@
     width: 30px;
     height: 30px;
     font-size: 11.5px;
+  }
+}
+
+/* ===================================================
+   4. Event Request Page Layout Adaptations
+   =================================================== */
+
+.create-event-grid-layout--request {
+  align-items: start;
+}
+
+.create-event-grid-layout--request .create-event-panel-left {
+  position: sticky;
+  top: 84px;
+  height: 620px;
+}
+
+.create-request-panel-right {
+  height: auto;
+  min-height: 620px;
+}
+
+.create-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.create-request-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.create-request-section:not(:first-of-type) {
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.create-request-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.create-request-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-request-section-title-row h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.create-request-section-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.create-request-target-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+@media (max-width: 1080px) {
+  .create-event-grid-layout--request .create-event-panel-left {
+    position: static;
+    height: auto;
   }
 }

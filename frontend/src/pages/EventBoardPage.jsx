@@ -16,9 +16,11 @@ import EventMap from '../components/map/EventMap.jsx'
 import { useEvents } from '../hooks/useEvents.js'
 import { useEventDiscovery } from '../hooks/useEventDiscovery.js'
 import { useLocation } from '../context/LocationContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import '../styles/eventMap.css'
 
 export default function EventBoardPage() {
+  const { authenticated } = useAuth()
   const { status, events: rawEvents, error, reload, removeEvent } = useEvents()
   const discovery = useEventDiscovery(rawEvents)
   const { district, status: locationStatus, detectLocation } = useLocation()
@@ -75,13 +77,15 @@ export default function EventBoardPage() {
         <>
           {viewMode === 'list' ? (
             <>
-              <div className="location-status" style={{ marginBottom: '16px', fontSize: '13.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                {locationStatus === 'detecting' && <span>Detecting location...</span>}
-                {locationStatus === 'resolved' && district && <span>Showing events in <strong>{district}</strong></span>}
-                {locationStatus === 'denied' && <span>Location access denied. Showing all events.</span>}
-                {(locationStatus === 'error' || (locationStatus === 'resolved' && !district)) && <span>Unable to determine district. Showing all events.</span>}
-                {(locationStatus === 'denied' || locationStatus === 'error') && <button onClick={detectLocation} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'underline' }}>Retry Detection</button>}
-              </div>
+              {authenticated && (
+                <div className="location-status" style={{ marginBottom: '16px', fontSize: '13.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                  {locationStatus === 'detecting' && <span>Detecting location...</span>}
+                  {locationStatus === 'resolved' && district && <span>Showing events in <strong>{district}</strong></span>}
+                  {locationStatus === 'denied' && <span>Location access denied. Showing all events.</span>}
+                  {(locationStatus === 'error' || (locationStatus === 'resolved' && !district)) && <span>Unable to determine district. Showing all events.</span>}
+                  {(locationStatus === 'denied' || locationStatus === 'error') && <button onClick={detectLocation} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'underline' }}>Retry Detection</button>}
+                </div>
+              )}
 
               <DiscoveryControls
                 discovery={discovery.discovery}

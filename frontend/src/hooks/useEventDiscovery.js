@@ -14,7 +14,7 @@ import {
 } from '../utils/eventDiscovery.js'
 
 export function useEventDiscovery(rawEvents = []) {
-  const { currentUser } = useAuth()
+  const { authenticated } = useAuth()
   const { district, localities, status: locationStatus, detectLocation } = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -24,6 +24,10 @@ export function useEventDiscovery(rawEvents = []) {
     createDiscoveryState(initialDateParam ? { selectedDateFilter: initialDateParam } : {})
   )
   const now = new Date()
+
+  // Only apply location filtering for authenticated users. Logged-out users see all public events.
+  const effectiveDistrict = authenticated ? district : null
+  const effectiveLocalities = authenticated ? localities : []
 
   // Sync state if URL query param changes
   useEffect(() => {
@@ -35,9 +39,9 @@ export function useEventDiscovery(rawEvents = []) {
 
   const activeEvents = useMemo(() => {
     const active = getActiveEvents(rawEvents, now)
-    if (!district) return active
+    if (!effectiveDistrict) return active
 
-    const normalizedDetected = district.toLowerCase().trim()
+    const normalizedDetected = effectiveDistrict.toLowerCase().trim()
     const filtered = active.filter(event => {
       if (event.district) {
         const normalizedEventDistrict = event.district.toLowerCase().trim()
@@ -50,20 +54,20 @@ export function useEventDiscovery(rawEvents = []) {
     })
 
     return filtered
-  }, [rawEvents, now, district])
+  }, [rawEvents, now, effectiveDistrict])
 
   const cityOptions = useMemo(() => {
-    return getCityOptions(activeEvents, district, localities)
-  }, [activeEvents, district, localities])
+    return getCityOptions(activeEvents, effectiveDistrict, effectiveLocalities)
+  }, [activeEvents, effectiveDistrict, effectiveLocalities])
 
   const events = useMemo(
-    () => filterAndSortEvents(activeEvents, discovery, now, district, localities),
-    [activeEvents, discovery, now, district, localities],
+    () => filterAndSortEvents(activeEvents, discovery, now, effectiveDistrict, effectiveLocalities),
+    [activeEvents, discovery, now, effectiveDistrict, effectiveLocalities],
   )
 
   const categoryCounts = useMemo(() => {
     const baseDiscovery = { ...discovery, selectedCategory: 'All' }
-    const baseFiltered = filterAndSortEvents(activeEvents, baseDiscovery, now, district, localities)
+    const baseFiltered = filterAndSortEvents(activeEvents, baseDiscovery, now, effectiveDistrict, effectiveLocalities)
     const counts = { All: baseFiltered.length }
     EVENT_CATEGORIES.forEach(cat => {
       if (cat !== 'All') {
@@ -71,7 +75,7 @@ export function useEventDiscovery(rawEvents = []) {
       }
     })
     return counts
-  }, [activeEvents, discovery.searchQuery, discovery.selectedCity, discovery.selectedDateFilter, now, district, localities])
+  }, [activeEvents, discovery.searchQuery, discovery.selectedCity, discovery.selectedDateFilter, now, effectiveDistrict, effectiveLocalities])
 
   const updateSearchQuery = useCallback((searchQuery) => {
     setDiscovery((current) => ({ ...current, searchQuery }))

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, Calendar, MessageSquare, User, ChevronDown, LogOut } from 'lucide-react'
+import { CalendarDays, Calendar, MessageSquare, User, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/logo.jpeg'
 import ChatAssistant from '../components/ChatAssistant.jsx'
@@ -19,10 +19,11 @@ export default function AppShell() {
   async function handleLogout() {
     try {
       await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
       setMobileMenuOpen(false)
       navigate('/', { replace: true })
-    } catch {
-      // Keep the existing authenticated state when logout cannot reach the backend.
     }
   }
 
@@ -71,7 +72,6 @@ export default function AppShell() {
                 >
                   <User size={18} strokeWidth={2} className="auth-nav__user-icon" />
                   <span>{currentUser?.name || 'Anbu'}</span>
-                  <ChevronDown size={15} strokeWidth={2} className="auth-nav__chevron" />
                 </NavLink>
                 <button
                   className="auth-nav__logout"
