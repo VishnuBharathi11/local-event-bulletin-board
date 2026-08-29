@@ -1,0 +1,105 @@
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function normalizeEmail(email) {
+  return String(email ?? '').trim().toLocaleLowerCase()
+}
+
+function normalizeUser(input = {}, userId = input.userId || '') {
+  const user = {
+    userId: String(userId || ''),
+    name: input.name ?? '',
+    email: normalizeEmail(input.email),
+    passwordHash: input.passwordHash ?? '',
+    phone: input.phone ?? '',
+    country: input.country ?? '',
+    state: input.state ?? '',
+    city: input.city ?? '',
+    pincode: input.pincode ?? '',
+    createdAt: input.createdAt ?? 0,
+    status: input.status ?? 'Active',
+  }
+
+  if (typeof user.name !== 'string') throw new TypeError('name must be a string')
+  if (typeof user.email !== 'string') throw new TypeError('email must be a string')
+  if (typeof user.passwordHash !== 'string') throw new TypeError('passwordHash must be a string')
+  if (typeof user.phone !== 'string') throw new TypeError('phone must be a string')
+  if (typeof user.country !== 'string') throw new TypeError('country must be a string')
+  if (typeof user.state !== 'string') throw new TypeError('state must be a string')
+  if (typeof user.city !== 'string') throw new TypeError('city must be a string')
+  if (typeof user.pincode !== 'string') throw new TypeError('pincode must be a string')
+  if (!Number.isSafeInteger(user.createdAt)) throw new TypeError('createdAt must be a safe integer')
+  return user
+}
+
+function validateRegistration(input = {}) {
+  const name = String(input.name ?? '').trim()
+  const email = normalizeEmail(input.email)
+  const password = String(input.password ?? '')
+
+  if (!name) throw Object.assign(new Error('Name is required.'), { statusCode: 400 })
+  if (!email) throw Object.assign(new Error('Email is required.'), { statusCode: 400 })
+  if (!EMAIL_PATTERN.test(email)) throw Object.assign(new Error('Invalid email address.'), { statusCode: 400 })
+  if (!password) throw Object.assign(new Error('Password is required.'), { statusCode: 400 })
+  if (password.length < 8) throw Object.assign(new Error('Password must be at least 8 characters.'), { statusCode: 400 })
+
+  return { name, email, password }
+}
+
+function validateProfileUpdate(input = {}) {
+  const updates = {}
+  if (input.name !== undefined) updates.name = String(input.name ?? '').trim()
+  if (input.phone !== undefined) updates.phone = String(input.phone ?? '').trim()
+  if (input.country !== undefined) updates.country = String(input.country ?? '').trim()
+  if (input.state !== undefined) updates.state = String(input.state ?? '').trim()
+  if (input.city !== undefined) updates.city = String(input.city ?? '').trim()
+  if (input.pincode !== undefined) updates.pincode = String(input.pincode ?? '').trim()
+
+  if (updates.name === '') throw Object.assign(new Error('Name cannot be empty.'), { statusCode: 400 })
+
+  return updates
+}
+
+function validateLogin(input = {}) {
+  const email = normalizeEmail(input.email)
+  const password = String(input.password ?? '')
+  if (!email || !password) throw Object.assign(new Error('Invalid email or password.'), { statusCode: 401 })
+  if (!EMAIL_PATTERN.test(email)) throw Object.assign(new Error('Invalid email or password.'), { statusCode: 401 })
+  return { email, password }
+}
+
+function toPublicUser(user) {
+  if (!user) return null
+  return {
+    userId: user.userId,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    country: user.country,
+    state: user.state,
+    city: user.city,
+    pincode: user.pincode,
+    createdAt: user.createdAt,
+    status: user.status,
+  }
+}
+
+function toFirestoreUser(user) {
+  return normalizeUser(user)
+}
+
+function fromFirestoreDocument(snapshot) {
+  if (!snapshot.exists) return null
+  return normalizeUser(snapshot.data(), snapshot.id)
+}
+
+module.exports = {
+  EMAIL_PATTERN,
+  normalizeEmail,
+  normalizeUser,
+  validateRegistration,
+  validateProfileUpdate,
+  validateLogin,
+  toPublicUser,
+  toFirestoreUser,
+  fromFirestoreDocument,
+}
