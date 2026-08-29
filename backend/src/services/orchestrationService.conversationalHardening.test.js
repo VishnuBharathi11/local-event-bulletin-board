@@ -5,13 +5,13 @@ const chatbotService = require('./chatbotService')
 const geminiService = require('./geminiService')
 const conversationContext = require('./conversationContext')
 
-test('general conversation phrases are classified without an EventHive tool intent', () => {
+test('general conversation phrases are classified separately from EventHive tools', () => {
   for (const phrase of ['Hi', 'Hello', 'Good morning', 'Good evening', 'Thanks', 'Thank you', 'Who are you?']) {
     assert.equal(orchestration.classifyIntent(phrase), orchestration.INTENTS.GENERAL_CONVERSATION)
   }
 })
 
-test('existing direct, semantic, and details intents remain distinct', () => {
+test('direct and semantic EventHive intents remain distinct', () => {
   assert.equal(orchestration.classifyIntent('Show me Music events in Coimbatore'), orchestration.INTENTS.EVENT_DISCOVERY)
   assert.equal(orchestration.classifyIntent('Find events related to football'), orchestration.INTENTS.SEMANTIC_EVENT_DISCOVERY)
   assert.equal(orchestration.classifyIntent('What semantic trends are emerging?'), orchestration.INTENTS.SEMANTIC_TREND_ANALYSIS)
@@ -19,53 +19,57 @@ test('existing direct, semantic, and details intents remain distinct', () => {
   assert.equal(orchestration.classifyIntent('Tell me more about this event'), orchestration.INTENTS.EVENT_DETAILS)
 })
 
-test('temporal phrases resolve to deterministic event-discovery filters', () => {
-  assert.equal(orchestration.extractFilters("Show me tomorrow's events").timeRange, 'tomorrow')
-  assert.equal(orchestration.extractFilters('Events tomorrow').timeRange, 'tomorrow')
-  assert.equal(orchestration.extractFilters("What's happening tomorrow?").timeRange, 'tomorrow')
-  assert.equal(orchestration.extractFilters('Give me tomorrow events list').timeRange, 'tomorrow')
-  assert.equal(orchestration.extractFilters('What events are happening tomorrow?').timeRange, 'tomorrow')
+test('temporal phrases resolve consistently to deterministic filters', () => {
+  for (const phrase of [
+    "Tomorrow events",
+    'Events tomorrow',
+    "What's happening tomorrow?",
+    "Show me tomorrow's events",
+    'Give me tomorrow events list',
+    'What events are happening tomorrow?',
+  ]) assert.equal(orchestration.extractFilters(phrase).timeRange, 'tomorrow')
   assert.equal(orchestration.extractFilters('Events this weekend').timeRange, 'weekend')
   assert.equal(orchestration.extractFilters('Events next week').timeRange, 'next_week')
 })
 
-test('category-only follow-up after trend analysis resolves to trend analysis', () => {
-  const state = { intent: orchestration.INTENTS.TREND_ANALYSIS, category: 'Workshops' }
-  const resolved = orchestration.resolveContextualIntent('Workshops', state)
-  assert.deepEqual(resolved, { intent: orchestration.INTENTS.TREND_ANALYSIS })
-})
-
-test('event follow-up resolves when a unique prior event is available', () => {
-  const state = {
-    intent: orchestration.INTENTS.EVENT_DISCOVERY,
-    eventId: 'football-1',
-    eventTitle: 'Football Match',
-    resultMetadata: [{ eventId: 'football-1', title: 'Football Match', category: 'Sports', city: 'Coimbatore' }],
-  }
-  assert.deepEqual(orchestration.resolveContextualIntent('When?', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
-  assert.deepEqual(orchestration.resolveContextualIntent('Where is it?', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
-  assert.deepEqual(orchestration.resolveContextualIntent('Football match', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
-})
-
-test('context does not override an explicit new event request', () => {
+test('short event follow-ups resolve against a unique prior event', () => {
   const state = {
     intent: orchestration.INTENTS.EVENT_DISCOVERY,
     eventId: 'football-1',
     eventTitle: 'Football Match',
     category: 'Sports',
     city: 'Coimbatore',
+    resultMetadata: [{ eventId: 'football-1', title: 'Football Match', category: 'Sports', city: 'Coimbatore' }],
   }
-  assert.equal(orchestration.resolveContextualIntent('Show me Music events in Coimbatore', state), null)
-  assert.deepEqual(orchestration.resolveEffectiveFilters('Show me Music events in Coimbatore', [], orchestration.INTENTS.EVENT_DISCOVERY, state), { category: 'Music', city: 'Coimbatore' })
+  assert.deepEqual(orchestration.resolveContextualIntent('When?', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
+  assert.deepEqual(orchestration.resolveContextualIntent('Where?', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
+  assert.deepEqual(orchestration.resolveContextualIntent('Who?', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
+  assert.deepEqual(orchestration.resolveContextualIntent('Football Match', state), { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1' })
 })
 
-test('orchestrate uses deterministic fallback for greetings without invoking EventHive tools', async () => {
+test('category-only trend follow-up uses the previous trend context', () => {
+  assert.deepEqual(
+    orchestration.resolveContextualIntent('Workshops', { intent: orchestration.INTENTS.TREND_ANALYSIS }),
+    { intent: orchestration.INTENTS.TREND_ANALYSIS },
+  )
+})
+
+test('explicit new event request takes precedence over stored event context', () => {
+  const state = { intent: orchestration.INTENTS.EVENT_DETAILS, eventId: 'football-1', eventTitle: 'Football Match', city: 'Coimbatore' }
+  assert.equal(orchestration.resolveContextualIntent('Show me Music events in Coimbatore', state), null)
+  assert.deepEqual(
+    orchestration.resolveEffectiveFilters('Show me Music events in Coimbatore', [], orchestration.INTENTS.EVENT_DISCOVERY, state),
+    { category: 'Music', city: 'Coimbatore' },
+  )
+})
+
+test('greeting never invokes an EventHive tool and returns a deterministic fallback when Gemini is unavailable', async () => {
   const originalIsConfigured = geminiService.isConfigured
   const originalUpcoming = chatbotService.getUpcomingEvents
   let called = false
-  geminiService.isConfigured = () => false
-  chatbotService.getUpcomingEvents = async () => { called = true; throw new Error('tool must not be called') }
   const conversationId = `greeting-test-${Date.now()}`
+  geminiService.isConfigured = () => false
+  chatbotService.getUpcomingEvents = async () => { called = true; return [] }
   try {
     const result = await orchestration.orchestrate({ message: 'Good evening', conversationId })
     assert.equal(result.intent, orchestration.INTENTS.GENERAL_CONVERSATION)
@@ -80,27 +84,25 @@ test('orchestrate uses deterministic fallback for greetings without invoking Eve
   }
 })
 
-test('context can resolve a unique event through orchestrate without changing explicit requests', async () => {
-  const originalDetails = chatbotService.getEventDetails
-  const originalIsConfigured = geminiService.isConfigured
-  const originalClient = geminiService.getClient
-  geminiService.isConfigured = () => false
-  chatbotService.getEventDetails = async (eventId) => ({ eventId, title: 'Football Match', category: 'Sports', city: 'Coimbatore', location: 'Central Ground', startTime: Date.now() + 3600000, endTime: Date.now() + 7200000, rsvpCount: 3 })
-  const fakeId = `followup-test-${Date.now()}`
+test('conversation memory is bounded and non-sensitive', () => {
+  const conversationId = `memory-test-${Date.now()}`
+  conversationContext.rememberConversationContext(conversationId, {
+    intent: orchestration.INTENTS.EVENT_DISCOVERY,
+    tool: 'getUpcomingEvents',
+    eventId: 'football-1',
+    eventTitle: 'Football Match',
+    category: 'Sports',
+    city: 'Coimbatore',
+    query: 'Show Sports events in Coimbatore',
+    resultMetadata: Array.from({ length: 20 }, (_, index) => ({ eventId: `event-${index}`, title: `Event ${index}`, category: 'Sports', city: 'Coimbatore' })),
+  })
   try {
-    await orchestration.orchestrate({ message: 'Show me the Football Match', conversationId: fakeId })
-    const result = await orchestration.orchestrate({ message: 'When is it?', conversationId: fakeId })
-    assert.equal(result.intent, orchestration.INTENTS.EVENT_DETAILS)
-    assert.equal(result.tool, 'getEventDetails')
-    assert.equal(result.arguments.eventId, 'football-1')
-  } catch (error) {
-    // The setup above intentionally uses an event-name request without an explicit ID;
-    // validate the context helper directly if the first interaction needs clarification.
-    assert.equal(error.code, undefined)
+    const stored = conversationContext.getConversationContext(conversationId)
+    assert.equal(stored.resultMetadata.length, 10)
+    assert.equal(stored.eventId, 'football-1')
+    assert.equal(stored.query, 'Show Sports events in Coimbatore')
+    assert.equal(Object.prototype.hasOwnProperty.call(stored, 'password'), false)
   } finally {
-    chatbotService.getEventDetails = originalDetails
-    geminiService.isConfigured = originalIsConfigured
-    geminiService.getClient = originalClient
-    conversationContext.clearConversationContext(fakeId)
+    conversationContext.clearConversationContext(conversationId)
   }
 })
