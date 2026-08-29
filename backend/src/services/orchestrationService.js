@@ -7,9 +7,21 @@ const MAX_HISTORY = conversationContext.MAX_HISTORY_TURNS
 const MAX_CONTEXT_CHARS = conversationContext.MAX_TOTAL_CONTEXT_CHARS
 const RESPONSE_VERSION = 'phase4.3-response-v1'
 const EVENT_CATEGORIES = ['Sports', 'Music', 'Food', 'Workshops', 'Meetups', 'Student Events', 'Garage Sale', 'Community']
-const INTENTS = Object.freeze({ EVENT_DISCOVERY: 'event_discovery', SEMANTIC_EVENT_DISCOVERY: 'semantic_event_discovery', SIMILAR_EVENT_DISCOVERY: 'similar_event_discovery', EVENT_DETAILS: 'event_details', COMMUNITY_DEMAND: 'community_demand', TREND_ANALYSIS: 'trend_analysis', SEMANTIC_TREND_ANALYSIS: 'semantic_trend_analysis', SEMANTIC_CONFLICT_ANALYSIS: 'semantic_conflict_analysis', GENERAL_CONVERSATION: 'general_conversation', UNSUPPORTED: 'unsupported' })
+const INTENTS = Object.freeze({
+  EVENT_DISCOVERY: 'event_discovery',
+  SEMANTIC_EVENT_DISCOVERY: 'semantic_event_discovery',
+  SIMILAR_EVENT_DISCOVERY: 'similar_event_discovery',
+  EVENT_DETAILS: 'event_details',
+  COMMUNITY_DEMAND: 'community_demand',
+  TREND_ANALYSIS: 'trend_analysis',
+  SEMANTIC_TREND_ANALYSIS: 'semantic_trend_analysis',
+  SEMANTIC_CONFLICT_ANALYSIS: 'semantic_conflict_analysis',
+  GENERAL_CONVERSATION: 'general_conversation',
+  UNSUPPORTED: 'unsupported',
+})
 
 function normalizeHistory(history) { return conversationContext.sanitizeHistory(history) }
+function cleanFilters(filters = {}) { return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== '')) }
 function isSupportedCategory(value) { return EVENT_CATEGORIES.some((category) => category.toLowerCase() === String(value).trim().toLowerCase()) }
 function isGeneralConversation(message) { return /^(hi|hello|hey|hii|hiii|good morning|good afternoon|good evening|thanks|thank you|who are you)[!.?\s]*$/i.test(message.trim()) }
 function classifyIntent(message) {
@@ -17,16 +29,16 @@ function classifyIntent(message) {
   if (/\b(community|people want|requested|request|demand|interested)\b/.test(text)) return INTENTS.COMMUNITY_DEMAND
   if (/\b(semantic trend|semantic trends|emerging trends|emerging topics|trend clusters|trend clustering)\b/.test(text)) return INTENTS.SEMANTIC_TREND_ANALYSIS
   if (/\b(similar events?|events? similar to|similar to this event|related events? to this event|find similar)\b/.test(text)) return INTENTS.SIMILAR_EVENT_DISCOVERY
-  if (/\b(conflict|conflicts|overlap|clash)\b/.test(text) && /\bsemantic|similar\b/.test(text)) return INTENTS.SEMANTIC_CONFLICT_ANALYSIS
+  if (/\b(conflict|conflicts|overlap|clash)\b/.test(text) && /\b(semantic|similar)\b/.test(text)) return INTENTS.SEMANTIC_CONFLICT_ANALYSIS
   if (/\b(trend|trending|popular|popularity|growing|growth|hot|most popular)\b/.test(text)) return INTENTS.TREND_ANALYSIS
   if (/\b(event|details|about|tell me more|more about)\b/.test(text) && /\b(which|what|show|find|upcoming|happening|near|in|category|sport|music|food|workshop|meetup)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
+  if (/^\s*(show|tell me about|give me details on)\s+(the|this)\b/.test(text) && /\bevent\b|\bmatch\b|\bmeetup\b|\bconcert\b|\bworkshop\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/\b(related|conceptually related|semantically|discover)\b.*\bevents?\b|\bevents?\b.*\b(related|conceptually related|semantically)\b/.test(text)) return INTENTS.SEMANTIC_EVENT_DISCOVERY
   if (/\b(show|find|list|events|happening|upcoming|tomorrow|today|weekend|near|in|category|sports|music|food|workshops|meetups|student|garage sale)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   if (isGeneralConversation(text)) return INTENTS.GENERAL_CONVERSATION
   return INTENTS.UNSUPPORTED
 }
-function cleanFilters(filters = {}) { return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== '')) }
 function extractCurrentFilters(message) {
   if (classifyIntent(message) === INTENTS.COMMUNITY_DEMAND) return {}
   const filters = {}
@@ -34,10 +46,7 @@ function extractCurrentFilters(message) {
   const category = EVENT_CATEGORIES.find((value) => lower.includes(value.toLowerCase()))
   if (category) filters.category = category
   const cityMatch = message.match(/\b(?:in|near|around)\s+([A-Za-z][A-Za-z .'-]{2,40}?)(?=\?|$|\s+(?:this|next|tomorrow|today|on|for|during|weekend|week)\b)/i)
-  if (cityMatch) {
-    const candidateCity = cityMatch[1].trim()
-    if (!isSupportedCategory(candidateCity)) filters.city = candidateCity
-  }
+  if (cityMatch) { const candidateCity = cityMatch[1].trim(); if (!isSupportedCategory(candidateCity)) filters.city = candidateCity }
   if (/\b(this weekend|weekend)\b/i.test(message)) filters.timeRange = 'weekend'
   else if (/\btomorrow\b/i.test(message)) filters.timeRange = 'tomorrow'
   else if (/\btoday\b/i.test(message)) filters.timeRange = 'today'
@@ -62,10 +71,7 @@ function resolveEffectiveFilters(message, history = [], intent = classifyIntent(
   const current = extractCurrentFilters(message)
   if (intent !== INTENTS.EVENT_DISCOVERY && intent !== INTENTS.SEMANTIC_EVENT_DISCOVERY && intent !== INTENTS.TREND_ANALYSIS) return cleanFilters(current)
   const context = extractContextFilters(history)
-  if (state?.intent === INTENTS.EVENT_DISCOVERY || state?.intent === INTENTS.SEMANTIC_EVENT_DISCOVERY) {
-    if (!context.city && state.city) context.city = state.city
-    if (!context.category && state.category) context.category = state.category
-  }
+  if ((state?.intent === INTENTS.EVENT_DISCOVERY || state?.intent === INTENTS.SEMANTIC_EVENT_DISCOVERY) && !context.city && state.city) context.city = state.city
   return cleanFilters({ category: current.category || context.category, city: current.city || context.city, timeRange: current.timeRange || context.timeRange })
 }
 function resolveDateRange(timeRange, now = new Date()) {
@@ -81,18 +87,13 @@ function extractEventId(message) { const match = message.match(/\bevent\s*(?:id)
 function isRsvpQuestion(message) { return /\b(how many|number of|count|counts|total)\b.*\b(rsvp|rsvp'd|going|attendees|attendance)\b|\brsvp\s*(count|number|total)\b/i.test(message) }
 function sanitizeEvidenceForResponse(result, intent, message) { if ((!Array.isArray(result) && !result?.clusters) || (intent !== INTENTS.EVENT_DISCOVERY && intent !== INTENTS.SEMANTIC_EVENT_DISCOVERY) || isRsvpQuestion(message)) return result; if (Array.isArray(result)) return result.map(({ rsvpCount, ...event }) => event); return result }
 function buildResponseEnvelope({ conversationId, intent, grounded, clarification = false, tool = null, toolArguments = {}, filters = {}, contextUsed = 0, response }) { return { version: RESPONSE_VERSION, mode: 'conversational-assistant', conversationId, intent, grounded, clarification, tool, arguments: cleanFilters(toolArguments), filters: cleanFilters(filters), context: { used: contextUsed > 0, turns: contextUsed }, response } }
-function getStatefulEvent(state) {
-  if (!state) return null
-  if (state.eventId) return { eventId: state.eventId, title: state.eventTitle, category: state.category, city: state.city }
-  const results = Array.isArray(state.resultMetadata) ? state.resultMetadata.filter((item) => item.eventId) : []
-  return results.length === 1 ? results[0] : null
-}
+function uniqueEventFromState(state) { if (!state) return null; if (state.eventId) return { eventId: state.eventId, title: state.eventTitle, category: state.category, city: state.city }; const candidates = Array.isArray(state.resultMetadata) ? state.resultMetadata.filter((item) => item.eventId) : []; return candidates.length === 1 ? candidates[0] : null }
 function resolveContextualIntent(message, state) {
   if (!state) return null
   const text = message.trim().toLowerCase()
-  const event = getStatefulEvent(state)
+  const event = uniqueEventFromState(state)
   if (event && /^(when|where|who|how many|when is it|where is it|who is it|how many people|how many attendees)[?!.\s]*$/i.test(message.trim())) return { intent: INTENTS.EVENT_DETAILS, eventId: event.eventId }
-  if (event && (/^(when|where|who)\b.*\bit\b/i.test(message) || /^(when|where|who)\b/i.test(message)) && /\b(it|this event|that event|the event)\b/i.test(message)) return { intent: INTENTS.EVENT_DETAILS, eventId: event.eventId }
+  if (event && /^(when|where|who)\b/i.test(message) && /\b(it|this event|that event|the event)\b/i.test(message)) return { intent: INTENTS.EVENT_DETAILS, eventId: event.eventId }
   if (event && event.title && text === event.title.toLowerCase()) return { intent: INTENTS.EVENT_DETAILS, eventId: event.eventId }
   if (state.intent === INTENTS.TREND_ANALYSIS && isSupportedCategory(message.trim())) return { intent: INTENTS.TREND_ANALYSIS }
   return null
@@ -113,15 +114,12 @@ async function generateGeneralResponse(message) {
     const ai = geminiService.getClient()
     const response = await ai.models.generateContent({ model: geminiService.DEFAULT_MODEL, contents: `You are the EventHive Assistant. Reply naturally and concisely to this social or introductory message. Do not invent EventHive data, event details, statistics, or capabilities beyond the established EventHive assistant scope.\n\nUser message:\n${message}`, config: { temperature: 0.4, maxOutputTokens: 180 } })
     return response.text?.trim() || conversationalFallback(message)
-  } catch (error) {
-    if (error.code === 'GEMINI_NOT_CONFIGURED') return conversationalFallback(message)
-    throw error
-  }
+  } catch (error) { if (error.code === 'GEMINI_NOT_CONFIGURED') return conversationalFallback(message); throw error }
 }
 async function executeTool(intent, filters, message, context = {}) {
   switch (intent) {
     case INTENTS.SEMANTIC_EVENT_DISCOVERY: { const args = cleanFilters({ category: filters.category, city: filters.city, limit: 10 }); return { tool: 'semanticEventSearch', arguments: cleanFilters({ query: message, ...args }), result: await aiIntelligenceService.semanticEventSearch(message, args) } }
-    case INTENTS.SIMILAR_EVENT_DISCOVERY: { const eventId = extractEventId(message) || context.eventId; if (!eventId) return { tool: null, arguments: {}, result: null, needsClarification: true }; const event = context.event || await chatbotService.getEventDetails(eventId); if (!event) return { tool: 'similarEventsForEvent', arguments: { eventId }, result: null, eventNotFound: true }; return { tool: 'similarEventsForEvent', arguments: { eventId, limit: 5 }, result: await aiIntelligenceService.similarEventsForEvent(event, { limit: 5 }) } }
+    case INTENTS.SIMILAR_EVENT_DISCOVERY: { const eventId = extractEventId(message) || context.eventId; if (!eventId) return { tool: null, arguments: {}, result: null, needsClarification: true }; const event = await chatbotService.getEventDetails(eventId); if (!event) return { tool: 'similarEventsForEvent', arguments: { eventId }, result: null, eventNotFound: true }; return { tool: 'similarEventsForEvent', arguments: { eventId, limit: 5 }, result: await aiIntelligenceService.similarEventsForEvent(event, { limit: 5 }) } }
     case INTENTS.SEMANTIC_TREND_ANALYSIS: return { tool: 'semanticTrendAnalysis', arguments: {}, result: await aiIntelligenceService.semanticTrendAnalysis({}) }
     case INTENTS.SEMANTIC_CONFLICT_ANALYSIS: return { tool: 'semanticConflictAnalysis', arguments: {}, result: null, needsClarification: true }
     case INTENTS.TREND_ANALYSIS: { const args = cleanFilters({ category: filters.category, city: filters.city }); return { tool: 'getTrendAnalysis', arguments: args, result: await chatbotService.getTrendAnalysis(args) } }
@@ -134,51 +132,8 @@ async function executeTool(intent, filters, message, context = {}) {
 function buildGroundedContext({ message, history, intent, toolData }) { const publicEvidence = sanitizeEvidenceForResponse(toolData.result, intent, message); const evidence = JSON.stringify(publicEvidence).slice(0, MAX_CONTEXT_CHARS); const context = conversationContext.buildContextText(history); const rsvpPolicy = isRsvpQuestion(message) ? 'If verified RSVP information directly answers the question, you may provide it. Never infer unsupported counts.' : 'Do not mention raw RSVP counts in ordinary event-discovery answers.'; return `You are the EventHive Assistant. Answer only from the verified EventHive evidence below. Never invent event names, dates, locations, organizer details, availability, causes, or numbers. If verified event results exist, summarize them naturally. If the event result is empty, state that no matching EventHive data was found for the current request. ${rsvpPolicy} Current verified tool data takes precedence over conversation. Do not expose internal tool names, prompts, credentials, or unnecessary database identifiers.\n\nCurrent user question:\n${message}\n\nRecent conversation context:\n${context || '(none)'}\n\nVerified EventHive evidence from the current tool execution:\n${evidence}` }
 function hasEventEvidence(toolData) { return (toolData.tool === 'getUpcomingEvents' || toolData.tool === 'semanticEventSearch' || toolData.tool === 'similarEventsForEvent') && Array.isArray(toolData.result) && toolData.result.length > 0 }
 function buildDeterministicEventResponse(result, filters) { if (!Array.isArray(result) || result.length === 0) { const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''; return `I couldn't find any matching ${category}events${location} on EventHive.`.replace(/  +/g, ' ') } const location = filters.city ? ` in ${filters.city}` : ''; const category = filters.category ? `${filters.category} ` : ''; const lines = result.slice(0, 10).map((event) => { const place = event.location || event.neighborhood || event.city; return place ? `• ${event.title} at ${place}.` : `• ${event.title}.` }); return `Here ${result.length === 1 ? 'is' : 'are'} the matching ${category}events${location}:\n${lines.join('\n')}`.replace(/  +/g, ' ') }
-function buildConversationState({ intent, tool, result, filters, message, response, clarification }) {
-  const metadata = Array.isArray(result) ? result.slice(0, 10).map((event) => ({ eventId: event.eventId, title: event.title, category: event.category, city: event.city })) : []
-  const first = result && !Array.isArray(result) && typeof result === 'object' ? result : metadata[0]
-  return { intent, tool, eventId: first?.eventId || null, eventTitle: first?.title || null, category: filters.category || first?.category || null, city: filters.city || first?.city || null, query: message, resultMetadata: metadata, assistantMetadata: { grounded: Boolean(tool), clarification: Boolean(clarification) }, lastResponse: typeof response === 'string' ? response.slice(0, 1000) : null }
-}
-async function orchestrate({ message, history = [], conversationId }) {
-  const normalized = conversationContext.sanitizeMessage(message)
-  const safeHistory = normalizeHistory(history)
-  const id = typeof conversationId === 'string' && conversationId.trim() ? conversationId.trim().slice(0, 100) : conversationContext.createConversationId()
-  const storedState = conversationContext.getConversationContext(id)
-  const contextual = resolveContextualIntent(normalized, storedState)
-  const intent = contextual?.intent || classifyIntent(normalized)
-  const filters = resolveEffectiveFilters(normalized, safeHistory, intent, storedState)
-
-  if (intent === INTENTS.GENERAL_CONVERSATION) {
-    const response = await generateGeneralResponse(normalized)
-    return buildResponseEnvelope({ conversationId: id, intent, grounded: false, clarification: false, tool: null, filters: {}, contextUsed: safeHistory.length, response })
-  }
-
-  if (intent === INTENTS.UNSUPPORTED && contextual?.intent !== INTENTS.EVENT_DETAILS) {
-    return buildResponseEnvelope({ conversationId: id, intent, grounded: false, clarification: true, tool: null, filters, contextUsed: safeHistory.length, response: 'I can help with EventHive events, trends, community demand, semantic discovery, similar events, and event details. Try asking about upcoming events, trends, or a specific event.' })
-  }
-
-  const toolData = await executeTool(intent, filters, normalized, { eventId: contextual?.eventId, event: getStatefulEvent(storedState) && storedState?.eventObject })
-  if (!toolData) throw new Error('No tool is available for the detected intent')
-  const response = await generateGroundedResponse(normalized, safeHistory, intent, toolData, filters)
-  const clarification = Boolean(toolData.needsClarification || toolData.eventNotFound)
-
-  if (toolData.tool) {
-    const state = buildConversationState({ intent, tool: toolData.tool, result: toolData.result, filters, message: normalized, response, clarification })
-    conversationContext.rememberConversationContext(id, state)
-  }
-
-  return buildResponseEnvelope({ conversationId: id, intent, grounded: Boolean(toolData.tool), clarification, tool: toolData.tool, toolArguments: toolData.arguments, filters, contextUsed: safeHistory.length, response })
-}
-
-async function generateGroundedResponse(message, history, intent, toolData, filters) {
-  if (toolData.needsClarification) return 'Please provide the event name or event ID so I can identify the exact event.'
-  if (toolData.eventNotFound) return 'I could not find that event in EventHive. Please provide a valid event ID or event name.'
-  const ai = geminiService.getClient()
-  const response = await ai.models.generateContent({ model: geminiService.DEFAULT_MODEL, contents: buildGroundedContext({ message, history, intent, toolData }), config: { temperature: 0.2, maxOutputTokens: 700 } })
-  const text = response.text?.trim()
-  if (!text) throw Object.assign(new Error('Gemini returned an empty assistant response'), { code: 'GEMINI_EMPTY_RESPONSE' })
-  if (hasEventEvidence(toolData) && /\b(no|none|couldn['’]?t find|do not have|does not contain|not contain)\b.*\bevent/i.test(text)) return buildDeterministicEventResponse(toolData.result, filters)
-  return text
-}
+function buildConversationState({ intent, tool, result, filters, message, response, clarification }) { const resultArray = Array.isArray(result) ? result : []; const resultMetadata = resultArray.slice(0, 10).map((event) => ({ eventId: event.eventId, title: event.title, category: event.category, city: event.city })); const detailEvent = !Array.isArray(result) && result && typeof result === 'object' ? result : null; const singleEvent = resultArray.length === 1 ? resultArray[0] : null; const event = detailEvent || singleEvent; return { intent, tool, eventId: event?.eventId || null, eventTitle: event?.title || null, category: filters.category || event?.category || null, city: filters.city || event?.city || null, query: message, resultMetadata, assistantMetadata: { grounded: Boolean(tool), clarification: Boolean(clarification) } } }
+async function orchestrate({ message, history = [], conversationId }) { const normalized = conversationContext.sanitizeMessage(message); const safeHistory = normalizeHistory(history); const id = typeof conversationId === 'string' && conversationId.trim() ? conversationId.trim().slice(0, 100) : conversationContext.createConversationId(); const storedState = conversationContext.getConversationContext(id); const contextual = resolveContextualIntent(normalized, storedState); const intent = contextual?.intent || classifyIntent(normalized); const filters = resolveEffectiveFilters(normalized, safeHistory, intent, storedState); if (intent === INTENTS.GENERAL_CONVERSATION) { const response = await generateGeneralResponse(normalized); return buildResponseEnvelope({ conversationId: id, intent, grounded: false, clarification: false, tool: null, filters: {}, contextUsed: safeHistory.length, response }) } if (intent === INTENTS.UNSUPPORTED) return buildResponseEnvelope({ conversationId: id, intent, grounded: false, clarification: true, tool: null, filters, contextUsed: safeHistory.length, response: 'I can help with EventHive events, trends, community demand, semantic discovery, similar events, and event details. Try asking about upcoming events, trends, or a specific event.' }); const toolData = await executeTool(intent, filters, normalized, { eventId: contextual?.eventId }); if (!toolData) throw new Error('No tool is available for the detected intent'); const response = await generateGroundedResponse(normalized, safeHistory, intent, toolData, filters); const clarification = Boolean(toolData.needsClarification || toolData.eventNotFound); if (toolData.tool) conversationContext.rememberConversationContext(id, buildConversationState({ intent, tool: toolData.tool, result: toolData.result, filters, message: normalized, response, clarification })); return buildResponseEnvelope({ conversationId: id, intent, grounded: Boolean(toolData.tool), clarification, tool: toolData.tool, toolArguments: toolData.arguments, filters, contextUsed: safeHistory.length, response }) }
+async function generateGroundedResponse(message, history, intent, toolData, filters) { if (toolData.needsClarification) return 'Please provide the event name or event ID so I can identify the exact event.'; if (toolData.eventNotFound) return 'I could not find that event in EventHive. Please provide a valid event ID or event name.'; const ai = geminiService.getClient(); const response = await ai.models.generateContent({ model: geminiService.DEFAULT_MODEL, contents: buildGroundedContext({ message, history, intent, toolData }), config: { temperature: 0.2, maxOutputTokens: 700 } }); const text = response.text?.trim(); if (!text) throw Object.assign(new Error('Gemini returned an empty assistant response'), { code: 'GEMINI_EMPTY_RESPONSE' }); if (hasEventEvidence(toolData) && /\b(no|none|couldn['’]?t find|do not have|does not contain|not contain)\b.*\bevent/i.test(text)) return buildDeterministicEventResponse(sanitizeEvidenceForResponse(toolData.result, intent, message), filters); return text }
 
 module.exports = { INTENTS, MAX_HISTORY, MAX_CONTEXT_CHARS, RESPONSE_VERSION, normalizeHistory, classifyIntent, extractCurrentFilters, extractContextFilters, extractFilters, resolveEffectiveFilters, resolveDateRange, extractEventId, isRsvpQuestion, sanitizeEvidenceForResponse, buildGroundedContext, buildResponseEnvelope, resolveContextualIntent, executeTool, orchestrate }
