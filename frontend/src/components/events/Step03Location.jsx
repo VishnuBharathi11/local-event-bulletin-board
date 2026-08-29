@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Info, MapPin } from 'lucide-react'
 import EventMapPicker from '../map/EventMapPicker.jsx'
 import { searchLocations } from '../../services/locationService.js'
+import '../../styles/locationAutocomplete.css'
 
 const LOCATION_DEBOUNCE_MS = 400
 const MIN_LOCATION_QUERY_LENGTH = 2
@@ -112,8 +113,7 @@ export default function Step03Location({ form, update, errors = {} }) {
     setLocationError('')
 
     update('location', selectedLocation)
-    if (suggestion?.city) update('city', suggestion.city)
-    else update('city', '')
+    update('city', suggestion?.city || '')
     update('neighborhood', suggestion?.neighborhood || '')
     update('latitude', Number.isFinite(Number(suggestion?.latitude)) ? Number(suggestion.latitude) : null)
     update('longitude', Number.isFinite(Number(suggestion?.longitude)) ? Number(suggestion.longitude) : null)
@@ -121,11 +121,6 @@ export default function Step03Location({ form, update, errors = {} }) {
 
   function handleLocationKeyDown(event) {
     if (!suggestionsOpen || suggestions.length === 0) {
-      if (event.key === 'ArrowDown' && suggestions.length > 0) {
-        event.preventDefault()
-        setSuggestionsOpen(true)
-        setActiveSuggestionIndex(0)
-      }
       return
     }
 
