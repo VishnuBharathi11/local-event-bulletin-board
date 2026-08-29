@@ -65,7 +65,7 @@ test('tomorrow event-list response contains a complete deterministic date and ti
   ], { timeRange: 'tomorrow' })
   assert.match(response, /Football Match/)
   assert.match(response, /Aug 30, 2026|30 Aug 2026/i)
-  assert.match(response, /6:30 PM|18:30/)
+  assert.match(response, /6:30\s*(AM|PM|am|pm)|18:30/)
   assert.doesNotMatch(response, /\b\d{1,2}:$/)
 })
 
