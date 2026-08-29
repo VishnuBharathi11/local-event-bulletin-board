@@ -2,6 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const orchestration = require('./orchestrationService')
 const chatbotService = require('./chatbotService')
+const eventRepository = require('../repositories/eventRepository')
 const conversationContext = require('./conversationContext')
 
 test('event-existence questions resolve to deterministic category discovery', () => {
@@ -43,6 +44,84 @@ test('what-about Sports still inherits the prior city while replacing category',
     category: 'Sports',
     city: 'Coimbatore',
   })
+})
+
+test('event detail questions resolve deterministically to event_details', () => {
+  for (const message of [
+    'When is the Football Match?',
+    'Show me the Football Match details',
+    'Tell me about the Football Match',
+    'When does the Football Match start?',
+    'Where is the Football Match?',
+    'Tell me more about the Football Match',
+  ]) {
+    assert.equal(orchestration.classifyIntent(message), orchestration.INTENTS.EVENT_DETAILS)
+  }
+})
+
+test('ongoing requests resolve to the explicit ongoing temporal filter', () => {
+  assert.equal(orchestration.classifyIntent('What are the ongoing events?'), orchestration.INTENTS.EVENT_DISCOVERY)
+  assert.deepEqual(orchestration.extractFilters('What are the ongoing events?'), { timeRange: 'ongoing' })
+})
+
+test('ongoing event filtering uses startTime <= now and endTime > now', async () => {
+  const original = eventRepository.getActiveEvents
+  const now = Date.now()
+  eventRepository.getActiveEvents = async () => [
+    { eventId: 'ongoing', title: 'Ongoing Event', category: 'Sports', city: 'Coimbatore', startTime: now - 1000, endTime: now + 1000 },
+    { eventId: 'future', title: 'Future Event', category: 'Sports', city: 'Coimbatore', startTime: now + 1000, endTime: now + 2000 },
+    { eventId: 'expired', title: 'Expired Event', category: 'Sports', city: 'Coimbatore', startTime: now - 2000, endTime: now - 1000 },
+  ]
+  try {
+    const result = await orchestration.executeTool(orchestration.INTENTS.EVENT_DISCOVERY, { timeRange: 'ongoing' }, 'What are the ongoing events?')
+    assert.equal(result.tool, 'getUpcomingEvents')
+    assert.deepEqual(result.result.map((event) => event.eventId), ['ongoing'])
+  } finally {
+    eventRepository.getActiveEvents = original
+  }
+})
+
+test('upcoming discovery continues using startTime > now and excludes expired events', async () => {
+  const original = chatbotService.getUpcomingEvents
+  const now = Date.now()
+  chatbotService.getUpcomingEvents = async () => [
+    { eventId: 'future', title: 'Future Event', startTime: now + 2000, endTime: now + 3000 },
+    { eventId: 'expired', title: 'Expired Event', startTime: now - 2000, endTime: now - 1000 },
+  ]
+  try {
+    const result = await orchestration.executeTool(orchestration.INTENTS.EVENT_DISCOVERY, {}, 'Show upcoming events')
+    assert.deepEqual(result.result.map((event) => event.eventId), ['future', 'expired'])
+  } finally {
+    chatbotService.getUpcomingEvents = original
+  }
+})
+
+test('event details resolves a unique current EventHive event without fabricating an id', async () => {
+  const original = eventRepository.getActiveEvents
+  eventRepository.getActiveEvents = async () => [
+    { eventId: 'football-1', title: 'Football Match', category: 'Sports', city: 'Coimbatore', startTime: 1777127400000, endTime: 1777131000000 },
+  ]
+  try {
+    const result = await orchestration.executeTool(orchestration.INTENTS.EVENT_DETAILS, {}, 'When is the Football Match?')
+    assert.equal(result.tool, 'getEventDetails')
+    assert.equal(result.arguments.eventId, 'football-1')
+    assert.equal(result.result.title, 'Football Match')
+  } finally {
+    eventRepository.getActiveEvents = original
+  }
+})
+
+test('event details response uses stored startTime and endTime', () => {
+  const response = orchestration.buildEventDetailsResponse({
+    title: 'Football Match',
+    startTime: Date.parse('2026-08-30T18:30:00+05:30'),
+    endTime: Date.parse('2026-08-30T20:00:00+05:30'),
+    location: 'Coimbatore Stadium',
+  })
+  assert.match(response, /Football Match/)
+  assert.match(response, /Aug 30, 2026|30 Aug 2026/i)
+  assert.match(response, /6:30\s*(AM|PM|am|pm)|18:30/)
+  assert.match(response, /8:00\s*(AM|PM|am|pm)|20:00/)
 })
 
 test('trending request ignores stale event filters', () => {
