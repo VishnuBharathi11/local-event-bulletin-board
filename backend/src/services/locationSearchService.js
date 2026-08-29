@@ -98,7 +98,6 @@ function normalizePlaceResult(result) {
   const city = getAddressComponent(result, [
     'locality',
     'postal_town',
-    'administrative_area_level_2',
   ])
 
   const neighborhood = getAddressComponent(result, [
