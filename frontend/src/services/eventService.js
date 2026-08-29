@@ -31,3 +31,10 @@ export function deleteEvent(eventId) {
 export function continueEventCreation(event) {
   return apiRequest('/events/conflicts/continue', { method: 'POST', body: JSON.stringify(event) })
 }
+
+export function generateEventDescription(event) {
+  return apiRequest('/ai/event-description', {
+    method: 'POST',
+    body: JSON.stringify(event),
+  })
+}
