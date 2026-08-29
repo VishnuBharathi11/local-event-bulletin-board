@@ -2,14 +2,18 @@ const eventRepository = require('../repositories/eventRepository')
 const eventRequestRepository = require('../repositories/eventRequestRepository')
 const { normalizeEvent } = require('../models/eventModel')
 const trendService = require('./trendService')
+const aiIntelligenceService = require('./aiIntelligenceService')
 
-const CHATBOT_VERSION = 'phase4-1-conversational-orchestration-v1'
+const CHATBOT_VERSION = 'phase5.6-unified-intelligence-v1'
 
 const CHATBOT_TOOLS = Object.freeze([
   { name: 'getUpcomingEvents', description: 'Return upcoming non-expired EventHive events, optionally filtered by category or city.', readOnly: true },
   { name: 'getEventDetails', description: 'Return details for a specific EventHive event.', readOnly: true },
   { name: 'getCommunityDemand', description: 'Return active community event requests and their current demand.', readOnly: true },
   { name: 'getTrendAnalysis', description: 'Return deterministic EventHive trend metrics derived from event activity, RSVP velocity, category/location activity, and community demand.', readOnly: true },
+  { name: 'semanticEventSearch', description: 'Find EventHive events using semantic similarity over existing event embeddings.', readOnly: true },
+  { name: 'similarEventsForEvent', description: 'Find semantically similar EventHive events for an identified event.', readOnly: true },
+  { name: 'semanticTrendAnalysis', description: 'Group existing embedded EventHive events into meaningful semantic trend clusters.', readOnly: true },
 ])
 
 function validateMessage(message) {
@@ -50,9 +54,40 @@ async function getCommunityDemand({ limit = 10 } = {}) {
 async function getTrendAnalysis(options = {}) { return trendService.analyzeTrends(options) }
 
 function getCapabilities() {
-  return { version: CHATBOT_VERSION, mode: 'conversational-tool-grounded', aiEnabled: true, readOnly: true, tools: CHATBOT_TOOLS, supportedIntentGroups: ['event_discovery', 'event_details', 'community_demand', 'trend_analysis', 'semantic_similarity_future'] }
+  return {
+    version: CHATBOT_VERSION,
+    mode: 'unified-ai-intelligence',
+    aiEnabled: true,
+    readOnly: true,
+    tools: CHATBOT_TOOLS,
+    supportedIntentGroups: [
+      'event_discovery',
+      'semantic_event_discovery',
+      'similar_event_discovery',
+      'event_details',
+      'community_demand',
+      'trend_analysis',
+      'semantic_trend_analysis',
+      'semantic_conflict_analysis',
+    ],
+  }
 }
 
-async function processMessage({ message }) { return { version: CHATBOT_VERSION, mode: 'conversational-tool-grounded', status: 'handled_by_orchestrator', message: validateMessage(message) } }
+async function processMessage({ message }) { return { version: CHATBOT_VERSION, mode: 'unified-ai-intelligence', status: 'handled_by_orchestrator', message: validateMessage(message) } }
 
-module.exports = { CHATBOT_VERSION, CHATBOT_TOOLS, validateMessage, getCapabilities, getUpcomingEvents, getEventDetails, getCommunityDemand, getTrendAnalysis, processMessage }
+module.exports = {
+  CHATBOT_VERSION,
+  CHATBOT_TOOLS,
+  validateMessage,
+  getCapabilities,
+  getUpcomingEvents,
+  getEventDetails,
+  getCommunityDemand,
+  getTrendAnalysis,
+  semanticEventSearch: aiIntelligenceService.semanticEventSearch,
+  similarEventsForEvent: aiIntelligenceService.similarEventsForEvent,
+  semanticTrendAnalysis: aiIntelligenceService.semanticTrendAnalysis,
+  deterministicAndSemanticTrends: aiIntelligenceService.deterministicAndSemanticTrends,
+  semanticConflictAnalysis: aiIntelligenceService.semanticConflictAnalysis,
+  processMessage,
+}
