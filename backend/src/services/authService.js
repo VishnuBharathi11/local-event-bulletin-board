@@ -1,5 +1,6 @@
 const crypto = require('node:crypto')
 const userRepository = require('../repositories/userRepository')
+const { getFirebaseAuth } = require('../config/firebaseAdmin')
 const { validateRegistration, validateLogin, toPublicUser } = require('../models/userModel')
 
 const SESSION_COOKIE = 'eventhive_session'
@@ -121,6 +122,54 @@ async function login(input) {
   return { user: toPublicUser(user), token: createSessionToken(user) }
 }
 
+async function loginWithGoogle(idToken) {
+  if (!idToken) {
+    const error = new Error('Google authentication token is required.')
+    error.statusCode = 400
+    throw error
+  }
+
+  let decodedToken
+  try {
+    decodedToken = await getFirebaseAuth().verifyIdToken(idToken)
+  } catch {
+    const error = new Error('Google authentication could not be verified.')
+    error.statusCode = 401
+    throw error
+  }
+
+  const email = String(decodedToken.email || '').trim().toLowerCase()
+  if (!email || decodedToken.email_verified !== true) {
+    const error = new Error('Google account email verification is required.')
+    error.statusCode = 403
+    throw error
+  }
+
+  let user = await userRepository.getUserByEmail(email)
+  if (!user) {
+    const name = String(decodedToken.name || email.split('@')[0]).trim() || 'EventHive User'
+    try {
+      user = await userRepository.createUser({
+        name,
+        email,
+        passwordHash: '',
+        createdAt: Date.now(),
+      })
+    } catch (error) {
+      if (error.code !== 'DUPLICATE_EMAIL') throw error
+      user = await userRepository.getUserByEmail(email)
+    }
+  }
+
+  if (!user) {
+    const error = new Error('Unable to create or load the EventHive account.')
+    error.statusCode = 500
+    throw error
+  }
+
+  return { user: toPublicUser(user), token: createSessionToken(user) }
+}
+
 async function getCurrentUser(userId) {
   if (!userId) return null
   const user = await userRepository.getUserById(userId)
@@ -144,6 +193,7 @@ module.exports = {
   verifyPassword,
   register,
   login,
+  loginWithGoogle,
   getCurrentUser,
   updateProfile,
 }
