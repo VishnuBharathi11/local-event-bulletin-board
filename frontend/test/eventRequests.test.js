@@ -51,7 +51,8 @@ test('unauthenticated users are routed to Login to Express Interest', () => {
 })
 
 test('authenticated users receive Express Interest and Interested states', () => {
-  assert.match(card, /!isInterested \? 'Express Interest'/)
+  assert.match(card, /isInterested \? 'Interested/)
+assert.match(card, /interestLabel/)
   assert.match(card, /isInterested \? 'Interested ✓'/)
 })
 

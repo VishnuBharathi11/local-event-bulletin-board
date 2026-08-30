@@ -13,6 +13,7 @@ import { shareEvent } from '../../utils/eventShare.js'
 export default function EventCard({
   event,
   onExpired,
+  onRsvpChanged,
   isManagement = false,
   onEdit,
   onDelete,
@@ -20,7 +21,7 @@ export default function EventCard({
   style = {}
 }) {
   const { authenticated, currentUser } = useAuth()
-  const rsvp = useEventRSVP(event.eventId, authenticated, event.rsvpCount)
+  const rsvp = useEventRSVP(event.eventId, authenticated)
   const [imageError, setImageError] = useState(false)
   const [lifecycleStatus, setLifecycleStatus] = useState(() => getEventLifecycleStatus(event))
   const [shareFeedback, setShareFeedback] = useState('')
@@ -58,13 +59,15 @@ export default function EventCard({
   const canModify = event.startTime - Date.now() > 2 * 60 * 60 * 1000
   const isOngoing = lifecycleStatus === 'ACTIVE'
 
-  async function handleGoing() {
-    await rsvp.setGoing()
-  }
+async function handleGoing() {
+  await rsvp.setGoing()
+  onRsvpChanged?.()
+}
 
-  async function handleNotGoing() {
-    await rsvp.setNotGoing()
-  }
+async function handleNotGoing() {
+  await rsvp.setNotGoing()
+  onRsvpChanged?.()
+}
 
   async function handleShare(e) {
     e.preventDefault()
