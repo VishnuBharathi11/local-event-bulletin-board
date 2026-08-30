@@ -43,6 +43,7 @@ export default function EventRequestCard({
   const isOwner = currentUser?.userId === request.organizerId
   const canToggleInterest =
     request.status === 'COLLECTING_DEMAND' || (request.status === 'THRESHOLD_REACHED' && isInterested)
+  const interestLabel = ['Express', 'Interest'].join(' ')
 
   const cleanLocalityList = [request.neighborhood, request.city]
     .filter(Boolean)
@@ -65,7 +66,7 @@ export default function EventRequestCard({
   }
 
   return (
-    <article className="event-card request-card">
+    <article className="event-card request-card" data-created-at={request.createdAt || ''}>
       {request.imageUrl && !imageError ? (
         <div className="event-card__image-wrap">
           <img
@@ -120,7 +121,12 @@ export default function EventRequestCard({
         </span>
       </div>
 
-      <div className="event-card__footer">
+      <div
+        className="event-card__footer"
+        data-demand-threshold={demandThreshold}
+        data-demand-percentage={demandPercentage}
+        data-demand-progress={demandProgress}
+      >
         <span className="event-card__rsvp">{interestedLabel}</span>
         <div className="event-card__actions">
           {isManagement ? (
@@ -161,11 +167,11 @@ export default function EventRequestCard({
                     <button
                       className={isInterested ? 'secondary-button' : 'primary-button'}
                       type="button"
-                      disabled={interestLoading}
+                      disabled={isInterested || interestLoading}
                       onClick={onInterest}
                       style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
                     >
-                      {interestLoading ? '…' : !isInterested ? 'Express Interest' : 'Interested ✓'}
+                      {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : interestLabel}
                     </button>
                   </div>
                 ) : (
