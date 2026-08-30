@@ -78,6 +78,9 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
   }
 
   function handleDescriptionChange(event) {
+    // Invalidate any in-flight AI response before accepting the user's edit.
+    // This prevents a stale response from replacing newer manual content.
+    requestIdRef.current += 1
     update('description', event.target.value)
     setDescriptionAiError('')
   }
@@ -128,11 +131,6 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
         setGeneratingDescription(false)
       }
     }
-  }
-
-  function handleDescriptionChange(event) {
-    update('description', event.target.value)
-    setDescriptionAiError('')
   }
 
   return (
@@ -201,7 +199,7 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
             placeholder="Describe your event, what makes it special, and what attendees can expect..."
             value={form.description || ''}
             onChange={handleDescriptionChange}
-            className={`form-textarea ${errors.description ? 'form-textarea--error' : ''}`}
+            className={`form-textarea ${errors.description ? 'form-textarea--error' : ''} ${generatingDescription ? 'event-description-textarea--generating' : ''}`}
           />
 
           <div className="event-description-ai">
@@ -224,12 +222,6 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
                 {generatingDescription ? 'Generating...' : 'Regenerate'}
               </button>
             </div>
-
-            {generatingDescription && (
-              <span className="event-description-ai__hint">
-                Generating AI description...
-              </span>
-            )}
 
             {descriptionAiError && (
               <p className="event-description-ai__error" role="alert">

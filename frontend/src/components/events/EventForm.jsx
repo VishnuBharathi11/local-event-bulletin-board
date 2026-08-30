@@ -133,9 +133,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
     const requestId = generationRequestRef.current + 1
     generationRequestRef.current = requestId
     const requestedTitle = title
-    const existingDescription = descriptionManuallyEditedRef.current
-      ? currentForm.description.trim()
-      : ''
+    const existingDescription = currentForm.description.trim()
 
     setGeneratingDescription(true)
     setDescriptionAiError(null)
@@ -143,7 +141,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
     try {
       const result = await generateEventDescription({
         title,
-        description: automatic ? '' : existingDescription,
+        description: existingDescription,
         category: currentForm.category,
         city: currentForm.city.trim(),
         neighborhood: currentForm.neighborhood.trim(),
@@ -309,8 +307,10 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
               maxLength={DESCRIPTION_MAX_LENGTH}
               value={form.description}
               onChange={handleDescriptionChange}
+              className={generatingDescription ? 'event-description-textarea event-description-textarea--generating' : 'event-description-textarea'}
+              aria-busy={generatingDescription}
             />
-            <div className="event-description-ai" aria-live="polite">
+            <div className="event-description-ai">
               <button
                 type="button"
                 className="secondary-button event-description-ai__button"
@@ -332,13 +332,6 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
                 <Sparkles size={15} aria-hidden="true" />
                 {generatingDescription ? 'Generating...' : 'Regenerate'}
               </button>
-              {generatingDescription && <span className="event-description-ai__hint">Generating description...</span>}
-              {!generatingDescription && aiDescription && descriptionManuallyEdited && (
-                <span className="event-description-ai__hint">AI suggestion ready. Insert to use it.</span>
-              )}
-              {!generatingDescription && aiDescription && !descriptionManuallyEdited && form.description === aiDescription && (
-                <span className="event-description-ai__hint">AI suggestion inserted. You can edit it or regenerate.</span>
-              )}
               {descriptionAiError && <p className="event-description-ai__error" role="alert">{descriptionAiError}</p>}
             </div>
           </div>
@@ -365,7 +358,7 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
                   />
                   <div className="image-upload__icon" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
                       <circle cx="8.5" cy="8.5" r="1.5"/>
                       <polyline points="21 15 16 10 5 21"/>
                     </svg>
