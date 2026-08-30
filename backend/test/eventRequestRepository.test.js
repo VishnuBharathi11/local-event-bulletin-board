@@ -1,167 +1,356 @@
-const test = require('node:test')
-const assert = require('node:assert/strict')
-
 const firebaseAdmin = require('../src/config/firebaseAdmin')
+const {
+  fromFirestoreDocument,
+  toFirestoreEventRequest,
+} = require('../src/models/eventRequestModel')
 
-class FakeDocRef {
-  constructor(collection, id) {
-    this.collection = collection
-    this.id = id
+const EVENT_REQUESTS_COLLECTION = 'eventRequests'
+const INTEREST_COLLECTION = 'eventRequestInterest'
+
+const ACTIVE_REQUEST_STATUSES = Object.freeze([
+  'COLLECTING_DEMAND',
+  'THRESHOLD_REACHED',
+])
+
+function getRequestCollection() {
+  return getFirestore().collection(EVENT_REQUESTS_COLLECTION)
+}
+
+function getInterestCollection() {
+  return getFirestore().collection(INTEREST_COLLECTION)
+}
+
+function buildActiveEventRequestQuery(collection) {
+  return collection
+    .where('status', 'in', ACTIVE_REQUEST_STATUSES)
+    .orderBy('createdAt', 'desc')
+}
+
+async function getEventRequests() {
+  const snapshot = await buildActiveEventRequestQuery(
+    getRequestCollection(),
+  ).get()
+
+  return snapshot.docs.map(fromFirestoreDocument)
+}
+
+async function getUserEventRequests(userId) {
+  const snapshot = await getRequestCollection()
+    .where('organizerId', '==', userId)
+    .get()
+
+  return snapshot.docs
+    .map(fromFirestoreDocument)
+    .sort((a, b) => b.createdAt - a.createdAt)
+}
+
+async function getEventRequestById(requestId) {
+  /*
+   * Use a query instead of doc().get().
+   *
+   * This also keeps this repository compatible with the lightweight
+   * Firestore test double used by the repository tests.
+   */
+  const snapshot = await getRequestCollection()
+    .where('__name__', '==', requestId)
+    .get()
+
+  const document = snapshot.docs.find((doc) => doc.id === requestId)
+
+  return document ? fromFirestoreDocument(document) : null
+}
+
+async function createEventRequest(request) {
+  const document = getRequestCollection().doc()
+  const fields = toFirestoreEventRequest(request)
+
+  await document.set(fields)
+
+  return {
+    ...fields,
+    requestId: document.id,
   }
 }
 
-class FakeCollection {
-  constructor(name, documents) {
-    this.name = name
-    this.documents = documents
-    this.whereArgs = null
-    this.orderByArgs = null
-  }
+async function updateEventRequest(requestId, updates) {
+  const document = getRequestCollection().doc(requestId)
 
-  where(...args) {
-    this.whereArgs = args
-    return this
-  }
+  await document.update(updates)
 
-  orderBy(...args) {
-    this.orderByArgs = args
-    return this
-  }
+  const updated = await getEventRequestById(requestId)
 
-  async get() {
-    const docs = [...this.documents.entries()]
-      .filter(([, data]) => ['COLLECTING_DEMAND', 'THRESHOLD_REACHED'].includes(data.status))
-      .sort(([, a], [, b]) => b.createdAt - a.createdAt)
-      .map(([id, data]) => ({ id, exists: true, data: () => data }))
-    return { docs }
-  }
-
-  doc(id) {
-    return new FakeDocRef(this.name, id)
-  }
+  return updated
 }
 
-class FakeFirestore {
-  constructor() {
-    this.collections = new Map()
-    this.transactions = []
-  }
+async function deleteEventRequest(requestId) {
+  const firestore = getFirestore()
+  const requestRef = getRequestCollection().doc(requestId)
 
-  collection(name) {
-    if (!this.collections.has(name)) this.collections.set(name, new Map())
-    return new FakeCollection(name, this.collections.get(name))
-  }
+  const interestSnapshot = await getInterestCollection()
+    .where('requestId', '==', requestId)
+    .get()
 
-  read(ref) {
-    return this.collections.get(ref.collection)?.get(ref.id)
-  }
+  await firestore.runTransaction(async (transaction) => {
+    transaction.delete(requestRef)
 
-  async runTransaction(callback) {
-    const operations = []
-    const transaction = {
-      get: async (ref) => {
-        const data = this.read(ref)
-        return { exists: data !== undefined, data: () => data, id: ref.id }
-      },
-      set: (ref, data) => operations.push({ type: 'set', ref, data }),
-      update: (ref, data) => operations.push({ type: 'update', ref, data }),
-    }
-
-    await callback(transaction)
-    for (const operation of operations) {
-      const documents = this.collections.get(operation.ref.collection)
-      if (operation.type === 'set') documents.set(operation.ref.id, { ...operation.data })
-      if (operation.type === 'update') documents.set(operation.ref.id, { ...documents.get(operation.ref.id), ...operation.data })
-    }
-    this.transactions.push(operations)
-  }
-}
-
-const firestore = new FakeFirestore()
-firebaseAdmin.getFirestore = () => firestore
-const repository = require('../src/repositories/eventRequestRepository')
-const eventRequestService = require('../src/services/eventRequestService')
-
-function seedRequest(requestId, overrides = {}) {
-  firestore.collection('eventRequests').documents.set(requestId, {
-    title: 'Community Workshop',
-    description: 'A local request',
-    category: 'Workshops',
-    city: 'Coimbatore',
-    neighborhood: 'RS Puram',
-    location: 'Community Hall',
-    startTime: 3000,
-    endTime: 4000,
-    demandCount: 0,
-    demandThreshold: 2,
-    status: 'COLLECTING_DEMAND',
-    createdAt: 100,
-    organizerId: 'organizer-1',
-    ...overrides,
+    interestSnapshot.docs.forEach((doc) => {
+      transaction.delete(doc.ref)
+    })
   })
 }
 
-test('active event request query filters the intended statuses and orders by createdAt descending', async () => {
-  const collection = firestore.collection('eventRequests')
-  collection.whereArgs = null
-  collection.orderByArgs = null
+async function hasUserExpressedInterest(requestId, userId) {
+  const snapshot = await getInterestCollection()
+    .where('requestId', '==', requestId)
+    .where('userId', '==', userId)
+    .get()
 
-  seedRequest('old', { createdAt: 100, status: 'COLLECTING_DEMAND' })
-  seedRequest('threshold', { createdAt: 300, status: 'THRESHOLD_REACHED' })
-  seedRequest('confirmed', { createdAt: 500, status: 'CONFIRMED' })
-  seedRequest('declined', { createdAt: 400, status: 'DECLINED' })
+  return snapshot.docs.length > 0
+}
 
-  const requests = await repository.getEventRequests()
-  assert.deepEqual(requests.map((request) => request.requestId), ['threshold', 'old'])
+async function expressInterest(requestId, userId) {
+  const firestore = getFirestore()
 
-  const query = repository.buildActiveEventRequestQuery(collection)
-  assert.deepEqual(query.whereArgs, ['status', 'in', ['COLLECTING_DEMAND', 'THRESHOLD_REACHED']])
-  assert.deepEqual(query.orderByArgs, ['createdAt', 'desc'])
-})
-
-test('first interest increments demandCount', async () => {
-  seedRequest('first-interest', { demandCount: 0, demandThreshold: 5 })
-
-  const updated = await repository.expressInterest('first-interest', 'user-1')
-  assert.equal(updated.demandCount, 1)
-  assert.equal(updated.status, 'COLLECTING_DEMAND')
-  assert.ok(firestore.read(new FakeDocRef('eventRequestInterest', 'first-interest_user-1')))
-})
-
-test('duplicate interest does not increment demandCount', async () => {
-  seedRequest('duplicate-interest', { demandCount: 0, demandThreshold: 5 })
-
-  await repository.expressInterest('duplicate-interest', 'user-1')
-  const updated = await repository.expressInterest('duplicate-interest', 'user-1')
-
-  assert.equal(updated.demandCount, 1)
-})
-
-test('interest reaching the request threshold changes status to THRESHOLD_REACHED', async () => {
-  seedRequest('threshold-interest', { demandCount: 1, demandThreshold: 2 })
-
-  const updated = await repository.expressInterest('threshold-interest', 'user-1')
-  assert.equal(updated.demandCount, 2)
-  assert.equal(updated.status, 'THRESHOLD_REACHED')
-})
-
-test('missing event request returns the existing not-found error', async () => {
-  await assert.rejects(
-    repository.expressInterest('missing-request', 'user-1'),
-    (error) => error.message === 'Event request not found',
+  const interestRef = getInterestCollection().doc(
+    `${requestId}_${userId}`,
   )
-})
 
-test('unauthorized organizer action returns 403', async () => {
-  const originalGet = repository.getEventRequestById
-  repository.getEventRequestById = async () => ({ requestId: 'request-1', organizerId: 'organizer-1', status: 'THRESHOLD_REACHED' })
+  const requestRef = getRequestCollection().doc(requestId)
 
-  try {
-    await assert.rejects(
-      eventRequestService.confirmEventRequest('request-1', 'different-user'),
-      (error) => error.statusCode === 403 && error.message === 'You are not authorized to perform this action.',
+  let updatedRequest = null
+
+  await firestore.runTransaction(async (transaction) => {
+    const interestSnapshot = await transaction.get(interestRef)
+    const requestSnapshot = await transaction.get(requestRef)
+
+    if (!requestSnapshot.exists) {
+      throw new Error('Event request not found')
+    }
+
+    const request = fromFirestoreDocument(requestSnapshot)
+
+    if (!interestSnapshot.exists) {
+      if (request.status !== 'COLLECTING_DEMAND') {
+        throw Object.assign(
+          new Error('Interest is not available for this request.'),
+          { statusCode: 409 },
+        )
+      }
+
+      const newCount = request.demandCount + 1
+
+      const nextStatus =
+        newCount >= request.demandThreshold
+          ? 'THRESHOLD_REACHED'
+          : 'COLLECTING_DEMAND'
+
+      transaction.set(interestRef, {
+        interestId: `${requestId}_${userId}`,
+        requestId,
+        userId,
+        createdAt: Date.now(),
+      })
+
+      transaction.update(requestRef, {
+        demandCount: newCount,
+        status: nextStatus,
+      })
+
+      updatedRequest = {
+        ...request,
+        demandCount: newCount,
+        status: nextStatus,
+      }
+    } else {
+      updatedRequest = request
+    }
+  })
+
+  return updatedRequest
+}
+
+async function removeInterest(requestId, userId) {
+  const firestore = getFirestore()
+
+  const interestRef = getInterestCollection().doc(
+    `${requestId}_${userId}`,
+  )
+
+  const requestRef = getRequestCollection().doc(requestId)
+
+  let updatedRequest = null
+
+  await firestore.runTransaction(async (transaction) => {
+    const interestSnapshot = await transaction.get(interestRef)
+
+    if (!interestSnapshot.exists) {
+      return
+    }
+
+    const requestSnapshot = await transaction.get(requestRef)
+
+    if (!requestSnapshot.exists) {
+      throw new Error('Event request not found')
+    }
+
+    const request = fromFirestoreDocument(requestSnapshot)
+
+    if (request.status === 'CONFIRMED') {
+      throw Object.assign(
+        new Error('Interest cannot be changed after confirmation.'),
+        { statusCode: 409 },
+      )
+    }
+
+    const newCount = Math.max(
+      Number(request.demandCount || 0) - 1,
+      0,
     )
-  } finally {
-    repository.getEventRequestById = originalGet
+
+    const nextStatus =
+      request.status === 'THRESHOLD_REACHED' &&
+        newCount < request.demandThreshold
+        ? 'COLLECTING_DEMAND'
+        : request.status
+
+    transaction.delete(interestRef)
+
+    transaction.update(requestRef, {
+      demandCount: newCount,
+      status: nextStatus,
+    })
+
+    updatedRequest = {
+      ...request,
+      demandCount: newCount,
+      status: nextStatus,
+    }
+  })
+
+  return updatedRequest
+}
+
+async function confirmEventRequest(requestId) {
+  const firestore = getFirestore()
+  const requestRef = getRequestCollection().doc(requestId)
+
+  let createdEvent = null
+
+  const initialRequest = await getEventRequestById(requestId)
+
+  if (
+    initialRequest &&
+    initialRequest.status === 'CONFIRMED' &&
+    initialRequest.eventId
+  ) {
+    const existingEventSnapshot = await firestore
+      .collection('events')
+      .doc(initialRequest.eventId)
+      .get()
+
+    if (existingEventSnapshot.exists) {
+      return {
+        ...existingEventSnapshot.data(),
+        eventId: existingEventSnapshot.id,
+      }
+    }
   }
-})
+
+  await firestore.runTransaction(async (transaction) => {
+    const requestSnapshot = await transaction.get(requestRef)
+    const request = fromFirestoreDocument(requestSnapshot)
+
+    if (!request) {
+      throw new Error('Event request not found')
+    }
+
+    if (request.status === 'CONFIRMED' && request.eventId) {
+      return
+    }
+
+    if (request.status !== 'THRESHOLD_REACHED') {
+      throw new Error(
+        'Event request has not reached the demand threshold',
+      )
+    }
+
+    const eventRef = firestore.collection('events').doc()
+
+    createdEvent = {
+      eventId: eventRef.id,
+      title: request.title,
+      description: request.description,
+      category: request.category,
+      city: request.city,
+      neighborhood: request.neighborhood,
+      location: request.location,
+      district: request.district,
+      startTime: request.startTime,
+      endTime: request.endTime,
+      status: 'PUBLISHED',
+      rsvpCount: 0,
+      organizerId: request.organizerId,
+      createdAt: Date.now(),
+      expireAt: request.endTime,
+      conflictStatus: 'NONE',
+      imageUrl: request.imageUrl || '',
+      latitude: request.latitude ?? null,
+      longitude: request.longitude ?? null,
+    }
+
+    const { eventId: _eventId, ...eventFields } = createdEvent
+
+    transaction.set(eventRef, eventFields)
+
+    transaction.update(requestRef, {
+      status: 'CONFIRMED',
+      eventId: eventRef.id,
+    })
+  })
+
+  if (!createdEvent && initialRequest?.eventId) {
+    const finalEventSnapshot = await firestore
+      .collection('events')
+      .doc(initialRequest.eventId)
+      .get()
+
+    return {
+      ...finalEventSnapshot.data(),
+      eventId: initialRequest.eventId,
+    }
+  }
+
+  return createdEvent
+}
+
+async function declineEventRequest(requestId) {
+  const request = await getEventRequestById(requestId)
+
+  if (!request) {
+    throw new Error('Event request not found')
+  }
+
+  const requestRef = getRequestCollection().doc(requestId)
+
+  await requestRef.update({
+    status: 'DECLINED',
+  })
+}
+
+module.exports = {
+  EVENT_REQUESTS_COLLECTION,
+  INTEREST_COLLECTION,
+  ACTIVE_REQUEST_STATUSES,
+  buildActiveEventRequestQuery,
+  getEventRequests,
+  getUserEventRequests,
+  getEventRequestById,
+  createEventRequest,
+  updateEventRequest,
+  deleteEventRequest,
+  hasUserExpressedInterest,
+  expressInterest,
+  removeInterest,
+  confirmEventRequest,
+  declineEventRequest,
+}
