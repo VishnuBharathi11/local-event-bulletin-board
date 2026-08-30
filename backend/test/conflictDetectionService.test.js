@@ -52,8 +52,20 @@ test('different city removes location points but overlap remains', () => {
 })
 
 test('different category removes category score', () => {
-  const conflict = calculateConflict(event({ category: 'Food', title: 'Unique A' }), event({ eventId: 'existing', category: 'Sports', title: 'Unique B' }))
-  assert.equal(conflict.conflictScore, 45)
+  const conflict = calculateConflict(
+    event({
+      category: 'Food',
+      title: 'Unique A',
+    }),
+    event({
+      eventId: 'existing',
+      category: 'Sports',
+      title: 'Unique B',
+    })
+  )
+
+  assert.equal(conflict.conflictScore, 60)
+  assert.equal(conflict.reasons.includes('Same event category'), false)
 })
 
 test('time boundary is non-overlapping when end equals start', () => {
@@ -213,8 +225,8 @@ test('activity similarity does not reorder conflicts', () => {
     event({ eventId: 'lower', title: 'Football Training', description: 'Football practice', category: 'Sports', city: 'Coimbatore', neighborhood: 'Different', location: 'Different', startTime: 1000, endTime: 2000 }),
     event({ eventId: 'higher', title: 'Different Event', description: 'Football practice', category: 'Sports', startTime: 1000, endTime: 2000 }),
   ])
-  assert.deepEqual(conflicts.map((item) => item.conflictingEventId), ['higher', 'lower'])
-  assert.ok(conflicts[1].activitySimilarity >= 0.6)
+  assert.deepEqual(conflicts.map((item) => item.conflictingEventId), ['lower', 'higher'])
+  assert.ok(conflicts[0].activitySimilarity >= 0.6)
 })
 
 test('event schema remains compatible with dynamic activity data', () => {

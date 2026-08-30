@@ -1,5 +1,6 @@
 const crypto = require('node:crypto')
 const userRepository = require('../repositories/userRepository')
+const firebaseAdmin = require('../config/firebaseAdmin')
 const { validateRegistration, validateLogin, toPublicUser } = require('../models/userModel')
 
 const SESSION_COOKIE = 'eventhive_session'
@@ -16,13 +17,8 @@ function getJwtSecret() {
   return secret
 }
 
-function base64UrlEncode(value) {
-  return Buffer.from(value).toString('base64url')
-}
-
-function base64UrlDecode(value) {
-  return Buffer.from(value, 'base64url').toString('utf8')
-}
+function base64UrlEncode(value) { return Buffer.from(value).toString('base64url') }
+function base64UrlDecode(value) { return Buffer.from(value, 'base64url').toString('utf8') }
 
 function signJwt(payload) {
   const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
@@ -35,7 +31,6 @@ function signJwt(payload) {
 function verifyJwt(token) {
   const parts = String(token || '').split('.')
   if (parts.length !== 3) throw new Error('Invalid session token')
-
   const [header, body, signature] = parts
   let parsedHeader
   let payload
@@ -45,9 +40,7 @@ function verifyJwt(token) {
   } catch {
     throw new Error('Invalid session token')
   }
-
   if (parsedHeader.alg !== 'HS256' || parsedHeader.typ !== 'JWT') throw new Error('Invalid session token')
-
   const expected = crypto.createHmac('sha256', getJwtSecret()).update(`${header}.${body}`).digest('base64url')
   const receivedBuffer = Buffer.from(signature)
   const expectedBuffer = Buffer.from(expected)
@@ -84,7 +77,6 @@ async function verifyPassword(password, storedHash) {
   const [, n, r, p, salt, encodedHash] = parts
   const options = { N: Number(n), r: Number(r), p: Number(p), keyLength: PASSWORD_SCRYPT.keyLength }
   if (!Number.isInteger(options.N) || !Number.isInteger(options.r) || !Number.isInteger(options.p) || !salt || !encodedHash) return false
-
   try {
     const derivedKey = await derivePassword(password, salt, options)
     const expected = Buffer.from(encodedHash, 'base64url')
@@ -121,6 +113,105 @@ async function login(input) {
   return { user: toPublicUser(user), token: createSessionToken(user) }
 }
 
+async function loginWithGoogle(idToken, mode = 'login') {
+  if (!idToken || typeof idToken !== 'string' || !idToken.trim()) {
+    const error = new Error('Google authentication token is required.')
+    error.statusCode = 400
+    throw error
+  }
+
+  const normalizedMode = mode === 'register' ? 'register' : 'login'
+
+  let decodedToken
+
+  try {
+    decodedToken = await firebaseAdmin
+      .getFirebaseAuth()
+      .verifyIdToken(idToken.trim())
+  } catch {
+    const error = new Error('Google authentication could not be verified.')
+    error.statusCode = 401
+    throw error
+  }
+
+  if (decodedToken.firebase?.sign_in_provider !== 'google.com') {
+    const error = new Error('A Google authentication token is required.')
+    error.statusCode = 401
+    throw error
+  }
+
+  const email = String(decodedToken.email || '').trim().toLowerCase()
+
+  if (!email || decodedToken.email_verified !== true) {
+    const error = new Error(
+      'Google account email verification is required.'
+    )
+    error.statusCode = 403
+    throw error
+  }
+
+  let user = await userRepository.getUserByEmail(email)
+
+  if (normalizedMode === 'login') {
+    if (!user) {
+      const error = new Error(
+        'User does not exist. Please register first.'
+      )
+      error.statusCode = 404
+      throw error
+    }
+
+    return {
+      user: toPublicUser(user),
+      token: createSessionToken(user),
+    }
+  }
+
+  // Registration mode
+  if (user) {
+    const error = new Error(
+      'An account with this email already exists.'
+    )
+    error.statusCode = 409
+    throw error
+  }
+
+  const name =
+    String(decodedToken.name || email.split('@')[0]).trim() ||
+    'EventHive User'
+
+  try {
+    user = await userRepository.createUser({
+      name,
+      email,
+      passwordHash: '',
+      createdAt: Date.now(),
+    })
+  } catch (error) {
+    if (error.code === 'DUPLICATE_EMAIL') {
+      const duplicate = new Error(
+        'An account with this email already exists.'
+      )
+      duplicate.statusCode = 409
+      throw duplicate
+    }
+
+    throw error
+  }
+
+  if (!user) {
+    const error = new Error(
+      'Unable to create the EventHive account.'
+    )
+    error.statusCode = 500
+    throw error
+  }
+
+  return {
+    user: toPublicUser(user),
+    token: createSessionToken(user),
+  }
+}
 async function getCurrentUser(userId) {
   if (!userId) return null
   const user = await userRepository.getUserById(userId)
@@ -144,6 +235,7 @@ module.exports = {
   verifyPassword,
   register,
   login,
+  loginWithGoogle,
   getCurrentUser,
   updateProfile,
 }

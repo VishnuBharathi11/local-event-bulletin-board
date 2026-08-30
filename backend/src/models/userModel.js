@@ -69,17 +69,11 @@ function validateLogin(input = {}) {
 
 function toPublicUser(user) {
   if (!user) return null
+
   return {
     userId: user.userId,
     name: user.name,
     email: user.email,
-    phone: user.phone,
-    country: user.country,
-    state: user.state,
-    city: user.city,
-    pincode: user.pincode,
-    createdAt: user.createdAt,
-    status: user.status,
   }
 }
 

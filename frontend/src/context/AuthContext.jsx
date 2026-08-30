@@ -38,12 +38,20 @@ export function AuthProvider({ children }) {
     return response.user
   }, [])
 
+  const loginWithGoogle = useCallback(async (mode = 'login') => {
+    const response = await authService.signInWithGoogle(mode)
+    setCurrentUser(response.user)
+    setStatus('authenticated')
+    return response.user
+  }, [])
+
   const logout = useCallback(async () => {
     try {
       await authService.logout()
     } catch (error) {
       console.error('Server logout error:', error)
     } finally {
+      await authService.signOutFromGoogle()
       localStorage.removeItem('detected_district')
       localStorage.removeItem('detected_locality')
       setCurrentUser(null)
@@ -65,10 +73,11 @@ export function AuthProvider({ children }) {
     currentUser,
     login,
     register,
+    loginWithGoogle,
     logout,
     updateProfile,
     refreshCurrentUser,
-  }), [status, currentUser, login, register, logout, updateProfile, refreshCurrentUser])
+  }), [status, currentUser, login, register, loginWithGoogle, logout, updateProfile, refreshCurrentUser])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
