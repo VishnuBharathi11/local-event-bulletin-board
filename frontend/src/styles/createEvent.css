@@ -40,7 +40,7 @@
   border: 0;
 }
 
-.create-event-form__section + .create-event-form__section {
+.create-event-form__section+.create-event-form__section {
   border-top: 1px solid var(--border);
 }
 
@@ -159,9 +159,12 @@
 }
 
 @keyframes event-description-generating-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 3px var(--brand-light), 0 0 14px rgb(109 40 217 / 12%);
   }
+
   50% {
     box-shadow: 0 0 0 4px var(--brand-light), 0 0 22px rgb(109 40 217 / 20%);
   }
@@ -233,6 +236,7 @@
 }
 
 @media (max-width: 760px) {
+
   .create-event-form__fields--date-time,
   .create-event-form__fields--location {
     grid-template-columns: 1fr;
@@ -281,7 +285,6 @@
   }
 }
 
-<<<<<<< HEAD
 .event-description-ai {
   margin-top: 10px;
   display: flex;
@@ -313,10 +316,9 @@
   margin: 8px 0 0;
   font-size: 12px;
 }
-=======
+
 @media (prefers-reduced-motion: reduce) {
   .event-description-textarea--generating {
     animation: none;
   }
 }
->>>>>>> 91c86a8a2b881ce0cbda2b3084c119f4d72008f6
