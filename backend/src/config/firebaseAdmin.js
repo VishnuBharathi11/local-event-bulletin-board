@@ -35,13 +35,17 @@ function getFirebaseApp() {
   return firebaseApp
 }
 
+function getFirebaseAuth() {
+  return admin.auth(getFirebaseApp())
+}
+
 function getFirestore() {
   const app = getFirebaseApp()
-
   return admin.firestore(app)
 }
 
 module.exports = {
   getFirebaseApp,
+  getFirebaseAuth,
   getFirestore,
 }
