@@ -31,45 +31,70 @@ function getProviderApiKey() {
   return process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_GEOCODING_API_KEY || ''
 }
 
-function requestGooglePlaces(url) {
+function requestGooglePlaces(url, options = {}) {
   return new Promise((resolve, reject) => {
-    const request = https.get(url, (response) => {
-      let data = ''
+    const request = https.request(
+      url,
+      {
+        method: options.method || 'GET',
+        headers: options.headers || {},
+      },
+      (response) => {
+        let raw = ''
 
-      response.setEncoding('utf8')
-      response.on('data', (chunk) => {
-        data += chunk
-      })
-      response.on('end', () => {
-        if (response.statusCode && response.statusCode >= 400) {
-          const error = new Error(`Location provider returned HTTP ${response.statusCode}.`)
-          error.code = 'LOCATION_PROVIDER_HTTP_ERROR'
-          return reject(error)
-        }
+        response.setEncoding('utf8')
 
-        try {
-          resolve(JSON.parse(data))
-        } catch {
-          const error = new Error('Location provider returned malformed JSON.')
-          error.code = 'LOCATION_PROVIDER_MALFORMED_RESPONSE'
-          reject(error)
-        }
-      })
-    })
+        response.on('data', (chunk) => {
+          raw += chunk
+        })
+
+        response.on('end', () => {
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            const error = new Error(
+              `Location provider returned HTTP ${response.statusCode}.`
+            )
+            error.code = 'LOCATION_PROVIDER_HTTP_ERROR'
+            reject(error)
+            return
+          }
+
+          try {
+            resolve(JSON.parse(raw))
+          } catch {
+            const error = new Error(
+              'Location provider returned malformed JSON.'
+            )
+            error.code = 'LOCATION_PROVIDER_MALFORMED_RESPONSE'
+            reject(error)
+          }
+        })
+      }
+    )
 
     request.setTimeout(8000, () => {
       request.destroy()
-      const error = new Error('Location provider request timed out.')
+
+      const error = new Error(
+        'Location provider request timed out.'
+      )
       error.code = 'LOCATION_PROVIDER_TIMEOUT'
       reject(error)
     })
 
     request.on('error', (error) => {
-      const wrapped = new Error('Unable to reach the location provider.')
+      const wrapped = new Error(
+        'Unable to reach the location provider.'
+      )
       wrapped.code = 'LOCATION_PROVIDER_NETWORK_ERROR'
       wrapped.cause = error
       reject(wrapped)
     })
+
+    if (options.body) {
+      request.write(options.body)
+    }
+
+    request.end()
   })
 }
 
@@ -82,32 +107,76 @@ function getAddressComponent(result, acceptedTypes) {
 
   return component?.long_name || ''
 }
-
 function normalizePlaceResult(result) {
-  if (!result || typeof result !== 'object') return null
+  if (!result || typeof result !== 'object') {
+    return null
+  }
 
-  const venue = typeof result.name === 'string' ? result.name.trim() : ''
-  const address = typeof result.formatted_address === 'string' ? result.formatted_address.trim() : ''
-  const location = result.geometry?.location
-  const latitude = Number(location?.lat)
-  const longitude = Number(location?.lng)
+  const venue =
+    String(
+      result.displayName?.text ||
+      result.name ||
+      ''
+    ).trim()
 
-  if (!venue && !address) return null
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null
+  const address =
+    String(
+      result.formattedAddress ||
+      result.formatted_address ||
+      ''
+    ).trim()
 
-  const city = getAddressComponent(result, [
+  const latitude = Number(
+    result.location?.latitude ??
+    result.geometry?.location?.lat
+  )
+
+  const longitude = Number(
+    result.location?.longitude ??
+    result.geometry?.location?.lng
+  )
+
+  if (
+    !venue ||
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
+    return null
+  }
+
+  const components =
+    Array.isArray(result.addressComponents)
+      ? result.addressComponents
+      : Array.isArray(result.address_components)
+        ? result.address_components
+        : []
+
+  const findComponent = (types) => {
+    const component = components.find((item) =>
+      Array.isArray(item.types) &&
+      types.some((type) => item.types.includes(type))
+    )
+
+    return String(
+      component?.longText ||
+      component?.long_name ||
+      ''
+    ).trim()
+  }
+
+  const city = findComponent([
     'locality',
     'postal_town',
   ])
 
-  const neighborhood = getAddressComponent(result, [
-    'neighborhood',
+  const neighborhood = findComponent([
     'sublocality',
     'sublocality_level_1',
+    'neighborhood',
   ])
 
   return {
-    venue: venue || address,
+    venue,
     address,
     city,
     neighborhood,
@@ -137,41 +206,78 @@ function deduplicateSuggestions(results) {
 
 async function searchLocations(query, options = {}) {
   const normalizedQuery = normalizeQuery(query)
-  const apiKey = getProviderApiKey()
 
-  if (!apiKey) {
-    const error = new Error('Location provider is not configured. Set GOOGLE_PLACES_API_KEY or GOOGLE_GEOCODING_API_KEY on the backend.')
-    error.code = 'LOCATION_PROVIDER_NOT_CONFIGURED'
-    throw error
+  let apiKey = ''
+
+  const hasInjectedFetcher = typeof options.fetcher === 'function'
+
+  if (!hasInjectedFetcher) {
+    apiKey = getProviderApiKey()
+
+    if (!apiKey) {
+      const error = new Error(
+        'Location provider is not configured. Set GOOGLE_PLACES_API_KEY or GOOGLE_GEOCODING_API_KEY on the backend.'
+      )
+      error.code = 'LOCATION_PROVIDER_NOT_CONFIGURED'
+      throw error
+    }
   }
 
-  const fetcher = typeof options.fetcher === 'function' ? options.fetcher : requestGooglePlaces
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(normalizedQuery)}&region=in&key=${encodeURIComponent(apiKey)}`
-  const payload = await fetcher(url)
+  let payload
+
+  if (hasInjectedFetcher) {
+    const url =
+      `https://places.googleapis.com/v1/places:searchText`
+
+    payload = await options.fetcher(url)
+  } else {
+    const url =
+      'https://places.googleapis.com/v1/places:searchText'
+
+    const requestBody = JSON.stringify({
+      textQuery: normalizedQuery,
+      pageSize: MAX_RESULTS,
+    })
+
+    payload = await requestGooglePlaces(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': [
+          'places.displayName',
+          'places.formattedAddress',
+          'places.location',
+          'places.addressComponents',
+        ].join(','),
+      },
+      body: requestBody,
+    })
+  }
 
   if (!payload || typeof payload !== 'object') {
-    const error = new Error('Location provider returned an invalid response.')
+    const error = new Error(
+      'Location provider returned an invalid response.'
+    )
     error.code = 'LOCATION_PROVIDER_MALFORMED_RESPONSE'
     throw error
   }
 
-  if (payload.status === 'ZERO_RESULTS') return []
-
-  if (payload.status && payload.status !== 'OK') {
-    const error = new Error('Location provider could not complete the search.')
+  if (payload.error) {
+    const error = new Error(
+      'Location provider could not complete the search.'
+    )
     error.code = 'LOCATION_PROVIDER_ERROR'
-    error.providerStatus = payload.status
+    error.providerStatus = payload.error.status
     throw error
   }
 
-  if (!Array.isArray(payload.results)) {
-    const error = new Error('Location provider returned no usable results array.')
-    error.code = 'LOCATION_PROVIDER_MALFORMED_RESPONSE'
-    throw error
-  }
+  const places = Array.isArray(payload.places)
+    ? payload.places
+    : []
 
   return deduplicateSuggestions(
-    payload.results
+    places
       .map(normalizePlaceResult)
       .filter(Boolean)
   )
