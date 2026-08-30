@@ -1,3 +1,5 @@
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
+import { getFirebaseAuth } from '../firebase.js'
 import { apiRequest } from './apiClient.js'
 
 export function register(input) {
@@ -18,4 +20,43 @@ export function getCurrentUser() {
 
 export function updateProfile(updates) {
   return apiRequest('/auth/profile', { method: 'PATCH', body: JSON.stringify(updates) })
+}
+
+export async function signInWithGoogle() {
+  const auth = getFirebaseAuth()
+  const provider = new GoogleAuthProvider()
+  provider.setCustomParameters({ prompt: 'select_account' })
+
+  let result
+  try {
+    result = await signInWithPopup(auth, provider)
+  } catch (error) {
+    if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
+      const cancelled = new Error('Google sign-in was cancelled.')
+      cancelled.code = error.code
+      throw cancelled
+    }
+    if (error?.code === 'auth/popup-blocked') {
+      const blocked = new Error('Google sign-in popup was blocked. Allow popups for EventHive and try again.')
+      blocked.code = error.code
+      throw blocked
+    }
+    throw error
+  }
+
+  const idToken = await result.user.getIdToken()
+  const response = await apiRequest('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  })
+
+  return response
+}
+
+export async function signOutFromGoogle() {
+  try {
+    await signOut(getFirebaseAuth())
+  } catch (error) {
+    console.warn('Firebase logout error:', error)
+  }
 }
