@@ -45,18 +45,19 @@ export async function signInWithGoogle() {
   }
 
   const idToken = await result.user.getIdToken()
-  const response = await apiRequest('/auth/google', {
+  return apiRequest('/auth/google', {
     method: 'POST',
     body: JSON.stringify({ idToken }),
   })
-
-  return response
 }
 
 export async function signOutFromGoogle() {
   try {
-    await signOut(getFirebaseAuth())
+    const auth = getFirebaseAuth()
+    await signOut(auth)
   } catch (error) {
-    console.warn('Firebase logout error:', error)
+    if (error?.code !== 'auth/configuration-error') {
+      console.warn('Firebase logout error:', error)
+    }
   }
 }
