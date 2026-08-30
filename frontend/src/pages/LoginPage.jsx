@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/eventhive.svg'
 import GradientBlinds from '../components/common/GradientBlinds.jsx'
 
-const BLINDS_GRADIENT_COLORS = ['#FF9FFC', '#5227FF'];
+const BLINDS_GRADIENT_COLORS = ['#FF9FFC', '#5227FF']
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [form, setForm] = useState({ email: '', password: '' })
@@ -27,6 +27,20 @@ export default function LoginPage() {
       navigate(location.state?.from || '/', { replace: true })
     } catch (requestError) {
       setError(requestError.status === 401 ? 'Invalid email or password.' : requestError.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    if (submitting) return
+    setError(null)
+    setSubmitting(true)
+    try {
+      await loginWithGoogle()
+      navigate(location.state?.from || '/', { replace: true })
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to sign in with Google. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -69,6 +83,11 @@ export default function LoginPage() {
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="primary-button" type="submit" disabled={submitting}>
             {submitting ? 'Signing in…' : 'Login'}
+          </button>
+          <div className="auth-divider" aria-hidden="true"><span>OR</span></div>
+          <button className="google-auth-button" type="button" onClick={handleGoogleSignIn} disabled={submitting}>
+            <span className="google-auth-button__icon" aria-hidden="true">G</span>
+            {submitting ? 'Signing in…' : 'Continue with Google'}
           </button>
         </form>
         <p className="auth-card__footer">No account? <Link to="/register">Register</Link></p>
