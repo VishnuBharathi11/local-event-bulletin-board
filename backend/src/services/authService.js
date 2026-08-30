@@ -17,13 +17,8 @@ function getJwtSecret() {
   return secret
 }
 
-function base64UrlEncode(value) {
-  return Buffer.from(value).toString('base64url')
-}
-
-function base64UrlDecode(value) {
-  return Buffer.from(value, 'base64url').toString('utf8')
-}
+function base64UrlEncode(value) { return Buffer.from(value).toString('base64url') }
+function base64UrlDecode(value) { return Buffer.from(value, 'base64url').toString('utf8') }
 
 function signJwt(payload) {
   const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
@@ -36,7 +31,6 @@ function signJwt(payload) {
 function verifyJwt(token) {
   const parts = String(token || '').split('.')
   if (parts.length !== 3) throw new Error('Invalid session token')
-
   const [header, body, signature] = parts
   let parsedHeader
   let payload
@@ -46,9 +40,7 @@ function verifyJwt(token) {
   } catch {
     throw new Error('Invalid session token')
   }
-
   if (parsedHeader.alg !== 'HS256' || parsedHeader.typ !== 'JWT') throw new Error('Invalid session token')
-
   const expected = crypto.createHmac('sha256', getJwtSecret()).update(`${header}.${body}`).digest('base64url')
   const receivedBuffer = Buffer.from(signature)
   const expectedBuffer = Buffer.from(expected)
@@ -85,7 +77,6 @@ async function verifyPassword(password, storedHash) {
   const [, n, r, p, salt, encodedHash] = parts
   const options = { N: Number(n), r: Number(r), p: Number(p), keyLength: PASSWORD_SCRYPT.keyLength }
   if (!Number.isInteger(options.N) || !Number.isInteger(options.r) || !Number.isInteger(options.p) || !salt || !encodedHash) return false
-
   try {
     const derivedKey = await derivePassword(password, salt, options)
     const expected = Buffer.from(encodedHash, 'base64url')
@@ -138,6 +129,12 @@ async function loginWithGoogle(idToken) {
     throw error
   }
 
+  if (decodedToken.firebase?.sign_in_provider !== 'google.com') {
+    const error = new Error('A Google authentication token is required.')
+    error.statusCode = 401
+    throw error
+  }
+
   const email = String(decodedToken.email || '').trim().toLowerCase()
   if (!email || decodedToken.email_verified !== true) {
     const error = new Error('Google account email verification is required.')
@@ -149,12 +146,7 @@ async function loginWithGoogle(idToken) {
   if (!user) {
     const name = String(decodedToken.name || email.split('@')[0]).trim() || 'EventHive User'
     try {
-      user = await userRepository.createUser({
-        name,
-        email,
-        passwordHash: '',
-        createdAt: Date.now(),
-      })
+      user = await userRepository.createUser({ name, email, passwordHash: '', createdAt: Date.now() })
     } catch (error) {
       if (error.code !== 'DUPLICATE_EMAIL') throw error
       user = await userRepository.getUserByEmail(email)
