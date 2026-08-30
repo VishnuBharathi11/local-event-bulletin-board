@@ -7,3 +7,8 @@ export function getDistrictFromCoords(lat, lng) {
 export function getLocalities(district) {
   return apiRequest(`/location/localities?district=${encodeURIComponent(district)}`)
 }
+
+export function searchLocations(query) {
+  const normalized = String(query || '').trim()
+  return apiRequest(`/location/search?q=${encodeURIComponent(normalized)}`)
+}

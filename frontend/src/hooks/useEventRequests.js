@@ -32,7 +32,7 @@ export function useEventRequests() {
   useEffect(() => { reload() }, [reload])
 
   const toggleInterest = useCallback(async (requestId) => {
-    if (!authenticated || interestLoadingId) return
+    if (!authenticated || interestLoadingId || interestedIds.has(requestId)) return
     const currentlyInterested = interestedIds.has(requestId)
     setInterestLoadingId(requestId)
     setInterestError(null)

@@ -11,6 +11,9 @@ const page = read('src/pages/CommunityRequestsPage.jsx')
 const hook = read('src/hooks/useEventRequests.js')
 const card = read('src/components/community/EventRequestCard.jsx')
 const details = read('src/pages/EventRequestDetailsPage.jsx')
+const requestBasicInfo = read('src/components/events/RequestStep01BasicInfo.jsx')
+const requestLocation = read('src/components/events/RequestStep03Location.jsx')
+const requestForm = read('src/pages/CreateEventRequestPage.jsx')
 
 const count = (source, pattern) => (source.match(pattern) || []).length
 
@@ -48,7 +51,8 @@ test('unauthenticated users are routed to Login to Express Interest', () => {
 })
 
 test('authenticated users receive Express Interest and Interested states', () => {
-  assert.match(card, /!isInterested \? 'Express Interest'/)
+  assert.match(card, /isInterested \? 'Interested/)
+assert.match(card, /interestLabel/)
   assert.match(card, /isInterested \? 'Interested ✓'/)
 })
 
@@ -79,4 +83,43 @@ test('organizer actions remain protected by authenticated user identity', () => 
   assert.match(details, /confirmEventRequest\(requestId\)/)
   assert.match(details, /confirmEventRequestAnyway\(requestId\)/)
   assert.match(details, /declineEventRequest\(requestId\)/)
+})
+
+test('Event Request Step 1 reuses the existing AI description service and parent form state', () => {
+  assert.match(requestBasicInfo, /generateEventDescription\(/)
+  assert.match(requestBasicInfo, /description: currentForm\.description \|\| ''/)
+  assert.match(requestBasicInfo, /category: currentForm\.category \|\| ''/)
+  assert.match(requestBasicInfo, /city: currentForm\.city \|\| ''/)
+  assert.match(requestBasicInfo, /neighborhood: currentForm\.neighborhood \|\| ''/)
+  assert.match(requestBasicInfo, /location: currentForm\.location \|\| ''/)
+  assert.match(requestBasicInfo, /update\('description'/)
+  assert.match(requestBasicInfo, /DESCRIPTION_MAX_LENGTH = 500/)
+  assert.match(requestBasicInfo, /event-description-textarea--generating/)
+})
+
+test('Event Request AI generation preserves debounce and stale-response protection', () => {
+  assert.match(requestBasicInfo, /DESCRIPTION_DEBOUNCE_MS = 850/)
+  assert.match(requestBasicInfo, /setTimeout\(async \(\) =>/)
+  assert.match(requestBasicInfo, /requestIdRef\.current/)
+  assert.match(requestBasicInfo, /latestTitleRef\.current !== title/)
+  assert.match(requestBasicInfo, /requestIdRef\.current \+= 1/) 
+})
+
+test('Event Request location reuses searchLocations with debounce and stale-request protection', () => {
+  assert.match(requestLocation, /searchLocations\(normalizedQuery\)/)
+  assert.match(requestLocation, /LOCATION_DEBOUNCE_MS = 400/)
+  assert.match(requestLocation, /requestIdRef\.current/)
+  assert.match(requestLocation, /suggestion\?\.city/)
+  assert.match(requestLocation, /suggestion\?\.neighborhood/)
+  assert.match(requestLocation, /suggestion\?\.latitude/)
+  assert.match(requestLocation, /suggestion\?\.longitude/)
+})
+
+test('Event Request keeps selected venue data in the existing submission payload', () => {
+  assert.match(requestForm, /location: form\.location\.trim\(\)/)
+  assert.match(requestForm, /city: form\.city\.trim\(\)/)
+  assert.match(requestForm, /neighborhood: form\.neighborhood \? form\.neighborhood\.trim\(\) : ''/)
+  assert.match(requestForm, /latitude: form\.latitude/)
+  assert.match(requestForm, /longitude: form\.longitude/)
+  assert.match(requestForm, /createEventRequest\(payload\)/)
 })

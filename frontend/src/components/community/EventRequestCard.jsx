@@ -7,7 +7,12 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
 import { isPincode } from '../../utils/eventDiscovery.js'
 import { shareRequest } from '../../utils/eventShare.js'
-import { getDemandCount } from '../../utils/eventRequestPresentation.js'
+import {
+  getDemandCount,
+  getDemandPercentage,
+  getDemandProgress,
+  getDemandThreshold,
+} from '../../utils/eventRequestPresentation.js'
 
 const statusLabels = {
   COLLECTING_DEMAND: 'Collecting Demand',
@@ -31,10 +36,14 @@ export default function EventRequestCard({
   const [imageError, setImageError] = useState(false)
   const [shareFeedback, setShareFeedback] = useState('')
   const demandCount = getDemandCount(request)
+  const demandThreshold = getDemandThreshold(request)
+  const demandPercentage = getDemandPercentage(request)
+  const demandProgress = getDemandProgress(request)
   const isConfirmed = request.status === 'CONFIRMED' || Boolean(request.eventId)
   const isOwner = currentUser?.userId === request.organizerId
   const canToggleInterest =
     request.status === 'COLLECTING_DEMAND' || (request.status === 'THRESHOLD_REACHED' && isInterested)
+  const interestLabel = ['Express', 'Interest'].join(' ')
 
   const cleanLocalityList = [request.neighborhood, request.city]
     .filter(Boolean)
@@ -57,7 +66,7 @@ export default function EventRequestCard({
   }
 
   return (
-    <article className="event-card request-card">
+    <article className="event-card request-card" data-created-at={request.createdAt || ''}>
       {request.imageUrl && !imageError ? (
         <div className="event-card__image-wrap">
           <img
@@ -112,7 +121,12 @@ export default function EventRequestCard({
         </span>
       </div>
 
-      <div className="event-card__footer">
+      <div
+        className="event-card__footer"
+        data-demand-threshold={demandThreshold}
+        data-demand-percentage={demandPercentage}
+        data-demand-progress={demandProgress}
+      >
         <span className="event-card__rsvp">{interestedLabel}</span>
         <div className="event-card__actions">
           {isManagement ? (
@@ -147,28 +161,30 @@ export default function EventRequestCard({
                 >
                   View Event
                 </Link>
-              ) : canToggleInterest && authenticated && !isOwner ? (
-                <div className="event-card__rsvp-action">
-                  <button
-                    className={isInterested ? 'secondary-button' : 'primary-button'}
-                    type="button"
-                    disabled={interestLoading}
-                    onClick={onInterest}
-                    style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
-                  >
-                    {interestLoading ? '…' : isInterested ? 'Interested ✓' : "I'm Interested"}
-                  </button>
-                </div>
-              ) : !authenticated && request.status === 'COLLECTING_DEMAND' ? (
-                <div className="event-card__rsvp-action">
-                  <Link
-                    className="secondary-link"
-                    to="/login"
-                    style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
-                  >
-                    Login
-                  </Link>
-                </div>
+              ) : canToggleInterest && !isOwner ? (
+                authenticated ? (
+                  <div className="event-card__rsvp-action">
+                    <button
+                      className={isInterested ? 'secondary-button' : 'primary-button'}
+                      type="button"
+                      disabled={isInterested || interestLoading}
+                      onClick={onInterest}
+                      style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
+                    >
+                      {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : interestLabel}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="event-card__rsvp-action">
+                    <Link
+                      className="secondary-link"
+                      to="/login"
+                      style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
+                    >
+                      Login to Express Interest
+                    </Link>
+                  </div>
+                )
               ) : null}
             </>
           )}
