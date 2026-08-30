@@ -45,10 +45,15 @@ export async function signInWithGoogle() {
   }
 
   const idToken = await result.user.getIdToken()
-  return apiRequest('/auth/google', {
-    method: 'POST',
-    body: JSON.stringify({ idToken }),
-  })
+  try {
+    return await apiRequest('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    })
+  } catch (error) {
+    await signOut(auth).catch(() => {})
+    throw error
+  }
 }
 
 export async function signOutFromGoogle() {
