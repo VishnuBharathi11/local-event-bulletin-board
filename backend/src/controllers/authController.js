@@ -63,6 +63,16 @@ async function login(req, res) {
   }
 }
 
+async function loginWithGoogle(req, res) {
+  try {
+    const result = await authService.loginWithGoogle(req.body?.idToken)
+    setSessionCookie(res, result.token)
+    return res.status(200).json({ user: result.user })
+  } catch (error) {
+    return handleError(res, error)
+  }
+}
+
 async function logout(_req, res) {
   res.setHeader('Set-Cookie', `${authService.SESSION_COOKIE}=; ${clearCookieOptions()}`)
   return res.status(204).send()
@@ -83,4 +93,4 @@ async function updateProfile(req, res) {
   }
 }
 
-module.exports = { register, login, logout, me, updateProfile }
+module.exports = { register, login, loginWithGoogle, logout, me, updateProfile }
