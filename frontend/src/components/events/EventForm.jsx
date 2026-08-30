@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import TimePicker from '../common/TimePicker.jsx'
 import EventMapPicker from '../map/EventMapPicker.jsx'
 import { Check, Sparkles } from 'lucide-react'
+import CustomSelect from '../common/CustomSelect.jsx'
 import { generateEventDescription } from '../../services/eventService.js'
 import '../../styles/createEvent.css'
 
@@ -345,10 +346,14 @@ export default function EventForm({ onSubmit, submitting = false, serverError = 
 
           <div className="form-field">
             <label htmlFor="event-category">Category <span className="required-star">*</span></label>
-            <select id="event-category" value={form.category} onChange={(event) => update('category', event.target.value)}>
-              <option value="">Select category</option>
-              {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-            </select>
+            <CustomSelect
+              id="event-category"
+              value={form.category}
+              onChange={(val) => update('category', val)}
+              options={CATEGORIES}
+              placeholder="Select category"
+              iconType="category"
+            />
           </div>
 
           <div className="form-field">

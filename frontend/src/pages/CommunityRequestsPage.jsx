@@ -25,7 +25,7 @@ export default function CommunityRequestsPage() {
         <div className="event-board-header__overlay" />
         <div className="event-board-header__content">
           <span className="event-board-header__badge">EventHive · Demand</span>
-          <h1>What the Community Wants</h1>
+          <h1>Community Ideas Matter</h1>
           <p className="event-board-header__sub">
             See what events people are asking for and help bring them to life.
           </p>

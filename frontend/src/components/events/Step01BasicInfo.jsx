@@ -204,6 +204,18 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
             className={`form-textarea ${errors.description ? 'form-textarea--error' : ''}`}
           />
 
+          <div className="form-field-footer">
+            {errors.description ? (
+              <span className="form-field-error">{errors.description}</span>
+            ) : (
+              <span />
+            )}
+
+            <span className="form-char-count">
+              {currentCount} / {maxChars}
+            </span>
+          </div>
+
           <div className="event-description-ai">
             <div className="event-description-ai__controls">
               <button
@@ -236,18 +248,6 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
                 {descriptionAiError}
               </p>
             )}
-          </div>
-
-          <div className="form-field-footer">
-            {errors.description ? (
-              <span className="form-field-error">{errors.description}</span>
-            ) : (
-              <span />
-            )}
-
-            <span className="form-char-count">
-              {currentCount} / {maxChars}
-            </span>
           </div>
         </div>
       </div>

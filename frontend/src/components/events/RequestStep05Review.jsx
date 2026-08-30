@@ -142,7 +142,7 @@ export default function RequestStep05Review({ form, currentUser, onGoToStep }) {
               </div>
               <div className="review-row">
                 <span className="review-label">Support Goal</span>
-                <span className="review-value font-medium" style={{ color: '#6d28d9', fontWeight: 750 }}>
+                <span className="review-value">
                   {form.demandThreshold ? `${form.demandThreshold} interested people needed` : 'Not set'}
                 </span>
               </div>

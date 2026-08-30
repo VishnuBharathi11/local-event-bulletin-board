@@ -24,9 +24,9 @@
 
 .map-view-header__left {
   display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .map-view-back-btn {
@@ -80,109 +80,23 @@
 }
 
 /* --------------------------------------------------------------------------
-   Filter Cards (View & Radius)
+   Filter Controls (View & Radius - Custom UI Dropdowns)
    -------------------------------------------------------------------------- */
-.map-filter-card-wrapper {
+.map-view-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 175px;
   position: relative;
 }
 
-.map-filter-card {
-  min-width: 145px;
-  background: #ffffff;
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: 12px;
-  padding: 8px 14px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.map-filter-card:hover,
-.map-filter-card--open {
-  border-color: var(--brand, #5E2EA8);
-  box-shadow: 0 4px 12px rgba(94, 46, 168, 0.08);
-}
-
-.map-filter-card__label {
+.map-view-field__label {
   display: block;
   font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted, #64748B);
-  margin-bottom: 2px;
-}
-
-.map-filter-card__value-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.map-filter-card__icon-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #F1F5F9;
-  display: grid;
-  place-items: center;
-  color: #475569;
-  flex-shrink: 0;
-}
-
-.map-filter-card__value {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--text-strong, #172033);
-  flex: 1;
-}
-
-.map-filter-card__chevron {
-  color: #94A3B8;
-  transition: transform 0.2s ease;
-}
-
-.map-filter-card--open .map-filter-card__chevron {
-  transform: rotate(180deg);
-}
-
-.map-filter-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  min-width: 100%;
-  background: #ffffff;
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  z-index: 100;
-  overflow: hidden;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-}
-
-.map-filter-option {
-  width: 100%;
-  padding: 8px 12px;
-  text-align: left;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-strong, #172033);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.map-filter-option:hover {
-  background: #F1F5F9;
-}
-
-.map-filter-option--active {
-  background: var(--brand-light, #F3ECFA);
-  color: var(--brand, #5E2EA8);
-  font-weight: 700;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  margin-bottom: 5px;
 }
 
 /* --------------------------------------------------------------------------
@@ -1002,15 +916,14 @@ body.chat-assistant-open .event-board__map-action-wrap {
 
   .map-view-header__right {
     width: 100%;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
   }
 
-  .map-filter-card-wrapper {
-    flex: 1;
-  }
-
-  .map-filter-card {
-    min-width: unset;
+  .map-view-field {
+    min-width: 0;
     width: 100%;
   }
 

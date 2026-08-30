@@ -767,7 +767,11 @@ em {
               border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.event-card:hover,
+.event-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 20px -6px rgba(109, 40, 217, 0.08) !important;
+}
+
 .request-card:hover {
   transform: translateY(-3px) !important;
   box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.15) !important;
@@ -1091,12 +1095,12 @@ em {
 
 /* --- Event Card visual refinement --- */
 .event-card {
-  border: 1px solid var(--border) !important;
+  border: 1px solid #ede5fc !important;
   border-radius: var(--radius-md) !important;
-  background: var(--surface) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #faf6fe 100%) !important;
   padding: 10px !important;
-  box-shadow: 0 4px 10px rgba(23, 32, 51, 0.02) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 10px rgba(109, 40, 217, 0.04) !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   display: flex !important;
   flex-direction: column !important;
   height: 100% !important;
@@ -1105,15 +1109,16 @@ em {
 
 .event-card:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 20px -6px rgba(94, 46, 168, 0.1),
+  box-shadow: 0 10px 20px -6px rgba(109, 40, 217, 0.08),
               0 3px 8px -3px rgba(23, 32, 51, 0.03) !important;
-  border-color: var(--brand-secondary) !important;
+  border-color: #ede5fc !important;
+  outline: none !important;
 }
 
 .event-card__image-wrap {
-  margin: -10px -10px 10px !important;
+  margin: 0 0 10px !important;
   aspect-ratio: 2.1 / 1 !important;
-  border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+  border-radius: 8px !important;
   overflow: hidden;
   position: relative;
   background-color: var(--brand-light) !important;

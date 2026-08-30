@@ -4,6 +4,7 @@ import { CalendarDays, Calendar, MessageSquare, User, LogOut } from 'lucide-reac
 import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/eventhive.svg'
 import ChatAssistant from '../components/ChatAssistant.jsx'
+
 const navigation = [
   { to: '/', label: 'Event Board', end: true, icon: CalendarDays },
   { to: '/calendar', label: 'Calendar', icon: Calendar },

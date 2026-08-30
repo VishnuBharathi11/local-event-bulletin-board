@@ -1,4 +1,5 @@
 import { DATE_FILTERS } from '../../state/discoveryState.js'
+import CustomSelect from '../common/CustomSelect.jsx'
 
 export default function DateFilter({ value, onChange }) {
   const isCustomDate = value && !DATE_FILTERS.includes(value)
@@ -21,17 +22,21 @@ export default function DateFilter({ value, onChange }) {
     }
   }
 
+  const options = [
+    ...(isCustomDate ? [{ value, label: customLabel }] : []),
+    ...DATE_FILTERS.map((f) => ({ value: f, label: f })),
+  ]
+
   return (
-    <label className="discovery-field" htmlFor="event-date-filter">
+    <div className="discovery-field">
       <span>Date</span>
-      <select id="event-date-filter" value={value} onChange={(event) => onChange(event.target.value)}>
-        {isCustomDate && <option value={value}>{customLabel}</option>}
-        {DATE_FILTERS.map((filter) => (
-          <option key={filter} value={filter}>
-            {filter}
-          </option>
-        ))}
-      </select>
-    </label>
+      <CustomSelect
+        id="event-date-filter"
+        value={value}
+        onChange={onChange}
+        options={options}
+        iconType="date"
+      />
+    </div>
   )
 }

@@ -29,6 +29,7 @@ import {
 import { useLocation } from '../../context/LocationContext.jsx';
 import { EVENT_CATEGORIES } from '../../state/discoveryState.js';
 import { isPincode } from '../../utils/eventDiscovery.js';
+import CustomSelect from '../common/CustomSelect.jsx';
 import '../../styles/eventMap.css';
 
 const DEFAULT_CENTER = {
@@ -1049,80 +1050,28 @@ export default function EventMap({
         </div>
 
         <div className="map-view-header__right">
-          {/* View Filter Card */}
-          <div className="map-filter-card-wrapper">
-            <div
-              className={`map-filter-card ${viewDropdownOpen ? 'map-filter-card--open' : ''}`}
-              onClick={() => {
-                setViewDropdownOpen(!viewDropdownOpen);
-                setRadiusDropdownOpen(false);
-              }}
-            >
-              <span className="map-filter-card__label">View</span>
-              <div className="map-filter-card__value-row">
-                <div className="map-filter-card__icon-dot">
-                  <MapPin size={13} />
-                </div>
-                <span className="map-filter-card__value">{viewFilter}</span>
-                <ChevronDown size={14} className="map-filter-card__chevron" />
-              </div>
-            </div>
-
-            {viewDropdownOpen && (
-              <div className="map-filter-dropdown">
-                {['All Events', 'Today', 'This Week', 'This Weekend'].map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    className={`map-filter-option ${viewFilter === opt ? 'map-filter-option--active' : ''}`}
-                    onClick={() => {
-                      setViewFilter(opt);
-                      setViewDropdownOpen(false);
-                    }}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* View Filter Field */}
+          <div className="map-view-field">
+            <span className="map-view-field__label">View</span>
+            <CustomSelect
+              id="map-view-filter"
+              value={viewFilter}
+              onChange={setViewFilter}
+              options={['All Events', 'Today', 'This Week', 'This Weekend']}
+              iconType="view"
+            />
           </div>
 
-          {/* Radius Filter Card */}
-          <div className="map-filter-card-wrapper">
-            <div
-              className={`map-filter-card ${radiusDropdownOpen ? 'map-filter-card--open' : ''}`}
-              onClick={() => {
-                setRadiusDropdownOpen(!radiusDropdownOpen);
-                setViewDropdownOpen(false);
-              }}
-            >
-              <span className="map-filter-card__label">Radius</span>
-              <div className="map-filter-card__value-row">
-                <div className="map-filter-card__icon-dot">
-                  <Crosshair size={13} />
-                </div>
-                <span className="map-filter-card__value">{radiusFilter}</span>
-                <ChevronDown size={14} className="map-filter-card__chevron" />
-              </div>
-            </div>
-
-            {radiusDropdownOpen && (
-              <div className="map-filter-dropdown">
-                {['5 km', '10 km', '25 km', '50 km', 'All'].map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    className={`map-filter-option ${radiusFilter === opt ? 'map-filter-option--active' : ''}`}
-                    onClick={() => {
-                      setRadiusFilter(opt);
-                      setRadiusDropdownOpen(false);
-                    }}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* Radius Filter Field */}
+          <div className="map-view-field">
+            <span className="map-view-field__label">Radius</span>
+            <CustomSelect
+              id="map-radius-filter"
+              value={radiusFilter}
+              onChange={setRadiusFilter}
+              options={['All', '5 km', '10 km', '25 km', '50 km']}
+              iconType="radius"
+            />
           </div>
         </div>
       </div>

@@ -9,6 +9,8 @@ import {
   Camera,
   FileSearch,
   Users,
+  Eye,
+  CheckCircle2,
   Lightbulb
 } from 'lucide-react'
 
@@ -49,11 +51,6 @@ export default function CreateEventLeftPanel({ currentStep = 1, isEdit = false }
           <ArrowLeft size={16} strokeWidth={2.2} />
           <span>Back to Event Board</span>
         </Link>
-        <div className="create-event-badge-row">
-          <span className="create-event-badge">
-            {isEdit ? 'EDIT EVENT' : 'NEW EVENT'}
-          </span>
-        </div>
         <h1 className="create-event-panel-left__title">
           {isEdit ? 'Edit Event' : 'Create New Event'}
         </h1>
@@ -69,10 +66,19 @@ export default function CreateEventLeftPanel({ currentStep = 1, isEdit = false }
         </p>
       </div>
 
-      {/* Middle Content: Everything You Can Do / You're Almost Done Card & Illustration */}
+      {/* Middle Content: Everything You Can Do / You're Almost Done Card with Inner Background Illustration */}
       <div className="create-event-panel-left__body">
         {currentStep < 5 ? (
           <div className="create-event-feature-card">
+            {/* Step Dynamic Illustration inside inner card background */}
+            <div className="create-event-illustration-wrap" aria-hidden="true">
+              <img
+                key={illustrationSrc}
+                src={illustrationSrc}
+                alt=""
+                className="create-event-illustration-img"
+              />
+            </div>
             <h2 className="create-event-feature-card__title">Everything you can do</h2>
             <ul className="create-event-feature-list">
               <li className="create-event-feature-item">
@@ -121,9 +127,18 @@ export default function CreateEventLeftPanel({ currentStep = 1, isEdit = false }
           </div>
         ) : (
           <div className="create-event-feature-card">
+            {/* Step Dynamic Illustration inside inner card background */}
+            <div className="create-event-illustration-wrap" aria-hidden="true">
+              <img
+                key={illustrationSrc}
+                src={illustrationSrc}
+                alt=""
+                className="create-event-illustration-img"
+              />
+            </div>
             <h2 className="create-event-feature-card__title">You're almost done!</h2>
             <p className="create-event-feature-card__subtitle">Review your event details before publishing.</p>
-            <ul className="create-event-feature-list" style={{ marginTop: '14px' }}>
+            <ul className="create-event-feature-list" style={{ marginTop: '10px' }}>
               <li className="create-event-feature-item">
                 <div className="create-event-feature-icon"><FileSearch size={14} strokeWidth={2.2} /></div>
                 <div>
@@ -139,25 +154,29 @@ export default function CreateEventLeftPanel({ currentStep = 1, isEdit = false }
                 </div>
               </li>
               <li className="create-event-feature-item">
-                <div className="create-event-feature-icon"><Users size={14} strokeWidth={2.2} /></div>
+                <div className="create-event-feature-icon"><Eye size={14} strokeWidth={2.2} /></div>
+                <div>
+                  <strong>Preview Your Event</strong>
+                  <p>See how your event will appear before publishing.</p>
+                </div>
+              </li>
+              <li className="create-event-feature-item">
+                <div className="create-event-feature-icon"><CheckCircle2 size={14} strokeWidth={2.2} /></div>
                 <div>
                   <strong>Ready to Publish</strong>
                   <p>Once published, your event will be visible to the community.</p>
                 </div>
               </li>
+              <li className="create-event-feature-item">
+                <div className="create-event-feature-icon"><Users size={14} strokeWidth={2.2} /></div>
+                <div>
+                  <strong>Reach Your Community</strong>
+                  <p>Help neighbors discover and join your event.</p>
+                </div>
+              </li>
             </ul>
           </div>
         )}
-
-        {/* Step Dynamic Illustration */}
-        <div className="create-event-illustration-wrap" aria-hidden="true">
-          <img
-            key={illustrationSrc}
-            src={illustrationSrc}
-            alt=""
-            className="create-event-illustration-img"
-          />
-        </div>
       </div>
 
       {/* Bottom Tip Card */}

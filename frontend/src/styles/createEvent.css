@@ -261,12 +261,15 @@
 
 .event-description-ai {
   margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .event-description-ai__controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .event-description-ai__button {
@@ -279,11 +282,11 @@
 
 .event-description-ai__hint {
   display: block;
-  margin-top: 7px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 12.5px;
 }
 
 .event-description-ai__error {
-  margin: 7px 0 0;
+  margin: 8px 0 0;
   font-size: 12px;
 }

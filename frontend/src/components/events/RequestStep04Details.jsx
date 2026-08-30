@@ -1,4 +1,5 @@
 import { ListFilter, UploadCloud, Image as ImageIcon, X } from 'lucide-react'
+import CustomSelect from '../common/CustomSelect.jsx'
 
 const CATEGORIES = [
   'Sports',
@@ -50,17 +51,15 @@ export default function RequestStep04Details({ form, update, errors = {} }) {
           <label htmlFor="request-category">
             Category <span className="required-star">*</span>
           </label>
-          <select
+          <CustomSelect
             id="request-category"
             value={form.category || ''}
-            onChange={(e) => update('category', e.target.value)}
-            className={`form-select ${errors.category ? 'form-select--error' : ''}`}
-          >
-            <option value="">Select category</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+            onChange={(val) => update('category', val)}
+            options={CATEGORIES}
+            placeholder="Select category"
+            iconType="category"
+            error={Boolean(errors.category)}
+          />
           {errors.category && <span className="form-field-error">{errors.category}</span>}
         </div>
 

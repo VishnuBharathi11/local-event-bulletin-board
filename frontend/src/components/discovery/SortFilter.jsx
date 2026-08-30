@@ -1,12 +1,17 @@
 import { SORT_ORDERS } from '../../state/discoveryState.js'
+import CustomSelect from '../common/CustomSelect.jsx'
 
 export default function SortFilter({ value, onChange }) {
   return (
-    <label className="discovery-field" htmlFor="event-sort-order">
+    <div className="discovery-field">
       <span>Sort</span>
-      <select id="event-sort-order" value={value} onChange={(event) => onChange(event.target.value)}>
-        {SORT_ORDERS.map((order) => <option key={order} value={order}>{order}</option>)}
-      </select>
-    </label>
+      <CustomSelect
+        id="event-sort-order"
+        value={value}
+        onChange={onChange}
+        options={SORT_ORDERS}
+        iconType="sort"
+      />
+    </div>
   )
 }

@@ -8,6 +8,9 @@ import {
   CheckCircle2,
   FileSearch,
   ShieldCheck,
+  HeartHandshake,
+  Send,
+  CalendarCheck,
   Lightbulb
 } from 'lucide-react'
 
@@ -51,11 +54,6 @@ export default function CreateEventRequestLeftPanel({ currentStep = 1, isEdit = 
           <ArrowLeft size={16} strokeWidth={2.2} />
           <span>{isEdit ? 'Back to Profile' : 'Back to Community Requests'}</span>
         </Link>
-        <div className="create-event-badge-row">
-          <span className="create-event-badge">
-            {isEdit ? 'EDIT REQUEST' : 'NEW REQUEST'}
-          </span>
-        </div>
         <h1 className="create-event-panel-left__title">
           {isEdit ? 'Update Request' : 'Request New Event'}
         </h1>
@@ -71,10 +69,19 @@ export default function CreateEventRequestLeftPanel({ currentStep = 1, isEdit = 
         </p>
       </div>
 
-      {/* Middle Content: How Requests Work Glass Card & Illustration */}
+      {/* Middle Content: How Requests Work Glass Card with Inner Background Illustration */}
       <div className="create-event-panel-left__body">
         {currentStep < 5 ? (
           <div className="create-event-feature-card">
+            {/* Dynamic Illustration inside inner card background */}
+            <div className="create-event-illustration-wrap" aria-hidden="true">
+              <img
+                key={illustrationSrc}
+                src={illustrationSrc}
+                alt=""
+                className="create-event-illustration-img"
+              />
+            </div>
             <h2 className="create-event-feature-card__title">How Requests Work</h2>
             <ul className="create-event-feature-list">
               <li className="create-event-feature-item">
@@ -126,9 +133,18 @@ export default function CreateEventRequestLeftPanel({ currentStep = 1, isEdit = 
           </div>
         ) : (
           <div className="create-event-feature-card">
+            {/* Dynamic Illustration inside inner card background */}
+            <div className="create-event-illustration-wrap" aria-hidden="true">
+              <img
+                key={illustrationSrc}
+                src={illustrationSrc}
+                alt=""
+                className="create-event-illustration-img"
+              />
+            </div>
             <h2 className="create-event-feature-card__title">You're almost done!</h2>
             <p className="create-event-feature-card__subtitle">Review your request details before submitting.</p>
-            <ul className="create-event-feature-list" style={{ marginTop: '14px' }}>
+            <ul className="create-event-feature-list" style={{ marginTop: '10px' }}>
               <li className="create-event-feature-item">
                 <div className="create-event-feature-icon">
                   <FileSearch size={14} strokeWidth={2.2} />
@@ -149,26 +165,34 @@ export default function CreateEventRequestLeftPanel({ currentStep = 1, isEdit = 
               </li>
               <li className="create-event-feature-item">
                 <div className="create-event-feature-icon">
-                  <Users size={14} strokeWidth={2.2} />
+                  <HeartHandshake size={14} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <strong>Build Community Interest</strong>
+                  <p>Let neighbors show their interest in your event idea.</p>
+                </div>
+              </li>
+              <li className="create-event-feature-item">
+                <div className="create-event-feature-icon">
+                  <Send size={14} strokeWidth={2.2} />
                 </div>
                 <div>
                   <strong>Ready to Submit</strong>
                   <p>Neighbors can start upvoting immediately.</p>
                 </div>
               </li>
+              <li className="create-event-feature-item">
+                <div className="create-event-feature-icon">
+                  <CalendarCheck size={14} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <strong>Turn It Into an Event</strong>
+                  <p>Once enough people are interested, organizers can bring it to life.</p>
+                </div>
+              </li>
             </ul>
           </div>
         )}
-
-        {/* Dynamic Illustration for each step */}
-        <div className="create-event-illustration-wrap" aria-hidden="true">
-          <img
-            key={illustrationSrc}
-            src={illustrationSrc}
-            alt=""
-            className="create-event-illustration-img"
-          />
-        </div>
       </div>
 
       {/* Bottom Tip Card */}
