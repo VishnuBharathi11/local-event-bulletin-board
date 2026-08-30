@@ -78,6 +78,9 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
   }
 
   function handleDescriptionChange(event) {
+    // Invalidate any in-flight AI response before accepting the user's edit.
+    // This prevents a stale response from replacing newer manual content.
+    requestIdRef.current += 1
     update('description', event.target.value)
     setDescriptionAiError('')
   }
@@ -128,11 +131,6 @@ export default function Step01BasicInfo({ form, update, currentUser, errors = {}
         setGeneratingDescription(false)
       }
     }
-  }
-
-  function handleDescriptionChange(event) {
-    update('description', event.target.value)
-    setDescriptionAiError('')
   }
 
   return (
