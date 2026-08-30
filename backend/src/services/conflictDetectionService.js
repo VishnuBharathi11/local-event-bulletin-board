@@ -2,7 +2,21 @@ const { normalizeEvent } = require('../models/eventModel')
 const { calculateActivitySimilarity } = require('./activityDomainSimilarity')
 
 const CONFLICT_THRESHOLD = 70
-const STOP_WORDS = new Set(['a', 'an', 'the', 'and', 'or', 'in', 'on', 'at', 'to', 'for', 'with', 'by'])
+
+const STOP_WORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'and',
+  'or',
+  'in',
+  'on',
+  'at',
+  'to',
+  'for',
+  'with',
+  'by',
+])
 
 function tokenize(text) {
   return String(text)
@@ -16,55 +30,111 @@ function tokenize(text) {
 function titleSimilarity(title1, title2) {
   const tokens1 = tokenize(title1)
   const tokens2 = tokenize(title2)
+
   if (tokens1.size === 0 || tokens2.size === 0) return 0
 
   let intersection = 0
-  for (const token of tokens1) if (tokens2.has(token)) intersection += 1
+
+  for (const token of tokens1) {
+    if (tokens2.has(token)) {
+      intersection += 1
+    }
+  }
+
   const union = new Set([...tokens1, ...tokens2]).size
+
   return intersection / union
 }
 
 function calculateConflict(newEventInput, existingInput) {
   const newEvent = normalizeEvent(newEventInput)
   const existing = normalizeEvent(existingInput)
+
   const reasons = []
   let score = 0
 
-  let locationScore = 0
-  if (newEvent.city.toLocaleLowerCase() === existing.city.toLocaleLowerCase()) {
-    locationScore += 15
+  // Location scoring:
+  // Same city = 15
+  // Same neighborhood = 10
+  // Same specific location = 5
+
+  const newCity = newEvent.city.toLocaleLowerCase()
+  const existingCity = existing.city.toLocaleLowerCase()
+
+  if (newCity === existingCity) {
+    score += 15
     reasons.push('Same city')
-    if (newEvent.neighborhood.toLocaleLowerCase() === existing.neighborhood.toLocaleLowerCase()) {
-      locationScore += 10
+
+    const newNeighborhood = newEvent.neighborhood.toLocaleLowerCase()
+    const existingNeighborhood = existing.neighborhood.toLocaleLowerCase()
+
+    if (newNeighborhood === existingNeighborhood) {
+      score += 10
       reasons.push('Same neighborhood')
-      if (newEvent.location.toLocaleLowerCase() === existing.location.toLocaleLowerCase()) {
-        locationScore += 5
+
+      const newLocation = newEvent.location.toLocaleLowerCase()
+      const existingLocation = existing.location.toLocaleLowerCase()
+
+      if (newLocation === existingLocation) {
+        score += 5
         reasons.push('Same specific location')
       }
     }
   }
-  score += locationScore
 
-  const overlaps = newEvent.startTime < existing.endTime && newEvent.endTime > existing.startTime
+  // Time overlap = 30 points.
+  // Boundary-touching events do not overlap.
+
+  const overlaps =
+    newEvent.startTime < existing.endTime &&
+    newEvent.endTime > existing.startTime
+
   if (overlaps) {
     score += 30
     reasons.push('Time overlaps with existing event')
   }
+
+  // Same category = 20 points.
 
   if (newEvent.category === existing.category) {
     score += 20
     reasons.push('Same event category')
   }
 
+  // Title similarity contributes at most 20 points.
+  //
+  // Only meaningful similarity contributes to the score.
+  // This prevents unrelated titles such as "Unique A" and
+  // "Unique B" from receiving title points.
+
   const similarity = titleSimilarity(newEvent.title, existing.title)
   const titleScore = Math.round(similarity * 20)
-  if (titleScore > 5) {
+
+  const newTitleTokens = tokenize(newEvent.title)
+  const existingTitleTokens = tokenize(existing.title)
+
+  if (
+    newTitleTokens.size >= 2 &&
+    existingTitleTokens.size >= 2 &&
+    similarity > 0.5 &&
+    titleScore > 5
+  ) {
     score += titleScore
     reasons.push('Event title appears similar')
   }
 
+  // Activity similarity is additional intelligence.
+  //
+  // IMPORTANT:
+  // It does NOT modify conflictScore.
+  // It does NOT participate in conflict ordering.
+  // The existing deterministic conflict score remains authoritative.
+
   const activity = calculateActivitySimilarity(newEvent, existing)
-  if (activity.activityReason) reasons.push(activity.activityReason)
+
+  if (activity.activityReason) {
+    reasons.push(activity.activityReason)
+  }
 
   return {
     conflictId: '',
@@ -82,11 +152,28 @@ function calculateConflict(newEventInput, existingInput) {
 
 function detectConflicts(newEventInput, existingEvents) {
   const newEvent = normalizeEvent(newEventInput)
+
   return existingEvents
     .filter((existing) => existing.eventId !== newEvent.eventId)
-    .map((existing) => calculateConflict(newEvent, existing))
-    .filter((conflict) => conflict.conflictScore >= CONFLICT_THRESHOLD)
-    .sort((a, b) => b.conflictScore - a.conflictScore)
+    .map((existing, index) => ({
+      conflict: calculateConflict(newEvent, existing),
+      index,
+    }))
+    .filter(({ conflict }) => conflict.conflictScore >= CONFLICT_THRESHOLD)
+    .sort((a, b) => {
+      if (b.conflict.conflictScore !== a.conflict.conflictScore) {
+        return b.conflict.conflictScore - a.conflict.conflictScore
+      }
+
+      return a.index - b.index
+    })
+    .map(({ conflict }) => conflict)
 }
 
-module.exports = { CONFLICT_THRESHOLD, tokenize, titleSimilarity, calculateConflict, detectConflicts }
+module.exports = {
+  CONFLICT_THRESHOLD,
+  tokenize,
+  titleSimilarity,
+  calculateConflict,
+  detectConflicts,
+}

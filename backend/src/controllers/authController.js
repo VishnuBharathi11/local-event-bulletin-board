@@ -65,7 +65,10 @@ async function login(req, res) {
 
 async function loginWithGoogle(req, res) {
   try {
-    const result = await authService.loginWithGoogle(req.body?.idToken)
+    const result = await authService.loginWithGoogle(
+      req.body?.idToken,
+      req.body?.mode
+    )
     setSessionCookie(res, result.token)
     return res.status(200).json({ user: result.user })
   } catch (error) {

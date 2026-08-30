@@ -37,7 +37,7 @@ export default function RegisterPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await loginWithGoogle()
+      await loginWithGoogle('register')
       navigate('/', { replace: true })
     } catch (requestError) {
       setError(requestError.message || 'Unable to continue with Google. Please try again.')

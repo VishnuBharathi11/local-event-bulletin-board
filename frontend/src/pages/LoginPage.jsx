@@ -37,12 +37,14 @@ export default function LoginPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await loginWithGoogle()
+      await loginWithGoogle('login')
       navigate(location.state?.from || '/', { replace: true })
     } catch (requestError) {
-      setError(requestError.message || 'Unable to sign in with Google. Please try again.')
-    } finally {
-      setSubmitting(false)
+      setError(
+        requestError.status === 404
+          ? 'User does not exist. Please register first.'
+          : requestError.message || 'Unable to sign in with Google. Please try again.'
+      )
     }
   }
 

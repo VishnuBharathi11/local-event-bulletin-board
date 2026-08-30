@@ -38,8 +38,8 @@ export function AuthProvider({ children }) {
     return response.user
   }, [])
 
-  const loginWithGoogle = useCallback(async () => {
-    const response = await authService.signInWithGoogle()
+  const loginWithGoogle = useCallback(async (mode = 'login') => {
+    const response = await authService.signInWithGoogle(mode)
     setCurrentUser(response.user)
     setStatus('authenticated')
     return response.user
