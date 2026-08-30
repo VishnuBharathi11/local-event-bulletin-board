@@ -1,0 +1,9 @@
+{
+    "hosting": {
+        "site": "genial-core-506613-t3",
+        "public": ".",
+        "ignore": [
+            "firebase.json"
+        ]
+    }
+}

@@ -102,19 +102,18 @@ export default function EventCard({
 
       <div className="event-card__organizer" aria-label={`Organizer ${event.organizerName || 'Event Organizer'}`}>
         <User size={13} aria-hidden="true" />
-        <span className="event-card__organizer-label">By</span>
-        <strong className="event-card__organizer-name">{event.organizerName || 'Event Organizer'}</strong>
+        <span className="event-card__organizer-name">{event.organizerName || 'Event Organizer'}</span>
       </div>
 
       <div className="event-card__info-block">
         <div className="event-card__info-item">
-          <CalendarDays size={13} aria-hidden="true" />
+          <CalendarDays size={14} aria-hidden="true" />
           <span className="event-card__datetime">
-            {formatDate(event.startTime)}
+            <strong>{formatDate(event.startTime)}</strong>
           </span>
         </div>
         <div className="event-card__info-item">
-          <Clock3 size={13} aria-hidden="true" />
+          <Clock3 size={14} aria-hidden="true" />
           <span className="event-card__datetime">
             {formatEventTimeRange(event.startTime, event.endTime)}
           </span>

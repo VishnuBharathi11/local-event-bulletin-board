@@ -97,7 +97,7 @@ export default function EmptyRequestsIllustration() {
           fill="#7c3aed"
           fontSize="21"
           fontWeight="800"
-          fontFamily="system-ui, -apple-system, 'Plus Jakarta Sans', sans-serif"
+          fontFamily="'Montserrat', system-ui, -apple-system, sans-serif"
         >
           ?
         </text>

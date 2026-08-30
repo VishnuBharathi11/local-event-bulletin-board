@@ -1,9 +1,9 @@
 
 .calendar-page {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 0 20px 40px;
+  padding: 0 0 36px;
   box-sizing: border-box;
 }
 

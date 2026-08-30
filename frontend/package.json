@@ -14,6 +14,8 @@
     "@react-google-maps/api": "^2.20.3",
     "firebase": "^12.18.0",
     "lucide-react": "^0.436.0",
+    "ogl": "^1.0.11",
+    "pngjs": "^7.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"

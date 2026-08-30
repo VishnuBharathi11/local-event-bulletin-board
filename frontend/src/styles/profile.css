@@ -2,9 +2,10 @@
 
 .profile-page-wrapper {
   width: 100%;
-  max-width: 1160px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding-bottom: 48px;
+  padding-bottom: 36px;
+  box-sizing: border-box;
 }
 
 /* 1. Profile Page Header */
@@ -61,14 +62,15 @@
   position: relative;
   overflow: hidden;
   background: linear-gradient(90deg, #4F2296 0%, #5B27A4 30%, #682CB4 60%, #7733C4 85%, #8339CE 100%);
-  border-radius: 14px;
-  padding: 24px 36px;
+  border-radius: 18px;
+  min-height: 200px;
+  padding: 36px 48px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   color: #ffffff;
-  margin-bottom: 22px;
-  box-shadow: 0 4px 18px rgba(79, 34, 150, 0.14);
+  margin-bottom: 26px;
+  box-shadow: 0 4px 20px rgba(79, 34, 150, 0.14);
 }
 
 .profile-hero-bg-curve {

@@ -902,18 +902,23 @@
 }
 
 /* --------------------------------------------------------------------------
-   See Map Floating Button on List View
+   See Map Floating Button on List View (Right-aligned above Ask EventHive)
    -------------------------------------------------------------------------- */
 .event-board__map-action-wrap {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
+  right: 24px;
+  bottom: 86px;
+  left: auto;
+  transform: none;
+  z-index: 110;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   width: auto;
   pointer-events: none;
+}
+
+body.chat-assistant-open .event-board__map-action-wrap {
+  display: none;
 }
 
 .event-board__see-map-btn {
@@ -921,30 +926,31 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 46px;
-  padding: 12px 28px !important;
-  font-size: 14.5px !important;
-  font-weight: 700 !important;
+  min-height: 48px;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  font-weight: 750 !important;
   cursor: pointer;
   border-radius: 999px !important;
-  box-shadow: 0 8px 30px rgba(94, 46, 168, 0.3) !important;
-  background-color: var(--brand) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  transition: all 0.2s ease-in-out;
+  box-shadow: 0 12px 30px rgb(22 34 54 / 18%) !important;
+  background: var(--brand) !important;
+  color: #fff !important;
+  border: 1px solid var(--brand) !important;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
 }
 
 .event-board__see-map-btn:hover {
-  transform: scale(1.03) translateY(-1px);
-  box-shadow: 0 12px 35px rgba(94, 46, 168, 0.4) !important;
+  background: var(--brand-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 15px 34px rgb(22 34 54 / 22%) !important;
 }
 
 .event-board__see-map-btn:active {
-  transform: scale(0.98);
+  transform: translateY(0);
 }
 
 .event-page--list-padding {
-  padding-bottom: 110px !important;
+  padding-bottom: 150px !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -1019,6 +1025,11 @@
 
   .map-search-container {
     width: calc(100% - 80px);
+  }
+
+  .event-board__map-action-wrap {
+    right: 16px;
+    bottom: 74px;
   }
 }
 

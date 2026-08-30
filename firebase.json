@@ -3,6 +3,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "target": "eventhive",
     "public": "frontend/dist",
     "ignore": [
       "firebase.json",

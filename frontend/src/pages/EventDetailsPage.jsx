@@ -1,4 +1,4 @@
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import {
   ArrowLeft,
@@ -28,6 +28,7 @@ import '../styles/eventDetails.css'
 export default function EventDetailsPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { status, event, error } = useEvent(eventId)
   const { authenticated, currentUser } = useAuth()
   const rsvp = useEventRSVP(eventId, authenticated, event?.rsvpCount)
@@ -159,6 +160,17 @@ export default function EventDetailsPage() {
     }
   }
 
+  function handleBackClick(e) {
+    if (location.state?.fromChat || sessionStorage.getItem('eventhive-reopen-chat-on-back') === 'true') {
+      e.preventDefault()
+      if (window.history.length > 1) {
+        navigate(-1)
+      } else {
+        navigate('/')
+      }
+    }
+  }
+
   return (
     <article className="event-details">
       <div className="event-details__container">
@@ -168,7 +180,7 @@ export default function EventDetailsPage() {
         <aside className="event-details__left">
           <div className="event-details__left-card" ref={leftCardRef}>
             {/* Top Back Link */}
-            <Link className="event-details__back-link" to="/">
+            <Link className="event-details__back-link" to="/" onClick={handleBackClick}>
               <ArrowLeft size={16} strokeWidth={2.4} />
               <span>Back to Event Board</span>
             </Link>
