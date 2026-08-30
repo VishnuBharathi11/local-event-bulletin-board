@@ -14,16 +14,28 @@ test('valid location search normalizes provider suggestions', async () => {
   const results = await searchLocations('Brookfield', {
     fetcher: async (url) => {
       requestedUrl = url
+
       return {
-        status: 'OK',
-        results: [
+        places: [
           {
-            name: 'Brookfield Mall',
-            formatted_address: 'Avinashi Road, Coimbatore, Tamil Nadu, India',
-            geometry: { location: { lat: 11.0168, lng: 76.9558 } },
-            address_components: [
-              { long_name: 'Coimbatore', types: ['locality'] },
-              { long_name: 'Avinashi Road', types: ['sublocality'] },
+            displayName: {
+              text: 'Brookfield Mall',
+            },
+            formattedAddress:
+              'Avinashi Road, Coimbatore, Tamil Nadu, India',
+            location: {
+              latitude: 11.0168,
+              longitude: 76.9558,
+            },
+            addressComponents: [
+              {
+                longText: 'Coimbatore',
+                types: ['locality'],
+              },
+              {
+                longText: 'Avinashi Road',
+                types: ['sublocality'],
+              },
             ],
           },
         ],
@@ -31,8 +43,13 @@ test('valid location search normalizes provider suggestions', async () => {
     },
   })
 
-  assert.match(requestedUrl, /maps\.googleapis\.com\/maps\/api\/place\/textsearch\/json/)
+  assert.equal(
+    requestedUrl,
+    'https://places.googleapis.com/v1/places:searchText'
+  )
+
   assert.equal(results.length, 1)
+
   assert.deepEqual(results[0], {
     venue: 'Brookfield Mall',
     address: 'Avinashi Road, Coimbatore, Tamil Nadu, India',
@@ -44,15 +61,24 @@ test('valid location search normalizes provider suggestions', async () => {
 })
 
 test('empty query is rejected', () => {
-  assert.throws(() => normalizeQuery(''), /at least 2 characters/)
+  assert.throws(
+    () => normalizeQuery(''),
+    /at least 2 characters/
+  )
 })
 
 test('short query is rejected', () => {
-  assert.throws(() => normalizeQuery('a'), /at least 2 characters/)
+  assert.throws(
+    () => normalizeQuery('a'),
+    /at least 2 characters/
+  )
 })
 
 test('oversized query is rejected', () => {
-  assert.throws(() => normalizeQuery('x'.repeat(101)), /must not exceed 100 characters/)
+  assert.throws(
+    () => normalizeQuery('x'.repeat(101)),
+    /must not exceed 100 characters/
+  )
 })
 
 test('provider result normalization tolerates missing optional address fields', () => {
@@ -60,7 +86,12 @@ test('provider result normalization tolerates missing optional address fields', 
     normalizePlaceResult({
       name: 'Community Hall',
       formatted_address: 'RS Puram, Coimbatore',
-      geometry: { location: { lat: 11.01, lng: 76.95 } },
+      geometry: {
+        location: {
+          lat: 11.01,
+          lng: 76.95,
+        },
+      },
       address_components: [],
     }),
     {
@@ -78,10 +109,21 @@ test('missing city and neighborhood remain empty rather than invented', () => {
   const result = normalizePlaceResult({
     name: 'Venue',
     formatted_address: 'Some address',
-    geometry: { location: { lat: 11, lng: 76 } },
+    geometry: {
+      location: {
+        lat: 11,
+        lng: 76,
+      },
+    },
     address_components: [
-      { long_name: 'Coimbatore District', types: ['administrative_area_level_2'] },
-      { long_name: 'Tamil Nadu', types: ['administrative_area_level_1'] },
+      {
+        long_name: 'Coimbatore District',
+        types: ['administrative_area_level_2'],
+      },
+      {
+        long_name: 'Tamil Nadu',
+        types: ['administrative_area_level_1'],
+      },
     ],
   })
 
@@ -92,38 +134,79 @@ test('missing city and neighborhood remain empty rather than invented', () => {
 test('malformed provider results are ignored', () => {
   const normalized = [
     normalizePlaceResult(null),
-    normalizePlaceResult({ name: 'No coordinates' }),
-    normalizePlaceResult({ name: '', formatted_address: '', geometry: { location: { lat: 11, lng: 76 } } }),
+    normalizePlaceResult({
+      name: 'No coordinates',
+    }),
+    normalizePlaceResult({
+      name: '',
+      formatted_address: '',
+      geometry: {
+        location: {
+          lat: 11,
+          lng: 76,
+        },
+      },
+    }),
   ]
 
-  assert.deepEqual(normalized, [null, null, null])
+  assert.deepEqual(normalized, [
+    null,
+    null,
+    null,
+  ])
 })
 
 test('duplicate results are removed deterministically', () => {
   const suggestions = [
-    { venue: 'Venue', address: 'Address', city: 'Coimbatore' },
-    { venue: 'venue', address: 'address', city: 'coimbatore' },
-    { venue: 'Other', address: 'Address 2', city: 'Coimbatore' },
+    {
+      venue: 'Venue',
+      address: 'Address',
+      city: 'Coimbatore',
+    },
+    {
+      venue: 'venue',
+      address: 'address',
+      city: 'coimbatore',
+    },
+    {
+      venue: 'Other',
+      address: 'Address 2',
+      city: 'Coimbatore',
+    },
   ]
 
-  assert.deepEqual(deduplicateSuggestions(suggestions), [
-    suggestions[0],
-    suggestions[2],
-  ])
+  assert.deepEqual(
+    deduplicateSuggestions(suggestions),
+    [
+      suggestions[0],
+      suggestions[2],
+    ]
+  )
 })
 
 test('provider failure is surfaced without leaking provider internals', async () => {
   await assert.rejects(
     searchLocations('Brookfield', {
-      fetcher: async () => ({ status: 'REQUEST_DENIED' }),
+      fetcher: async () => ({
+        error: {
+          status: 'PERMISSION_DENIED',
+          message: 'Request denied',
+        },
+      }),
     }),
-    (error) => error.code === 'LOCATION_PROVIDER_ERROR' && error.message === 'Location provider could not complete the search.'
+    (error) =>
+      error.code === 'LOCATION_PROVIDER_ERROR' &&
+      error.message ===
+        'Location provider could not complete the search.'
   )
 })
 
 test('provider configuration failure is explicit', async () => {
-  const previousPlacesKey = process.env.GOOGLE_PLACES_API_KEY
-  const previousGeocodingKey = process.env.GOOGLE_GEOCODING_API_KEY
+  const previousPlacesKey =
+    process.env.GOOGLE_PLACES_API_KEY
+
+  const previousGeocodingKey =
+    process.env.GOOGLE_GEOCODING_API_KEY
 
   delete process.env.GOOGLE_PLACES_API_KEY
   delete process.env.GOOGLE_GEOCODING_API_KEY
@@ -131,20 +214,32 @@ test('provider configuration failure is explicit', async () => {
   try {
     await assert.rejects(
       searchLocations('Brookfield'),
-      (error) => error.code === 'LOCATION_PROVIDER_NOT_CONFIGURED'
+      (error) =>
+        error.code ===
+        'LOCATION_PROVIDER_NOT_CONFIGURED'
     )
   } finally {
-    if (previousPlacesKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY
-    else process.env.GOOGLE_PLACES_API_KEY = previousPlacesKey
+    if (previousPlacesKey === undefined) {
+      delete process.env.GOOGLE_PLACES_API_KEY
+    } else {
+      process.env.GOOGLE_PLACES_API_KEY =
+        previousPlacesKey
+    }
 
-    if (previousGeocodingKey === undefined) delete process.env.GOOGLE_GEOCODING_API_KEY
-    else process.env.GOOGLE_GEOCODING_API_KEY = previousGeocodingKey
+    if (previousGeocodingKey === undefined) {
+      delete process.env.GOOGLE_GEOCODING_API_KEY
+    } else {
+      process.env.GOOGLE_GEOCODING_API_KEY =
+        previousGeocodingKey
+    }
   }
 })
 
 test('zero provider results return an empty suggestion list', async () => {
   const results = await searchLocations('NoSuchVenue', {
-    fetcher: async () => ({ status: 'ZERO_RESULTS', results: [] }),
+    fetcher: async () => ({
+      places: [],
+    }),
   })
 
   assert.deepEqual(results, [])
