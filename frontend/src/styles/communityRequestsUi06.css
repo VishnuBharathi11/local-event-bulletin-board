@@ -42,28 +42,6 @@
   min-width: 148px;
 }
 
-.request-grid--ui06 {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
-}
-
-.request-card--ui06 {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-  padding: 22px;
-  border-radius: var(--radius-md, 14px);
-  box-shadow: var(--shadow-sm, 0 8px 24px rgb(22 34 54 / 5%));
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.request-card--ui06:hover {
-  border-color: #c5d1df;
-  box-shadow: 0 14px 34px rgb(22 34 54 / 8%);
-  transform: translateY(-1px);
-}
-
 .request-card--threshold {
   border-color: #b8c9df;
   background: linear-gradient(180deg, #fff 0%, #f7faff 100%);

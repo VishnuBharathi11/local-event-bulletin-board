@@ -15,31 +15,29 @@ export default function CommunityRequestsPage() {
 
   return (
     <section className="community-requests-page community-requests-page--reference">
-      {/* 1. Hero Section matching reference screenshot */}
-      <header className="community-hero-card">
-        <div className="community-hero-card__content">
-          <span className="community-hero-card__eyebrow">EVENTHIVE · DEMAND</span>
-          <h1 className="community-hero-card__title">What the Community Wants</h1>
-          <p className="community-hero-card__desc">
+      {/* 1. Hero Section matching Event Board hero card */}
+      <header className="event-board-header event-board-header--all">
+        <div
+          className="event-board-header__bg"
+          style={{ backgroundImage: `url(${communityEventHero})` }}
+          aria-hidden="true"
+        />
+        <div className="event-board-header__overlay" />
+        <div className="event-board-header__content">
+          <span className="event-board-header__badge">EventHive · Demand</span>
+          <h1>What the Community Wants</h1>
+          <p className="event-board-header__sub">
             See what events people are asking for and help bring them to life.
           </p>
-          <div className="community-hero-card__actions">
-            <Link className="community-hero-card__btn-primary" to="/community-requests/new">
-              <PlusCircle size={18} strokeWidth={2.2} />
-              <span>Request Event</span>
-            </Link>
+          <div className="event-board-header__actions" style={{ marginTop: '20px' }}>
             <Link
-              to="/how-it-works"
-              className="community-hero-card__btn-secondary"
+              className="primary-button event-board-header__btn"
+              to="/community-requests/new"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              <span>How it works?</span>
-              <ArrowRight size={17} strokeWidth={2.2} />
+              <PlusCircle size={16} /> Request Event
             </Link>
           </div>
-        </div>
-
-        <div className="community-hero-card__illustration" aria-hidden="true">
-          <img src={communityEventHero} alt="" className="community-hero-card__img" />
         </div>
       </header>
 
@@ -80,7 +78,7 @@ export default function CommunityRequestsPage() {
 
       {/* Populated Requests Grid */}
       {status === 'success' && requests.length > 0 && (
-        <div className="request-grid request-grid--ui06" aria-live="polite">
+        <div className="event-grid event-grid--many request-grid" aria-live="polite">
           {requests.map((request) => (
             <EventRequestCard
               key={request.requestId}

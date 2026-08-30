@@ -7,8 +7,8 @@ import meetupsHero from '../assets/category-meetups.png'
 import studentHero from '../assets/category-student-events.png'
 import garageHero from '../assets/category-garage-sale.png'
 import communityHero from '../assets/category-community.png'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Map, Plus } from 'lucide-react'
 import EventCard from '../components/events/EventCard.jsx'
 import DiscoveryControls from '../components/discovery/DiscoveryControls.jsx'
@@ -21,25 +21,50 @@ import '../styles/eventMap.css'
 
 export default function EventBoardPage() {
   const { authenticated } = useAuth()
+  const [searchParams] = useSearchParams()
   const { status, events: rawEvents, error, reload, removeEvent } = useEvents()
   const discovery = useEventDiscovery(rawEvents)
   const { district, status: locationStatus, detectLocation } = useLocation()
-  const [viewMode, setViewMode] = useState('list')
+  const [viewMode, setViewMode] = useState(() => searchParams.get('view') === 'map' ? 'map' : 'list')
 
-  const CATEGORY_INFOS = {
-    All: { title: 'Discover local events', description: 'Explore and RSVP to activities happening in your community today.', image: eventCommunityHero },
-    Sports: { title: 'Sports & Activities', description: 'Find sports, fitness sessions, and outdoor games happening near you.', image: sportsHero },
-    Music: { title: 'Concerts & Gigs', description: 'Discover local live music, performances, and student concerts.', image: musicHero },
-    Food: { title: 'Food & Culinary', description: 'Explore food festivals, market stalls, and food pop-ups.', image: foodHero },
-    Workshops: { title: 'Workshops & Seminars', description: 'Learn new skills at classes, tutoring sessions, and seminars.', image: workshopsHero },
-    Meetups: { title: 'Socials & Meetups', description: 'Connect with people at neighborhood meetings and volunteer projects.', image: meetupsHero },
-    'Student Events': { title: 'Student Events', description: 'Check out study groups, campus meetups, and academic activities.', image: studentHero },
-    'Garage Sale': { title: 'Garage & Flea Sales', description: 'Find local yard sales, flea markets, and second-hand sales.', image: garageHero },
-    Community: { title: 'Community Programs', description: 'Participate in volunteer cleanups, local meetings, and civic workshops.', image: communityHero }
+  useEffect(() => {
+    const handleOpenMap = () => setViewMode('map')
+    window.addEventListener('eventhive:open-map', handleOpenMap)
+    return () => window.removeEventListener('eventhive:open-map', handleOpenMap)
+  }, [])
+
+  const CATEGORY_SLIDES = [
+    { category: 'All', title: 'Discover local events', description: 'Explore and RSVP to activities happening in your community today.', image: eventCommunityHero },
+    { category: 'Sports', title: 'Sports & Activities', description: 'Find sports, fitness sessions, and outdoor games happening near you.', image: sportsHero },
+    { category: 'Music', title: 'Concerts & Gigs', description: 'Discover local live music, performances, and student concerts.', image: musicHero },
+    { category: 'Food', title: 'Food & Culinary', description: 'Explore food festivals, market stalls, and food pop-ups.', image: foodHero },
+    { category: 'Workshops', title: 'Workshops & Seminars', description: 'Learn new skills at classes, tutoring sessions, and seminars.', image: workshopsHero },
+    { category: 'Meetups', title: 'Socials & Meetups', description: 'Connect with people at neighborhood meetings and volunteer projects.', image: meetupsHero },
+    { category: 'Student Events', title: 'Student Events', description: 'Check out study groups, campus meetups, and academic activities.', image: studentHero },
+    { category: 'Garage Sale', title: 'Garage & Flea Sales', description: 'Find local yard sales, flea markets, and second-hand sales.', image: garageHero },
+    { category: 'Community', title: 'Community Programs', description: 'Participate in volunteer cleanups, local meetings, and civic workshops.', image: communityHero }
+  ]
+
+  const EXTENDED_SLIDES = useMemo(() => [...CATEGORY_SLIDES, CATEGORY_SLIDES[0]], [])
+  const [slideIndex, setSlideIndex] = useState(0)
+  const [withTransition, setWithTransition] = useState(true)
+
+  useEffect(() => {
+    if (discovery.discovery.selectedCategory !== 'All') return
+    const timer = setInterval(() => {
+      setWithTransition(true)
+      setSlideIndex((prev) => prev + 1)
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [discovery.discovery.selectedCategory])
+
+  const handleTransitionEnd = () => {
+    if (slideIndex >= CATEGORY_SLIDES.length) {
+      // Instantly jump to index 0 (which matches the cloned last slide) without backwards animation
+      setWithTransition(false)
+      setSlideIndex(0)
+    }
   }
-
-  const categoryInfo = CATEGORY_INFOS[discovery.discovery.selectedCategory] || CATEGORY_INFOS.All
-  const categorySlug = discovery.discovery.selectedCategory.toLowerCase().replace(/\s+/g, '-')
 
   // Verification Logging for Map View data flow
   if (viewMode === 'map' && status === 'success') {
@@ -51,21 +76,52 @@ export default function EventBoardPage() {
     }
   }
 
+  const activeSlideIndex = discovery.discovery.selectedCategory === 'All'
+    ? slideIndex
+    : Math.max(0, CATEGORY_SLIDES.findIndex(s => s.category === discovery.discovery.selectedCategory))
+
   return (
     <section className={`event-page ${viewMode === 'list' ? 'event-page--list-padding' : ''}`}>
       {viewMode === 'list' && (
-        <header className={`event-board-header event-board-header--${categorySlug}`}>
-          {categoryInfo.image && <div className="event-board-header__bg" style={{ backgroundImage: `url(${categoryInfo.image})` }} aria-hidden="true" />}
-          <div className="event-board-header__overlay" />
-          <div className="event-board-header__content">
-            <span className="event-board-header__badge">EventHive · {discovery.discovery.selectedCategory}</span>
-            <h1>{categoryInfo.title}</h1>
-            <p className="event-board-header__sub">{categoryInfo.description}</p>
-            <div className="event-board-header__actions" style={{ marginTop: '20px' }}>
-              <Link className="primary-button event-board-header__btn" to="/events/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                <Plus size={16} /> Create Event
-              </Link>
-            </div>
+        <header className="event-board-header event-board-header--carousel">
+          <div
+            className="event-board-header__track"
+            onTransitionEnd={handleTransitionEnd}
+            style={{
+              transform: `translateX(-${activeSlideIndex * 100}%)`,
+              transition: withTransition ? 'transform 1.1s cubic-bezier(0.4, 0, 0.2, 1)' : 'none'
+            }}
+          >
+            {EXTENDED_SLIDES.map((slide, idx) => {
+              const slug = slide.category.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <div
+                  key={`${slide.category}-${idx}`}
+                  className={`event-board-header__slide event-board-header--${slug}`}
+                >
+                  <div
+                    className="event-board-header__bg"
+                    style={{ backgroundImage: `url(${slide.image})` }}
+                    aria-hidden="true"
+                  />
+                  <div className="event-board-header__overlay" />
+                  <div className="event-board-header__content">
+                    <span className="event-board-header__badge">EventHive · {slide.category}</span>
+                    <h1>{slide.title}</h1>
+                    <p className="event-board-header__sub">{slide.description}</p>
+                    <div className="event-board-header__actions" style={{ marginTop: '20px' }}>
+                      <Link
+                        className="primary-button event-board-header__btn"
+                        to="/events/new"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Plus size={16} /> Create Event
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </header>
       )}

@@ -381,7 +381,7 @@ export default function EventMap({
     distinctCategories.length > 0 && selectedCategories.length === distinctCategories.length;
 
   const [viewFilter, setViewFilter] = useState('All Events');
-  const [radiusFilter, setRadiusFilter] = useState('25 km');
+  const [radiusFilter, setRadiusFilter] = useState('All');
   const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
   const [radiusDropdownOpen, setRadiusDropdownOpen] = useState(false);
 

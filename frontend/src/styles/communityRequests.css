@@ -1,5 +1,9 @@
 .community-requests-page {
   width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding: 0 0 36px;
+  box-sizing: border-box;
 }
 
 .community-requests-header {
@@ -26,58 +30,71 @@
 
 .request-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
 }
 
-.request-card {
-  min-width: 0;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: 0 8px 24px rgb(22 34 54 / 4%);
+.request-card__demand-wrap {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
 }
 
-.request-card__topline {
+.request-card__demand-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 5px;
 }
 
-.request-card__category,
-.request-card__status {
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: 12px;
+.request-card__demand-count {
+  font-size: 11.5px;
   font-weight: 750;
+  color: #1e293b;
 }
 
-.request-card__category {
-  background: #e9eff8;
-  color: var(--brand-dark);
+.request-card__demand-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--brand);
 }
 
-.request-card__status {
-  background: #eef2f7;
-  color: #4c596c;
+.request-card__demand-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.request-card__demand-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.request-card__status--collecting_demand {
+  background: #f3e8ff;
+  color: #6d28d9;
 }
 
 .request-card__status--threshold_reached {
-  background: #e8edf8;
-  color: var(--brand);
+  background: #ede9fe;
+  color: #5b21b6;
+  font-weight: 800;
 }
 
 .request-card__status--confirmed {
   background: #e8f4ed;
-  color: var(--success);
+  color: #18794e;
 }
 
 .request-card__status--declined {
   background: #fcebea;
-  color: var(--danger);
+  color: #a12920;
 }
 
 .request-card h2 {
@@ -778,129 +795,6 @@
   padding-bottom: 40px;
 }
 
-/* 1. Hero Card */
-.community-hero-card {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 280px;
-  margin-bottom: 26px;
-  padding: 40px 48px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-}
-
-.community-hero-card__content {
-  position: relative;
-  z-index: 2;
-  max-width: 520px;
-}
-
-.community-hero-card__eyebrow {
-  display: inline-block;
-  color: #6d28d9;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-
-.community-hero-card__title {
-  margin: 0;
-  color: #0f172a;
-  font-size: clamp(32px, 3.8vw, 44px);
-  font-weight: 850;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
-}
-
-.community-hero-card__desc {
-  margin: 14px 0 24px;
-  color: #64748b;
-  font-size: 16px;
-  line-height: 1.55;
-  font-weight: 450;
-}
-
-.community-hero-card__actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.community-hero-card__btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 22px;
-  background-color: #6d28d9;
-  color: #ffffff !important;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  border-radius: 9px;
-  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.22);
-  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.community-hero-card__btn-primary:hover {
-  background-color: #5b21b6;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.3);
-}
-
-.community-hero-card__btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: transparent;
-  border: none;
-  color: #6d28d9;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 8px 4px;
-  transition: color 0.15s ease, transform 0.15s ease;
-}
-
-.community-hero-card__btn-secondary:hover {
-  color: #5b21b6;
-  transform: translateX(2px);
-}
-
-/* Right Illustration */
-.community-hero-card__illustration {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 58%;
-  pointer-events: none;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  overflow: hidden;
-}
-
-.community-hero-card__img {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  object-position: center right;
-  mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.15) 12%, rgba(0, 0, 0, 0.85) 30%, black 50%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.15) 12%, rgba(0, 0, 0, 0.85) 30%, black 50%);
-}
-
 /* 2. Empty State Card */
 .community-empty-card {
   display: flex;
@@ -1059,35 +953,7 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 900px) {
-  .community-hero-card {
-    padding: 36px 32px;
-  }
-  .community-hero-card__illustration {
-    width: 48%;
-    opacity: 0.7;
-  }
-}
-
 @media (max-width: 768px) {
-  .community-hero-card {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 32px 24px;
-    min-height: auto;
-  }
-  .community-hero-card__content {
-    max-width: 100%;
-  }
-  .community-hero-card__illustration {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    margin-top: 24px;
-    opacity: 1;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
-  }
   .community-empty-card {
     padding: 40px 20px;
   }
@@ -1099,9 +965,10 @@
 
 .event-request-view-page {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1360px;
   margin-inline: auto;
-  padding: 24px 20px 48px;
+  padding: 0 0 36px;
+  box-sizing: border-box;
 }
 
 .event-request-view-card {
@@ -1109,7 +976,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 20px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
-  padding: 36px 40px 44px;
+  padding: clamp(20px, 3.5vw, 36px);
 }
 
 .request-view-back-link {

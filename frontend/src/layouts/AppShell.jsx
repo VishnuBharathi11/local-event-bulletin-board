@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { CalendarDays, Calendar, MessageSquare, User, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import logo from '../assets/logo.jpeg'
+import logo from '../assets/eventhive.svg'
 import ChatAssistant from '../components/ChatAssistant.jsx'
 const navigation = [
   { to: '/', label: 'Event Board', end: true, icon: CalendarDays },

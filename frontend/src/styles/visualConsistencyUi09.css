@@ -1,7 +1,7 @@
 /* UI-09: final visual consistency and polish. Presentation only. */
 
 :root {
-  --font-family-base: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-base: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 html,
@@ -48,7 +48,6 @@ em {
 .request-form__intro h1,
 .request-details--ui07 .request-details__header--ui07 h1,
 .event-details__main h1,
-.auth-card h1,
 .create-event-header h1,
 .create-event-visual__content h1,
 .create-request-visual__content h1,
@@ -279,7 +278,6 @@ em {
   min-height: 46px;
 }
 
-.auth-form input:focus,
 .create-event-form input:focus,
 .create-event-form textarea:focus,
 .create-event-form select:focus,
@@ -438,7 +436,6 @@ em {
   .request-form__intro h1,
   .request-details--ui07 .request-details__header--ui07 h1,
   .event-details__main h1,
-  .auth-card h1,
   .create-event-header h1 {
     font-size: clamp(29px, 9vw, 40px);
   }
@@ -524,7 +521,7 @@ em {
 
 /* Data-adaptive Grid layouts for desktop/tablet */
 @media (min-width: 1440px) {
-  .event-grid {
+  .event-grid, .request-grid {
     display: grid !important;
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 20px !important;
@@ -533,19 +530,10 @@ em {
 }
 
 @media (min-width: 1025px) and (max-width: 1439px) {
-  .event-grid {
+  .event-grid, .request-grid {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 20px !important;
-    justify-content: stretch;
-  }
-}
-
-@media (min-width: 1025px) {
-  .request-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 24px !important;
     justify-content: stretch;
   }
 }
@@ -1166,90 +1154,99 @@ em {
   line-height: 1.25 !important;
   letter-spacing: -0.015em !important;
   color: var(--text-strong) !important;
-  margin: 0 0 6px !important;
+  margin: 0 0 2px !important;
   white-space: normal !important;
   overflow: hidden !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
-  /* Reserve space for exactly 2 lines */
-  height: 2.5em !important;
-  min-height: 2.5em !important;
+  height: auto !important;
+  min-height: auto !important;
 }
 
 .event-card__organizer {
   display: flex !important;
   align-items: center !important;
   gap: 5px !important;
+  margin-top: 2px !important;
   margin-bottom: 8px !important;
-  font-size: 11.5px !important;
+  padding: 2px 0 !important;
+  font-size: 12px !important;
   color: var(--text-muted) !important;
-  /* Reserve space for 1 line */
-  height: 1.4em !important;
-  min-height: 1.4em !important;
+  height: auto !important;
+  min-height: auto !important;
 }
 
 .event-card__organizer svg {
   color: var(--brand) !important;
-  opacity: 0.8 !important;
+  flex-shrink: 0 !important;
 }
 
 .event-card__organizer-label {
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   color: var(--text-muted) !important;
 }
 
 .event-card__organizer-name {
   color: var(--brand-dark) !important;
-  font-weight: 750 !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  padding: 2px 0 !important;
+  line-height: 1.2 !important;
 }
 
 .event-card__info-block {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: center !important;
+  gap: 5px !important;
+  min-width: 0 !important;
   margin: 0 0 8px !important;
-  border-bottom: 1px dashed var(--border) !important;
-  padding-bottom: 6px !important;
-  /* Reserve space for up to 2 lines of date/time */
-  height: 2.8em !important;
-  min-height: 2.8em !important;
+  padding: 8px 10px !important;
+  border-radius: 8px !important;
+  background: #f7f9fc !important;
+  border: 1px solid #edf2f7 !important;
+  height: auto !important;
+  min-height: auto !important;
 }
 
 .event-card__info-item {
   display: flex !important;
-  align-items: flex-start !important;
-  gap: 5px !important;
-  font-size: 11.5px !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
   color: var(--text-muted) !important;
   line-height: 1.3 !important;
 }
 
 .event-card__info-item svg {
   color: var(--brand) !important;
-  flex-shrink: 0;
-  margin-top: 1px !important;
+  flex-shrink: 0 !important;
+  margin-top: 0 !important;
 }
 
 .event-card__datetime {
-  font-weight: 650 !important;
-  letter-spacing: -0.01em !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+}
+
+.event-card__datetime strong {
+  font-weight: 750 !important;
+  color: #344054 !important;
 }
 
 .event-card__location {
   display: flex !important;
   align-items: flex-start !important;
-  gap: 5px !important;
-  padding: 6px 8px !important;
-  border-radius: var(--radius-sm) !important;
-  background: var(--surface-muted) !important;
-  border: 1px solid var(--border) !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  padding: 8px 10px !important;
+  border-radius: 8px !important;
+  background: #f7f9fc !important;
+  border: 1px solid #edf2f7 !important;
   margin-top: 0 !important;
   margin-bottom: 10px !important;
-  /* Fixed height for location box to ensure alignment */
-  height: 3.4em !important;
-  min-height: 3.4em !important;
-  overflow: hidden !important;
+  height: auto !important;
+  min-height: auto !important;
 }
 
 .event-card__location-text {
@@ -2098,7 +2095,9 @@ em {
   margin-bottom: 6px !important;
 }
 
-.form-field input:not([type="checkbox"]):not([type="radio"]):not(.input--readonly),
+:not(.auth-form) > .form-field input:not([type="checkbox"]):not([type="radio"]):not(.input--readonly),
+.create-event-form .form-field input:not([type="checkbox"]):not([type="radio"]):not(.input--readonly),
+.event-form .form-field input:not([type="checkbox"]):not([type="radio"]):not(.input--readonly),
 .form-field select,
 .form-field textarea {
   height: 42px;
@@ -2116,7 +2115,9 @@ em {
   min-height: 100px;
 }
 
-.form-field input:focus,
+:not(.auth-form) > .form-field input:focus,
+.create-event-form .form-field input:focus,
+.event-form .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
   border-color: var(--brand) !important;
@@ -2230,7 +2231,8 @@ em {
 
 /* --- Phase 6.6: Event Board Category Hero Card Full Background Layout --- */
 
-.event-board-header {
+.event-board-header,
+.calendar-hero {
   position: relative !important;
   overflow: hidden !important;
   display: flex !important;
@@ -2240,10 +2242,39 @@ em {
   min-height: 280px !important;
   margin-bottom: 26px !important;
   padding: 40px 48px !important;
+  box-sizing: border-box !important;
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 18px !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+.event-board-header--carousel,
+.event-board-header:has(.event-board-header__track) {
+  padding: 0 !important;
+  display: block !important;
+}
+
+.event-board-header__track {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100% !important;
+  min-height: 280px !important;
+  will-change: transform !important;
+}
+
+.event-board-header__slide {
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 40px 48px !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
 }
 
 .event-board-header__bg {
@@ -2273,6 +2304,33 @@ em {
   position: relative !important;
   z-index: 2 !important;
   max-width: 520px !important;
+}
+
+.event-board-header__badge {
+  display: inline-block !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  color: var(--brand) !important;
+  letter-spacing: 0.08em !important;
+  margin-bottom: 8px !important;
+}
+
+.event-board-header h1 {
+  margin: 0 !important;
+  font-size: clamp(28px, 4vw, 38px) !important;
+  font-weight: 800 !important;
+  color: var(--text-strong) !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.event-board-header__sub {
+  margin: 8px 0 0 !important;
+  font-size: 15px !important;
+  color: var(--text-muted) !important;
+  line-height: 1.5 !important;
+  max-width: 480px !important;
 }
 
 /* Category backgrounds matching Community Requests hero card styling */
@@ -2994,4 +3052,65 @@ em {
 
 .event-details__directions-btn {
   margin-top: 4px !important;
+}
+
+/* Authentication Page Hero Heading (50% size reduction) */
+.auth-page .auth-card h1,
+.auth-page .auth-card .auth-card__heading,
+.auth-card .auth-card__heading,
+.auth-card h1 {
+  font-size: clamp(16px, 2.2vw, 22px) !important;
+  color: #c084fc !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.02em !important;
+  text-align: center !important;
+  margin: 0 0 10px !important;
+}
+
+/* Authentication Page Static Inputs (no focus glow or animation) */
+.auth-page .auth-form input,
+.auth-page .auth-form input:hover,
+.auth-page .auth-form input:focus,
+.auth-page .auth-form input:focus-visible,
+.auth-page .auth-form input:focus-within,
+.auth-page .auth-form input:active,
+.auth-card .form-field input,
+.auth-card .form-field input:hover,
+.auth-card .form-field input:focus,
+.auth-card .form-field input:focus-visible,
+.auth-card .form-field input:focus-within,
+.auth-card .form-field input:active {
+  background: rgba(255, 255, 255, 0.06) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+  outline: none !important;
+  outline-offset: 0 !important;
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+  color: #ffffff !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.auth-page .auth-form input:-webkit-autofill,
+.auth-page .auth-form input:-webkit-autofill:hover, 
+.auth-page .auth-form input:-webkit-autofill:focus,
+.auth-page .auth-form input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(14, 11, 26, 0.95) inset, inset 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 0 0px 1000px rgba(14, 11, 26, 0.95) inset, inset 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* Persistent Sticky Fixed Navigation Bar Across All Pages */
+.app-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 99999 !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
 }
