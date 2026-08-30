@@ -42,7 +42,6 @@ export function authenticateWithGoogle(idToken, mode = 'login') {
   })
 }
 
-
 export async function signInWithGoogle(mode = 'login') {
   const auth = getFirebaseAuth()
   const provider = new GoogleAuthProvider()
@@ -82,46 +81,6 @@ export async function signInWithGoogle(mode = 'login') {
 
   try {
     return await authenticateWithGoogle(idToken, mode)
-  } catch (error) {
-    await signOut(auth).catch(() => { })
-    throw error
-  }
-}
-export async function signInWithGoogle(mode = 'login') {
-  const auth = getFirebaseAuth()
-  const provider = new GoogleAuthProvider()
-
-  provider.setCustomParameters({ prompt: 'select_account' })
-
-  let result
-
-  try {
-    result = await signInWithPopup(auth, provider)
-  } catch (error) {
-    if (
-      error?.code === 'auth/popup-closed-by-user' ||
-      error?.code === 'auth/cancelled-popup-request'
-    ) {
-      const cancelled = new Error('Google sign-in was cancelled.')
-      cancelled.code = error.code
-      throw cancelled
-    }
-
-    if (error?.code === 'auth/popup-blocked') {
-      const blocked = new Error(
-        'Google sign-in popup was blocked. Allow popups for EventHive and try again.'
-      )
-      blocked.code = error.code
-      throw blocked
-    }
-
-    throw error
-  }
-
-  const idToken = await result.user.getIdToken()
-
-  try {
-    return await loginWithGoogle(idToken, mode)
   } catch (error) {
     await signOut(auth).catch(() => { })
     throw error
