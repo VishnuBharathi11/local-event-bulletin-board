@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getEvents } from '../services/eventService.js'
 import { useLocation } from '../context/LocationContext.jsx'
-import { getCityOptions } from '../utils/eventDiscovery.js'
 import {
   addMonths,
   getCalendarEvents,
@@ -12,11 +11,10 @@ import {
 } from '../utils/calendar.js'
 
 export function useCalendar() {
-  const { district, localities } = useLocation()
+  const { district } = useLocation()
   const [state, setState] = useState({ status: 'loading', events: [], error: null })
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth())
   const [selectedDate, setSelectedDate] = useState(() => startOfToday())
-  const [selectedCity, setSelectedCity] = useState('All')
 
   useEffect(() => {
     let cancelled = false
@@ -37,52 +35,24 @@ export function useCalendar() {
     return () => { cancelled = true }
   }, [])
 
-  const cityOptions = useMemo(() => {
-    const calendarEvents = getCalendarEvents(state.events)
-    return getCityOptions(calendarEvents, district, localities)
-  }, [state.events, district, localities])
-
   const activeEvents = useMemo(() => {
-    const calendarEvents = getCalendarEvents(state.events)
-    if (!district) return calendarEvents
+    const unexpired = getCalendarEvents(state.events)
+    if (!district) return unexpired
 
     const normalizedDetected = district.toLowerCase().trim()
-
-    // Internal accurate matching logic for city/locality
-    let allowedInternalValues = new Set();
-    if (selectedCity !== 'All') {
-      allowedInternalValues.add(selectedCity.toLowerCase().trim());
-
-      const area = localities.find(a => a.name && a.name.toLowerCase().trim() === selectedCity.toLowerCase().trim());
-      if (area && area.pincode) {
-        allowedInternalValues.add(area.pincode.toLowerCase().trim());
-      }
-    }
-
-    return calendarEvents.filter(event => {
-      // 1. District Filter
+    return unexpired.filter((event) => {
       if (event.district) {
         const normalizedEventDistrict = event.district.toLowerCase().trim()
-        if (normalizedEventDistrict !== normalizedDetected && !normalizedEventDistrict.includes(normalizedDetected) && !normalizedDetected.includes(normalizedEventDistrict)) {
-          return false
-        }
-      } else {
-        const searchSpace = `${event.city || ''} ${event.neighborhood || ''}`.toLowerCase()
-        if (!searchSpace.includes(normalizedDetected)) return false
+        return (
+          normalizedEventDistrict === normalizedDetected ||
+          normalizedEventDistrict.includes(normalizedDetected) ||
+          normalizedDetected.includes(normalizedEventDistrict)
+        )
       }
-
-      // 2. City Filter
-      if (selectedCity !== 'All') {
-        const eventCity = String(event.city || '').toLowerCase().trim();
-        const eventNeighborhood = String(event.neighborhood || '').toLowerCase().trim();
-        if (!allowedInternalValues.has(eventCity) && !allowedInternalValues.has(eventNeighborhood)) {
-          return false;
-        }
-      }
-
-      return true
+      const searchSpace = `${event.city || ''} ${event.neighborhood || ''} ${event.location || ''}`.toLowerCase()
+      return searchSpace.includes(normalizedDetected)
     })
-  }, [state.events, district, selectedCity, localities])
+  }, [state.events, district])
 
   const eventDays = useMemo(
     () => getEventDaysForMonth(activeEvents, currentMonth),
@@ -121,9 +91,6 @@ export function useCalendar() {
     selectedDate,
     eventDays,
     eventsForDate,
-    cityOptions,
-    selectedCity,
-    onCityChange: setSelectedCity,
     onPreviousMonth: previousMonth,
     onNextMonth: nextMonth,
     onToday: goToToday,

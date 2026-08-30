@@ -4,10 +4,13 @@ const assert = require('node:assert/strict')
 const geminiService = require('./geminiService')
 
 test('Gemini configuration requires a Google Cloud project', () => {
-  const previous = process.env.GOOGLE_CLOUD_PROJECT
+  const previousGcp = process.env.GOOGLE_CLOUD_PROJECT
+  const previousFb = process.env.FIREBASE_PROJECT_ID
   delete process.env.GOOGLE_CLOUD_PROJECT
+  delete process.env.FIREBASE_PROJECT_ID
   assert.equal(geminiService.isConfigured(), false)
-  if (previous !== undefined) process.env.GOOGLE_CLOUD_PROJECT = previous
+  if (previousGcp !== undefined) process.env.GOOGLE_CLOUD_PROJECT = previousGcp
+  if (previousFb !== undefined) process.env.FIREBASE_PROJECT_ID = previousFb
 })
 
 test('trend explanation prompt contains verified evidence and grounding rules', () => {

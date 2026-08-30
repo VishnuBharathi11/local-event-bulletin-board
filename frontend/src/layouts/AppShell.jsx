@@ -1,26 +1,29 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { CalendarDays, Calendar, MessageSquare, User, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import logo from '../assets/logo.jpeg'
-
+import logo from '../assets/eventhive.svg'
+import ChatAssistant from '../components/ChatAssistant.jsx'
 const navigation = [
-  { to: '/', label: 'Event Board', end: true },
-  { to: '/calendar', label: 'Calendar' },
-  { to: '/community-requests', label: 'Community Requests' },
+  { to: '/', label: 'Event Board', end: true, icon: CalendarDays },
+  { to: '/calendar', label: 'Calendar', icon: Calendar },
+  { to: '/community-requests', label: 'Community Requests', icon: MessageSquare },
 ]
 
 export default function AppShell() {
   const { loading, authenticated, currentUser, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   async function handleLogout() {
     try {
       await logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
       setMobileMenuOpen(false)
       navigate('/', { replace: true })
-    } catch {
-      // Keep the existing authenticated state when logout cannot reach the backend.
     }
   }
 
@@ -32,22 +35,27 @@ export default function AppShell() {
             <img src={logo} alt="" className="brand__logo" />
             <span>
               <strong>EventHive</strong>
-              <small>Local Event Bulletin Board</small>
+              <small>LOCAL EVENT BULLETIN BOARD</small>
             </span>
           </NavLink>
 
           {/* Desktop Navigation Links */}
           <nav className="main-nav desktop-only-nav" aria-label="Primary navigation">
-            {navigation.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => (isActive ? 'nav-link nav-link--active' : 'nav-link')}
-              >
-                {item.label}
-              </NavLink>
-            ))}
+            {navigation.map((item) => {
+              const Icon = item.icon
+              const isItemActive = (isActive) => isActive || (item.to === '/community-requests' && location.pathname.startsWith('/how-it-works'))
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) => (isItemActive(isActive) ? 'nav-link nav-link--active' : 'nav-link')}
+                >
+                  {Icon && <Icon size={17} strokeWidth={2} className="nav-link__icon" />}
+                  <span>{item.label}</span>
+                </NavLink>
+              )
+            })}
           </nav>
 
           {/* Desktop Auth Links */}
@@ -56,17 +64,14 @@ export default function AppShell() {
               <span className="auth-nav__state">Checking account…</span>
             ) : authenticated ? (
               <>
+                <div className="nav-divider" aria-hidden="true" />
                 <NavLink
-                  className={({ isActive }) => isActive ? 'auth-nav__user nav-link--active' : 'auth-nav__user'}
+                  className={({ isActive }) => (isActive ? 'auth-nav__user auth-nav__user--active' : 'auth-nav__user')}
                   to="/profile"
                   title={currentUser?.email}
-                  style={{ display: 'inline-flex', alignItems: 'center' }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginRight: 6 }}>
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  {currentUser?.name}
+                  <User size={18} strokeWidth={2} className="auth-nav__user-icon" />
+                  <span>{currentUser?.name || 'Anbu'}</span>
                 </NavLink>
                 <button
                   className="auth-nav__logout"
@@ -75,15 +80,12 @@ export default function AppShell() {
                   aria-label="Logout"
                   title="Logout"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
+                  <LogOut size={19} strokeWidth={2} />
                 </button>
               </>
             ) : (
               <>
+                <div className="nav-divider" aria-hidden="true" />
                 <NavLink className="nav-link" to="/login">Login</NavLink>
                 <NavLink className="primary-button auth-nav__register" to="/register">Register</NavLink>
               </>
@@ -140,17 +142,22 @@ export default function AppShell() {
           <div className="mobile-nav-overlay" onClick={() => setMobileMenuOpen(false)}>
             <div className="mobile-nav-drawer" onClick={(e) => e.stopPropagation()}>
               <nav className="mobile-nav-links" aria-label="Mobile navigation">
-                {navigation.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.end}
-                    className={({ isActive }) => (isActive ? 'mobile-nav-link mobile-nav-link--active' : 'mobile-nav-link')}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.label}
-                  </NavLink>
-                ))}
+                {navigation.map((item) => {
+                  const Icon = item.icon
+                  const isItemActive = (isActive) => isActive || (item.to === '/community-requests' && location.pathname.startsWith('/how-it-works'))
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      className={({ isActive }) => (isItemActive(isActive) ? 'mobile-nav-link mobile-nav-link--active' : 'mobile-nav-link')}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {Icon && <Icon size={18} strokeWidth={2} />}
+                      <span>{item.label}</span>
+                    </NavLink>
+                  )
+                })}
               </nav>
               <div className="mobile-auth-links">
                 {loading ? (
@@ -185,6 +192,7 @@ export default function AppShell() {
       <main className="app-main container">
         <Outlet />
       </main>
+      <ChatAssistant />
     </div>
   )
 }

@@ -1,7 +1,28 @@
 const express = require('express');
 const { getDetailedLocationFromCoords, getPostalAreasForDistrict } = require('../services/geocodingService');
+const { searchLocations } = require('../services/locationSearchService');
 
 const router = express.Router();
+
+router.get('/search', async (req, res) => {
+  try {
+    const suggestions = await searchLocations(req.query.q);
+    return res.json({ suggestions });
+  } catch (error) {
+    if (error?.code === 'LOCATION_QUERY_INVALID'
+      || error?.code === 'LOCATION_QUERY_TOO_SHORT'
+      || error?.code === 'LOCATION_QUERY_TOO_LONG') {
+      return res.status(400).json({ error: error.message });
+    }
+
+    if (error?.code === 'LOCATION_PROVIDER_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'Location search is temporarily unavailable. Please enter the venue manually.' });
+    }
+
+    console.error('Failed to search locations:', error?.code || error?.message || error);
+    return res.status(502).json({ error: 'Unable to search locations right now. Please enter the venue manually.' });
+  }
+});
 
 router.get('/district', async (req, res) => {
   const { lat, lng } = req.query;

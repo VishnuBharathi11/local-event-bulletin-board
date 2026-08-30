@@ -1,160 +1,57 @@
-import eventPlanningHero from '../assets/event-planning-hero.jpeg'
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { ArrowLeft, ArrowRight, Send } from 'lucide-react'
+import CreateEventRequestLeftPanel from '../components/events/CreateEventRequestLeftPanel.jsx'
+import CreateEventStepper from '../components/events/CreateEventStepper.jsx'
+import RequestStep01BasicInfo from '../components/events/RequestStep01BasicInfo.jsx'
+import RequestStep02DateTime from '../components/events/RequestStep02DateTime.jsx'
+import RequestStep03Location from '../components/events/RequestStep03Location.jsx'
+import RequestStep04Details from '../components/events/RequestStep04Details.jsx'
+import RequestStep05Review from '../components/events/RequestStep05Review.jsx'
+import {
+  createEventRequest,
+  getEventRequestById,
+  updateEventRequest
+} from '../services/eventRequestService.js'
 import { useAuth } from '../context/AuthContext.jsx'
-import { createEventRequest, getEventRequestById, updateEventRequest } from '../services/eventRequestService.js'
-import TimePicker from '../components/common/TimePicker.jsx'
-import EventMapPicker from '../components/map/EventMapPicker.jsx'
-import '../styles/communityRequests.css'
+import '../styles/createEventMultiStep.css'
 
-const categories = [
-  'Sports',
-  'Music',
-  'Food',
-  'Workshops',
-  'Meetups',
-  'Student Events',
-  'Garage Sale',
-  'Community',
-]
+function initialForm() {
+  return {
+    title: '',
+    description: '',
+    category: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    location: '',
+    city: '',
+    neighborhood: '',
+    demandThreshold: '',
+    imageUrl: null,
+    latitude: null,
+    longitude: null,
+  }
+}
 
 function pad(value) {
   return String(value).padStart(2, '0')
 }
 
-function getTodayString() {
-  const now = new Date()
-
-  return `${now.getFullYear()}-${pad(
-    now.getMonth() + 1
-  )}-${pad(now.getDate())}`
-}
-
-function getCurrentMinutes() {
-  const now = new Date()
-
-  return (
-    now.getHours() * 60 +
-    now.getMinutes()
-  )
-}
-
-function toTimestamp(date, time) {
-  if (!date || !time) {
-    return NaN
-  }
-
-  return new Date(
-    `${date}T${time}`
-  ).getTime()
-}
-
-function formatDisplayTime(time) {
-  if (!time) {
-    return ''
-  }
-
-  const [hourString, minuteString] =
-    time.split(':')
-
-  const hour24 = Number(hourString)
-
-  if (
-    !Number.isFinite(hour24) ||
-    !Number.isFinite(Number(minuteString))
-  ) {
-    return ''
-  }
-
-  let hour12 = hour24 % 12
-
-  if (hour12 === 0) {
-    hour12 = 12
-  }
-
-  const period =
-    hour24 >= 12 ? 'PM' : 'AM'
-
-  return `${hour12}:${pad(
-    Number(minuteString)
-  )} ${period}`
-}
-
-function convert12To24(
-  hour12,
-  minute,
-  period
-) {
-  let hour24 = Number(hour12)
-
-  if (period === 'AM') {
-    if (hour24 === 12) {
-      hour24 = 0
-    }
-  } else {
-    if (hour24 !== 12) {
-      hour24 += 12
-    }
-  }
-
-  return {
-    hour: hour24,
-    minute: Number(minute),
-  }
-}
-
-function getTotalMinutes(
-  hour,
-  minute,
-  period
-) {
-  const converted =
-    convert12To24(
-      hour,
-      minute,
-      period
-    )
-
-  return (
-    converted.hour * 60 +
-    converted.minute
-  )
-}
-
 export default function CreateEventRequestPage() {
   const { requestId } = useParams()
   const isEdit = Boolean(requestId)
-  const navigate =
-    useNavigate()
+  const navigate = useNavigate()
   const { currentUser } = useAuth()
 
-  const [form, setForm] =
-    useState({
-      title: '',
-      description: '',
-      category: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      location: '',
-      city: '',
-      neighborhood: '',
-      demandThreshold: '',
-      imageUrl: null,
-      latitude: null,
-      longitude: null,
-    })
+  const [currentStep, setCurrentStep] = useState(1)
+  const [form, setForm] = useState(initialForm)
+  const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(isEdit)
+  const [submitting, setSubmitting] = useState(false)
+  const [serverError, setServerError] = useState(null)
 
-  const [status, setStatus] =
-    useState(isEdit ? 'loading' : 'idle')
-
-  const [error, setError] =
-    useState(null)
-
-  const [nowTick, setNowTick] =
-    useState(Date.now())
-
+  // Load existing request data if editing
   useEffect(() => {
     if (!isEdit) return
 
@@ -164,8 +61,8 @@ export default function CreateEventRequestPage() {
 
         // Authorization check
         if (data.organizerId !== currentUser?.userId) {
-          setError('You are not authorized to edit this request.')
-          setStatus('idle')
+          setServerError('You are not authorized to edit this request.')
+          setLoading(false)
           return
         }
 
@@ -177,299 +74,150 @@ export default function CreateEventRequestPage() {
         const endStr = `${pad(end.getHours())}:${pad(end.getMinutes())}`
 
         setForm({
-          title: data.title,
-          description: data.description,
-          category: data.category,
+          title: data.title || '',
+          description: data.description || '',
+          category: data.category || '',
           date: dateStr,
           startTime: startStr,
           endTime: endStr,
-          location: data.location,
-          city: data.city,
-          neighborhood: data.neighborhood,
-          demandThreshold: String(data.demandThreshold),
-          imageUrl: data.imageUrl,
+          location: data.location || '',
+          city: data.city || '',
+          neighborhood: data.neighborhood || '',
+          demandThreshold: String(data.demandThreshold || ''),
+          imageUrl: data.imageUrl || null,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
         })
-        setStatus('idle')
       } catch (err) {
-        setError(err.message)
-        setStatus('idle')
+        setServerError(err.message)
+      } finally {
+        setLoading(false)
       }
     }
     load()
   }, [isEdit, requestId, currentUser?.userId])
 
-  useEffect(() => {
-    const timer =
-      window.setInterval(
-        () => {
-          setNowTick(
-            Date.now()
-          )
-        },
-        30000
-      )
-
-    return () =>
-      window.clearInterval(
-        timer
-      )
-  }, [])
-
-  function update(
-    field,
-    value
-  ) {
-    setForm(
-      (current) => ({
-        ...current,
-        [field]: value,
-      })
-    )
+  function update(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => ({ ...prev, [field]: null }))
+    setServerError(null)
   }
 
-  function handleImageChange(event) {
-    const file = event.target.files[0]
-    if (!file) return
+  function validateStep(step) {
+    const stepErrors = {}
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      update('imageUrl', reader.result)
-    }
-    reader.readAsDataURL(file)
-  }
+    if (step === 1) {
+      if (!form.title || !form.title.trim()) {
+        stepErrors.title = 'Proposed title is required.'
+      }
+      if (!form.description || !form.description.trim()) {
+        stepErrors.description = 'Description is required.'
+      }
+    } else if (step === 2) {
+      const now = new Date()
+      const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
-  function clearImage() {
-    update('imageUrl', null)
-  }
-
-  const today = useMemo(
-    () =>
-      getTodayString(),
-    [nowTick]
-  )
-
-  const startMinimumMinutes =
-    useMemo(() => {
       if (!form.date) {
-        return 0
+        stepErrors.date = 'Suggested date is required.'
+      } else if (form.date < today) {
+        stepErrors.date = 'Past dates cannot be selected.'
       }
 
-      if (
-        form.date === today
-      ) {
-        return getCurrentMinutes()
+      if (!form.startTime || !/^\d{2}:\d{2}$/.test(form.startTime)) {
+        stepErrors.startTime = 'Start time is required.'
+      }
+      if (!form.endTime || !/^\d{2}:\d{2}$/.test(form.endTime)) {
+        stepErrors.endTime = 'End time is required.'
       }
 
-      return 0
-    }, [
-      form.date,
-      today,
-      nowTick,
-    ])
+      if (form.date && form.startTime && form.endTime) {
+        const [year, month, day] = form.date.split('-').map(Number)
+        const [startHour, startMin] = form.startTime.split(':').map(Number)
+        const [endHour, endMin] = form.endTime.split(':').map(Number)
 
-  const endMinimumMinutes =
-    useMemo(() => {
-      let minimum = 0
+        const startTimestamp = new Date(year, month - 1, day, startHour, startMin, 0, 0).getTime()
+        const endTimestamp = new Date(year, month - 1, day, endHour, endMin, 0, 0).getTime()
+        const nowTs = Date.now()
 
-      if (
-        form.date === today
-      ) {
-        minimum =
-          getCurrentMinutes()
-      }
-
-      if (form.startTime) {
-        const [
-          hour,
-          minute,
-        ] =
-          form.startTime
-            .split(':')
-            .map(Number)
-
-        if (
-          Number.isFinite(hour) &&
-          Number.isFinite(minute)
-        ) {
-          minimum =
-            Math.max(
-              minimum,
-              hour * 60 +
-                minute +
-                1
-            )
+        if (startTimestamp <= nowTs) {
+          stepErrors.startTime = 'Start time must be in the future.'
+        }
+        if (endTimestamp <= startTimestamp) {
+          stepErrors.endTime = 'End time must be after start time.'
         }
       }
-
-      return minimum
-    }, [
-      form.date,
-      form.startTime,
-      today,
-      nowTick,
-    ])
-
-  function handleDateChange(
-    event
-  ) {
-    const selectedDate =
-      event.target.value
-
-    if (
-      selectedDate < today
-    ) {
-      return
+    } else if (step === 3) {
+      if (!form.location || !form.location.trim()) {
+        stepErrors.location = 'Venue or location is required.'
+      }
+      if (!form.city || !form.city.trim()) {
+        stepErrors.city = 'City is required.'
+      }
+    } else if (step === 4) {
+      if (!form.category) {
+        stepErrors.category = 'Please select a category.'
+      }
+      const threshold = parseInt(form.demandThreshold, 10)
+      if (!Number.isInteger(threshold) || threshold <= 0) {
+        stepErrors.demandThreshold = 'Please enter a valid positive number for support target.'
+      }
     }
 
-    setForm(
-      (current) => ({
-        ...current,
-        date: selectedDate,
-        startTime: '',
-        endTime: '',
-      })
-    )
+    setErrors(stepErrors)
+    return Object.keys(stepErrors).length === 0
   }
 
-  async function handleSubmit(
-    event
-  ) {
-    event.preventDefault()
+  function handleNext() {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(5, prev + 1))
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
-    setError(null)
+  function handlePrev() {
+    setCurrentStep((prev) => Math.max(1, prev - 1))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-    if (
-      !form.title.trim() ||
-      !form.description.trim() ||
-      !form.category ||
-      !form.city.trim()
-    ) {
-      setError(
-        'Title, description, category, and city are required.'
-      )
+  function handleStepClick(targetStep) {
+    if (targetStep < currentStep) {
+      setCurrentStep(targetStep)
+    } else if (targetStep === currentStep + 1 && validateStep(currentStep)) {
+      setCurrentStep(targetStep)
+    }
+  }
 
-      return
+  async function handleSubmit() {
+    // Validate all required steps
+    for (let step = 1; step <= 4; step++) {
+      if (!validateStep(step)) {
+        setCurrentStep(step)
+        return
+      }
     }
 
-    const threshold = parseInt(form.demandThreshold, 10)
-    if (!Number.isInteger(threshold) || threshold <= 0) {
-      setError('Please enter a valid positive number for minimum required participants.')
-      return
-    }
-
-    if (!form.date) {
-      setError(
-        'Please select a suggested date.'
-      )
-
-      return
-    }
-
-    if (
-      form.date < today
-    ) {
-      setError(
-        'Past dates cannot be selected.'
-      )
-
-      return
-    }
-
-    const startTimestamp =
-      toTimestamp(
-        form.date,
-        form.startTime
-      )
-
-    const endTimestamp =
-      toTimestamp(
-        form.date,
-        form.endTime
-      )
-
-    if (
-      !Number.isFinite(
-        startTimestamp
-      ) ||
-      !Number.isFinite(
-        endTimestamp
-      )
-    ) {
-      setError(
-        'Please select both start and end times.'
-      )
-
-      return
-    }
-
-    if (
-      startTimestamp <=
-      Date.now()
-    ) {
-      setError(
-        'Start time must be in the future.'
-      )
-
-      return
-    }
-
-    if (
-      endTimestamp <=
-      startTimestamp
-    ) {
-      setError(
-        'End time must be after start time.'
-      )
-
-      return
-    }
-
-    if (
-      endTimestamp <=
-      Date.now()
-    ) {
-      setError(
-        'End time must be in the future.'
-      )
-
-      return
-    }
-
-    setStatus('saving')
+    setSubmitting(true)
+    setServerError(null)
 
     try {
+      const [year, month, day] = form.date.split('-').map(Number)
+      const [startHour, startMin] = form.startTime.split(':').map(Number)
+      const [endHour, endMin] = form.endTime.split(':').map(Number)
+
+      const startTime = new Date(year, month - 1, day, startHour, startMin, 0, 0).getTime()
+      const endTime = new Date(year, month - 1, day, endHour, endMin, 0, 0).getTime()
+
       const payload = {
-        title:
-          form.title.trim(),
-
-        description:
-          form.description.trim(),
-
-        category:
-          form.category,
-
-        city:
-          form.city.trim(),
-
-        neighborhood:
-          form.neighborhood.trim(),
-
-        location:
-          form.location.trim(),
-
-        startTime:
-          startTimestamp,
-
-        endTime:
-          endTimestamp,
-
-        demandThreshold:
-          parseInt(form.demandThreshold, 10) || 0,
-
+        title: form.title.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        city: form.city.trim(),
+        neighborhood: form.neighborhood ? form.neighborhood.trim() : '',
+        location: form.location.trim(),
+        startTime,
+        endTime,
+        demandThreshold: parseInt(form.demandThreshold, 10) || 0,
         imageUrl: form.imageUrl,
-
         latitude: form.latitude,
         longitude: form.longitude,
       }
@@ -481,435 +229,125 @@ export default function CreateEventRequestPage() {
         result = await createEventRequest(payload)
       }
 
-      navigate(
-        `/community-requests/${encodeURIComponent(
-          result.requestId
-        )}`
-      )
-    } catch (
-      requestError
-    ) {
-      setStatus('idle')
-
-      setError(
-        requestError.message
-      )
+      navigate(`/community-requests/${encodeURIComponent(result.requestId)}`, { replace: true })
+    } catch (error) {
+      setServerError(error.message || 'Failed to submit event request. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  if (status === 'loading') {
+  if (loading) {
     return (
-      <div className="state-card">
+      <div className="state-card" style={{ maxWidth: '600px', margin: '40px auto', textAlign: 'center' }}>
         <strong>Loading request data...</strong>
       </div>
     )
   }
 
   return (
-    <section className="request-form">
-      <div className="create-request-layout">
-        {/* LEFT COLUMN: VISUAL INTRO */}
-        <div className="create-request-layout__visual">
-          <div className="create-request-visual__top">
-            <Link
-              className="back-link"
-              to={isEdit ? '/profile' : '/community-requests'}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}
-            >
-              <ArrowLeft size={16} /> {isEdit ? 'Back to Profile' : 'Community Requests'}
-            </Link>
-            <div className="create-request-visual__content" style={{ marginTop: '24px' }}>
-              <p className="eyebrow">
-                {isEdit ? 'Edit Request' : 'Request Event'}
-              </p>
+    <section className="create-event-multi-page">
+      <div className="create-event-grid-layout">
+        {/* Left Side Information Panel */}
+        <CreateEventRequestLeftPanel currentStep={currentStep} isEdit={isEdit} />
 
-              <h1 style={{ marginTop: '8px' }}>
-                {isEdit ? 'Update your request' : 'Tell the community what should happen'}
-              </h1>
+        {/* Right Side 5-Step Form Panel */}
+        <main className={`create-event-panel-right ${currentStep === 3 ? 'create-event-panel-right--step3' : ''} ${currentStep === 4 ? 'create-event-panel-right--step4' : ''} ${currentStep === 5 ? 'create-event-panel-right--step5' : ''}`}>
+          {/* 5-Step Stepper */}
+          <CreateEventStepper currentStep={currentStep} onStepClick={handleStepClick} />
 
-              <p className="create-request-description">
-                {isEdit
-                  ? 'Refine the details of your event request. Changes will be reflected immediately.'
-                  : 'This creates a demand request, not a published event. If enough people express interest, the organizer can review and confirm it.'
-                }
-              </p>
-            </div>
-          </div>
-          <div className="create-request-visual__image">
-            <img src={eventPlanningHero} alt="" />
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: FORM CARD */}
-        <div className="create-request-layout__form">
-          <form
-            className="event-form create-event-form"
-            onSubmit={handleSubmit}
-            noValidate
-          >
-        <div className="form-grid">
-          <div className="form-field">
-            <label htmlFor="user-name">
-              Name
-            </label>
-
-            <input
-              id="user-name"
-              value={currentUser?.name || ''}
-              readOnly
-              className="input--readonly"
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="user-email">
-              Email
-            </label>
-
-            <input
-              id="user-email"
-              value={currentUser?.email || ''}
-              readOnly
-              className="input--readonly"
-            />
-          </div>
-        </div>
-
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">What should happen?</h2>
-            <p className="create-event-form__section-description">Describe the event idea you are proposing to the community.</p>
-          </div>
-          <div className="form-field">
-            <label htmlFor="request-title">
-            Proposed title <span className="required-star">*</span>
-          </label>
-
-          <input
-            id="request-title"
-            value={form.title}
-            onChange={(event) =>
-              update(
-                'title',
-                event.target.value
-              )
-            }
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="request-description">
-            Description <span className="required-star">*</span>
-          </label>
-
-          <textarea
-            id="request-description"
-            value={
-              form.description
-            }
-            onChange={(event) =>
-              update(
-                'description',
-                event.target.value
-              )
-            }
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="request-category">
-            Category <span className="required-star">*</span>
-          </label>
-
-          <select
-            id="request-category"
-            value={form.category}
-            onChange={(event) =>
-              update(
-                'category',
-                event.target.value
-              )
-            }
-          >
-            <option value="">
-              Select category
-            </option>
-
-            {categories.map(
-              (category) => (
-                <option
-                  key={category}
-                  value={category}
-                >
-                  {category}
-                </option>
-              )
+          {/* Current Step Form Content */}
+          <div className="create-event-step-wrapper">
+            {currentStep === 1 && (
+              <RequestStep01BasicInfo
+                form={form}
+                update={update}
+                currentUser={currentUser}
+                errors={errors}
+              />
             )}
-          </select>
-        </div>
-        </div>
 
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">How much interest is needed?</h2>
-            <p className="create-event-form__section-description">Set a target. Once met, organizers will review the proposal.</p>
-          </div>
-          <div className="form-field request-min-participants-field">
-            <label htmlFor="request-min-participants" className="community-target-label">
-              COMMUNITY SUPPORT TARGET
-            </label>
-            <span className="community-target-description">Minimum people needed to show interest</span>
-            <input
-              id="request-min-participants"
-              type="number"
-              min="1"
-              value={form.demandThreshold}
-              onChange={(event) =>
-                update(
-                  'demandThreshold',
-                  event.target.value
-                )
-              }
-              placeholder="Enter minimum number of people"
-            />
-          </div>
-        </div>
+            {currentStep === 2 && (
+              <RequestStep02DateTime
+                form={form}
+                update={update}
+                errors={errors}
+              />
+            )}
 
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">When?</h2>
-            <p className="create-event-form__section-description">Suggest a date and time for the proposed event.</p>
-          </div>
-          <div className="form-grid form-grid--date-time">
-          <div className="form-field">
-            <label htmlFor="request-date">
-              Suggested date <span className="required-star">*</span>
-            </label>
+            {currentStep === 3 && (
+              <RequestStep03Location
+                form={form}
+                update={update}
+                errors={errors}
+              />
+            )}
 
-            <input
-              id="request-date"
-              type="date"
-              min={today}
-              value={form.date}
-              onChange={
-                handleDateChange
-              }
-            />
-          </div>
+            {currentStep === 4 && (
+              <RequestStep04Details
+                form={form}
+                update={update}
+                errors={errors}
+              />
+            )}
 
-          <div className="form-field">
-            <label htmlFor="request-start">
-              Start time <span className="required-star">*</span>
-            </label>
-
-            <TimePicker
-              id="request-start"
-              label="start time"
-              value={
-                form.startTime
-              }
-              onChange={(value) =>
-                update(
-                  'startTime',
-                  value
-                )
-              }
-              minimumMinutes={
-                startMinimumMinutes
-              }
-              disabled={
-                !form.date
-              }
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="request-end">
-              End time <span className="required-star">*</span>
-            </label>
-
-            <TimePicker
-              id="request-end"
-              label="end time"
-              value={
-                form.endTime
-              }
-              onChange={(value) =>
-                update(
-                  'endTime',
-                  value
-                )
-              }
-              minimumMinutes={
-                endMinimumMinutes
-              }
-              disabled={
-                !form.date ||
-                !form.startTime
-              }
-              align="right"
-            />
-          </div>
-        </div>
-        </div>
-
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">Event Image</h2>
-            <p className="create-event-form__section-description">Provide a cover image to help attract community interest.</p>
-          </div>
-          <div className="form-field">
-          <label htmlFor="request-image">
-            Event Image <span className="required-star">*</span>
-          </label>
-
-          <div className="image-upload">
-            {!form.imageUrl ? (
-              <label htmlFor="request-image" className="image-upload__label">
-                <input
-                  id="request-image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="image-upload__input"
-                />
-                <div className="image-upload__icon" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-                <div className="image-upload__text">
-                  <strong>Click to upload image</strong>
-                  <span>PNG, JPG or JPEG (max. 5MB)</span>
-                </div>
-              </label>
-            ) : (
-              <div className="image-upload__preview-wrap">
-                <img src={form.imageUrl} alt="Preview" className="image-upload__preview" />
-                <button
-                  type="button"
-                  className="image-upload__clear"
-                  onClick={clearImage}
-                  title="Remove image"
-                  aria-label="Remove image"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
+            {currentStep === 5 && (
+              <RequestStep05Review
+                form={form}
+                currentUser={currentUser}
+                onGoToStep={(step) => setCurrentStep(step)}
+              />
             )}
           </div>
-        </div>
-        </div>
 
-        <div className="create-event-form__section">
-          <div className="create-event-form__section-header">
-            <h2 className="create-event-form__section-title">Where?</h2>
-            <p className="create-event-form__section-description">Suggest a neighborhood or venue location.</p>
-          </div>
-          <div className="form-field">
-          <label htmlFor="request-location">
-            Suggested venue <span className="required-star">*</span>
-          </label>
-
-          <input
-            id="request-location"
-            value={
-              form.location
-            }
-            onChange={(event) =>
-              update(
-                'location',
-                event.target.value
-              )
-            }
-          />
-        </div>
-
-        <div className="form-grid form-grid--location">
-          <div className="form-field">
-            <label htmlFor="request-city">
-              City <span className="required-star">*</span>
-            </label>
-
-            <input
-              id="request-city"
-              value={form.city}
-              onChange={(event) =>
-                update(
-                  'city',
-                  event.target.value
-                )
-              }
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="request-neighborhood">
-              Neighborhood <span className="required-star">*</span>
-            </label>
-
-            <input
-              id="request-neighborhood"
-              value={
-                form.neighborhood
-              }
-              onChange={(event) =>
-                update(
-                  'neighborhood',
-                  event.target.value
-                )
-              }
-            />
-          </div>
-        </div>
-        </div>
-
-        <div className="form-field" style={{ marginTop: '16px' }}>
-          <label>Suggested Location on Map</label>
-          <EventMapPicker
-            latitude={form.latitude}
-            longitude={form.longitude}
-            onLocationChange={(lat, lng) => {
-              update('latitude', lat);
-              update('longitude', lng);
-            }}
-            initialCenter={form.latitude && form.longitude ? [form.latitude, form.longitude] : undefined}
-            initialZoom={form.latitude && form.longitude ? 15 : undefined}
-          />
-          {!form.latitude && (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
-              Selecting a map location helps others find your request.
+          {serverError && (
+            <p className="form-field-error" style={{ margin: '14px 0 0', fontSize: '13px' }} role="alert">
+              {serverError}
             </p>
           )}
-        </div>
 
-        {error && (
-          <p
-            className="form-error"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
+          {/* Footer Action Buttons */}
+          <footer className="create-event-footer-actions">
+            {currentStep === 1 ? (
+              <Link
+                to={isEdit ? '/profile' : '/community-requests'}
+                className="create-event-btn-secondary create-event-btn-cancel"
+              >
+                Cancel
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="create-event-btn-secondary"
+                onClick={handlePrev}
+              >
+                <ArrowLeft size={16} />
+                <span>Previous</span>
+              </button>
+            )}
 
-        <button
-          className="primary-button"
-          type="submit"
-          disabled={
-            status === 'saving'
-          }
-        >
-          {status === 'saving'
-            ? (isEdit ? 'Updating…' : 'Submitting…')
-            : (isEdit ? 'Update Request' : 'Submit Request')}
-        </button>
-      </form>
-        </div>
+            {currentStep < 5 ? (
+              <button
+                type="button"
+                className="create-event-btn-primary"
+                onClick={handleNext}
+              >
+                <span>Save &amp; Continue</span>
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="create-event-btn-primary"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                <span>{submitting ? 'Submitting…' : isEdit ? 'Update Request' : 'Submit Request'}</span>
+                <Send size={15} />
+              </button>
+            )}
+          </footer>
+        </main>
       </div>
     </section>
   )

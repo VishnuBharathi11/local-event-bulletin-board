@@ -28,7 +28,7 @@ function isSupportedCategory(value) { return EVENT_CATEGORIES.some((category) =>
 function isGeneralConversation(message) { return /^(hi|hello|hey|hii|hiii|good morning|good afternoon|good evening|thanks|thank you|who are you)[!.?\s]*$/i.test(message.trim()) }
 function classifyIntent(message) {
   const text = message.toLowerCase().trim()
-<<<<<<< HEAD
+
   if (/\b(community|people want|requested|request|demand|interested)\b/.test(text)) return INTENTS.COMMUNITY_DEMAND
   if (/\b(semantic trend|semantic trends|emerging trends|emerging topics|trend clusters|trend clustering)\b/.test(text)) return INTENTS.SEMANTIC_TREND_ANALYSIS
   if (/\b(similar events?|events? similar to|similar to this event|related events? to this event|find similar)\b/.test(text)) return INTENTS.SIMILAR_EVENT_DISCOVERY
@@ -41,7 +41,6 @@ function classifyIntent(message) {
   if (/\b(event|details|about|tell me more|more about)\b/.test(text)) return INTENTS.EVENT_DETAILS
   if (/\b(show|find|list|event|events|happening|upcoming|tomorrow|today|weekend|near|in|category|sports|music|food|workshops|meetups|student|garage sale|is there|are there)\b/.test(text)) return INTENTS.EVENT_DISCOVERY
   if (isGeneralConversation(text)) return INTENTS.GENERAL_CONVERSATION
-=======
 
   if (/\b(community|people want|requested|request|demand|interested)\b/.test(text)) {
     return INTENTS.COMMUNITY_DEMAND
@@ -98,8 +97,6 @@ function classifyIntent(message) {
   if (isGeneralConversation(text)) {
     return INTENTS.GENERAL_CONVERSATION
   }
-
->>>>>>> 46d3cc4 (feat: harden event detail and ongoing event queries)
   return INTENTS.UNSUPPORTED
 }
 function extractCurrentFilters(message) {
@@ -244,7 +241,6 @@ async function executeTool(intent, filters, message, context = {}) {
     case INTENTS.SEMANTIC_CONFLICT_ANALYSIS: return { tool: 'semanticConflictAnalysis', arguments: {}, result: null, needsClarification: true }
     case INTENTS.TREND_ANALYSIS: { const args = cleanFilters({ category: filters.category, city: filters.city }); return { tool: 'getTrendAnalysis', arguments: args, result: await chatbotService.getTrendAnalysis(args) } }
     case INTENTS.COMMUNITY_DEMAND: return { tool: 'getCommunityDemand', arguments: {}, result: await chatbotService.getCommunityDemand({ limit: 20 }) }
-<<<<<<< HEAD
     case INTENTS.EVENT_DISCOVERY: {
       const args = cleanFilters({ category: filters.category, city: filters.city, limit: 20 })
       const now = Date.now()
@@ -269,7 +265,6 @@ async function executeTool(intent, filters, message, context = {}) {
       const result = await chatbotService.getEventDetails(eventId)
       return { tool: 'getEventDetails', arguments: { eventId }, result }
     }
-=======
     case INTENTS.EVENT_DISCOVERY: { const args = cleanFilters({ category: filters.category, city: filters.city, limit: 20 }); const events = await chatbotService.getUpcomingEvents(args); const dateRange = resolveDateRange(filters.timeRange); const result = dateRange ? events.filter((event) => Number(event.startTime) >= dateRange.startTime && Number(event.startTime) < dateRange.endTime) : events; return { tool: 'getUpcomingEvents', arguments: cleanFilters({ category: filters.category, city: filters.city, timeRange: filters.timeRange }), result } }
     case INTENTS.EVENT_DETAILS: {
   let eventId = extractEventId(message) || context.eventId
@@ -295,7 +290,6 @@ async function executeTool(intent, filters, message, context = {}) {
     result: await chatbotService.getEventDetails(eventId)
   }
 }
->>>>>>> 46d3cc4 (feat: harden event detail and ongoing event queries)
     default: return null
   }
 }

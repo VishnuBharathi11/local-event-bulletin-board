@@ -1,13 +1,12 @@
-import calendarHero from '../assets/calendar-hero.jpeg'
+import calendarImage from '../assets/calendar-hero.png'
 import Calendar from '../components/calendar/Calendar.jsx'
-import LocationFilters from '../components/discovery/LocationFilters.jsx'
 import { useCalendar } from '../hooks/useCalendar.js'
-import { useLocation } from '../context/LocationContext.jsx'
+import { Link } from 'react-router-dom'
+import { Plus } from 'lucide-react'
 import '../styles/calendar.css'
 
 export default function CalendarPage() {
   const calendar = useCalendar()
-  const { district, status: locationStatus, detectLocation } = useLocation()
 
   if (calendar.status === 'loading') {
     return (
@@ -35,38 +34,22 @@ export default function CalendarPage() {
 
   return (
     <main className="calendar-page">
-      <header className="calendar-page__intro page-hero-layout calendar-hero">
-        <div className="page-hero-layout__copy">
-          <p className="eyebrow">COMMUNITY EVENTS</p>
+      <header className="event-board-header event-board-header--all calendar-hero">
+        <div className="event-board-header__bg" style={{ backgroundImage: `url(${calendarImage})` }} aria-hidden="true" />
+        <div className="event-board-header__overlay" />
+        <div className="event-board-header__content">
+          <span className="event-board-header__badge">COMMUNITY EVENTS</span>
           <h1>Event Calendar</h1>
-          <p className="calendar-page__description">
+          <p className="event-board-header__sub">
             Browse upcoming local events by date and discover what's happening in your community.
           </p>
-        </div>
-        <div className="page-hero-layout__image">
-          <img src={calendarHero} alt="" />
+          <div className="event-board-header__actions" style={{ marginTop: '20px' }}>
+            <Link className="primary-button event-board-header__btn" to="/events/new" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Plus size={16} /> Create Event
+            </Link>
+          </div>
         </div>
       </header>
-
-      <div className="location-status" style={{ marginBottom: '16px', fontSize: '13.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-        {locationStatus === 'detecting' && <span>Detecting location...</span>}
-        {locationStatus === 'resolved' && district && <span>📍 Showing events in <strong>{district}</strong></span>}
-        {locationStatus === 'denied' && <span>Location access denied. Showing all events.</span>}
-        {(locationStatus === 'error' || (locationStatus === 'resolved' && !district)) && <span>Unable to determine district. Showing all events.</span>}
-        {(locationStatus === 'denied' || locationStatus === 'error') && (
-          <button onClick={detectLocation} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontWeight: 700, padding: 0, textDecoration: 'underline' }}>
-            Retry Detection
-          </button>
-        )}
-      </div>
-
-      <div className="calendar-filters" style={{ marginBottom: '24px' }}>
-        <LocationFilters
-          city={calendar.selectedCity}
-          cities={calendar.cityOptions}
-          onCityChange={calendar.onCityChange}
-        />
-      </div>
 
       <Calendar {...calendar} />
     </main>

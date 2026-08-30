@@ -30,7 +30,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .create-event-form__section {
@@ -147,6 +147,26 @@
   white-space: nowrap;
 }
 
+.event-description-textarea {
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.event-description-textarea--generating {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px var(--brand-light), 0 0 18px rgb(109 40 217 / 16%) !important;
+  background: #fefcff !important;
+  animation: event-description-generating-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes event-description-generating-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--brand-light), 0 0 14px rgb(109 40 217 / 12%);
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--brand-light), 0 0 22px rgb(109 40 217 / 20%);
+  }
+}
+
 .event-description-ai {
   display: flex;
   flex-wrap: wrap;
@@ -161,6 +181,7 @@
   justify-content: center;
   gap: 7px;
   min-height: 38px;
+  padding-inline: 14px;
 }
 
 .event-description-ai__button:disabled {
@@ -168,10 +189,11 @@
   opacity: .68;
 }
 
-.event-description-ai__hint {
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.4;
+.event-description-ai__button:not(:disabled):hover {
+  border-color: var(--brand-secondary);
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  box-shadow: var(--shadow-sm);
 }
 
 .event-description-ai__error {
@@ -256,5 +278,11 @@
 
   .create-event-form__error {
     margin-inline: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-description-textarea--generating {
+    animation: none;
   }
 }

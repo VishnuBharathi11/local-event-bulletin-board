@@ -1,4 +1,4 @@
-import { DEFAULT_DISCOVERY_STATE } from '../state/discoveryState.js'
+import { DEFAULT_DISCOVERY_STATE, DATE_FILTERS } from '../state/discoveryState.js'
 
 function isSameDay(first, second) {
   return first.getFullYear() === second.getFullYear() &&
@@ -18,6 +18,37 @@ function matchesDateFilter(startTime, filter, now) {
   const today = new Date(now)
   const tomorrow = new Date(now)
   tomorrow.setDate(tomorrow.getDate() + 1)
+
+  // Specific date string handling (e.g. YYYY-MM-DD or custom date)
+  if (filter && !DATE_FILTERS.includes(filter)) {
+    const eventYear = eventDate.getFullYear()
+    const eventMonth = String(eventDate.getMonth() + 1).padStart(2, '0')
+    const eventDay = String(eventDate.getDate()).padStart(2, '0')
+    const eventDateString = `${eventYear}-${eventMonth}-${eventDay}`
+
+    if (filter === eventDateString) {
+      return true
+    }
+
+    const parts = String(filter).split('-')
+    if (parts.length === 3) {
+      const fYear = Number(parts[0])
+      const fMonth = Number(parts[1])
+      const fDay = Number(parts[2])
+      return (
+        eventDate.getFullYear() === fYear &&
+        eventDate.getMonth() + 1 === fMonth &&
+        eventDate.getDate() === fDay
+      )
+    }
+
+    const parsedFilterDate = new Date(filter)
+    if (!Number.isNaN(parsedFilterDate.getTime())) {
+      return isSameDay(eventDate, parsedFilterDate)
+    }
+
+    return false
+  }
 
   switch (filter) {
     case 'All Upcoming':

@@ -39,9 +39,16 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(async () => {
-    await authService.logout()
-    setCurrentUser(null)
-    setStatus('unauthenticated')
+    try {
+      await authService.logout()
+    } catch (error) {
+      console.error('Server logout error:', error)
+    } finally {
+      localStorage.removeItem('detected_district')
+      localStorage.removeItem('detected_locality')
+      setCurrentUser(null)
+      setStatus('unauthenticated')
+    }
   }, [])
 
   const updateProfile = useCallback(async (updates) => {

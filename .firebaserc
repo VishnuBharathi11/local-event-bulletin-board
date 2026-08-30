@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "genial-core-506613-t3"
-  }
+  },
+  "targets": {
+    "genial-core-506613-t3": {
+      "hosting": {
+        "eventhive": [
+          "eventhive"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

@@ -1,9 +1,18 @@
-import EventCard from '../events/EventCard.jsx'
+import { Link } from 'react-router-dom'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  ArrowRight,
+  Share2,
+} from 'lucide-react'
 import CategoryBadge from '../events/CategoryBadge.jsx'
 import EventStatusBadge from '../events/EventStatusBadge.jsx'
-import { Link } from 'react-router-dom'
 import { formatEventTimeRange } from '../../utils/dateTime.js'
 import { getCalendarCells, formatMonthYear, formatSelectedDate, WEEKDAYS, isExpired } from '../../utils/calendar.js'
+import { shareEvent } from '../../utils/eventShare.js'
 
 export default function Calendar({
   currentMonth,
@@ -20,6 +29,7 @@ export default function Calendar({
 
   return (
     <section className="calendar" aria-label="Community Calendar">
+      {/* Left Column: Monthly Calendar Datepicker */}
       <div className="calendar__datepicker">
         <div className="calendar__header">
           <button
@@ -28,15 +38,12 @@ export default function Calendar({
             onClick={onPreviousMonth}
             aria-label="Previous Month"
           >
-            <span aria-hidden="true">‹</span>
+            <ChevronLeft size={16} />
             <span className="calendar__nav-label">Previous</span>
           </button>
 
           <div className="calendar__month-heading">
-            <h1>{formatMonthYear(currentMonth)}</h1>
-            <button className="calendar__today-button" type="button" onClick={onToday}>
-              Today
-            </button>
+            <h2>{formatMonthYear(currentMonth)}</h2>
           </div>
 
           <button
@@ -46,7 +53,7 @@ export default function Calendar({
             aria-label="Next Month"
           >
             <span className="calendar__nav-label">Next</span>
-            <span aria-hidden="true">›</span>
+            <ChevronRight size={16} />
           </button>
         </div>
 
@@ -84,17 +91,25 @@ export default function Calendar({
         </div>
       </div>
 
+      {/* Right Column: Selected Date Panel */}
       <section className="calendar__events" aria-labelledby="selected-date-heading">
+        {/* Selected Date Header (Fixed) */}
         <div className="calendar__events-heading">
-          <div>
-            <p className="eyebrow">SELECTED DATE</p>
-            <h2 id="selected-date-heading">{formatSelectedDate(selectedDate)}</h2>
+          <div className="calendar__events-title-wrap">
+            <div className="calendar__events-icon">
+              <CalendarIcon size={20} />
+            </div>
+            <div>
+              <p className="calendar__events-eyebrow">SELECTED DATE</p>
+              <h2 id="selected-date-heading">{formatSelectedDate(selectedDate)}</h2>
+            </div>
           </div>
           <span className="calendar__event-count">
-            {eventsForDate.length} {eventsForDate.length === 1 ? 'Event' : 'Events'}
+            {eventsForDate.length} {eventsForDate.length === 1 ? 'EVENT' : 'EVENTS'}
           </span>
         </div>
 
+        {/* Scrollable Events Container */}
         {eventsForDate.length === 0 ? (
           <div className="calendar__empty-state">
             <div className="calendar__empty-icon" aria-hidden="true">⌕</div>
@@ -110,20 +125,43 @@ export default function Calendar({
                 style={{ opacity: isExpired(event, now) ? 0.6 : 1 }}
               >
                 <Link className="calendar-event-preview-card__link" to={`/events/${encodeURIComponent(event.eventId)}`}>
-                  {event.imageUrl && (
-                    <div className="calendar-event-preview-card__image-wrap">
+                  <div className="calendar-event-preview-card__image-wrap">
+                    {event.imageUrl ? (
                       <img src={event.imageUrl} alt="" />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="calendar-event-preview-card__fallback-img">EH</div>
+                    )}
+                  </div>
                   <div className="calendar-event-preview-card__content">
-                    <div className="calendar-event-preview-card__badges">
-                      <CategoryBadge category={event.category} />
-                      <EventStatusBadge status={event.status} />
+                    <div className="calendar-event-preview-card__top-row">
+                      <div className="calendar-event-preview-card__badges">
+                        <CategoryBadge category={event.category} />
+                        <EventStatusBadge status={event.status} />
+                      </div>
+                      <button
+                        type="button"
+                        className="calendar-event-preview-card__share"
+                        aria-label="Share event"
+                        title="Share event"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          await shareEvent(event);
+                        }}
+                      >
+                        <Share2 size={16} />
+                      </button>
                     </div>
                     <h3 className="calendar-event-preview-card__title">{event.title}</h3>
                     <div className="calendar-event-preview-card__meta">
-                      <span>🕐 {formatEventTimeRange(event.startTime, event.endTime)}</span>
-                      <span>📍 {event.location}, {[event.neighborhood, event.city].filter(Boolean).join(' · ')}</span>
+                      <span className="calendar-event-preview-card__meta-item">
+                        <Clock size={13} />
+                        {formatEventTimeRange(event.startTime, event.endTime)}
+                      </span>
+                      <span className="calendar-event-preview-card__meta-item">
+                        <MapPin size={13} className="calendar-event-preview-card__pin-icon" />
+                        {event.location}{[event.neighborhood, event.city].filter(Boolean).length > 0 ? `, ${[event.neighborhood, event.city].filter(Boolean).join(' · ')}` : ''}
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -131,6 +169,21 @@ export default function Calendar({
             ))}
           </div>
         )}
+
+        {/* Footer Link */}
+        <div className="calendar__events-footer">
+          {(() => {
+            const year = selectedDate.getFullYear()
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+            const day = String(selectedDate.getDate()).padStart(2, '0')
+            const formattedDateParam = `${year}-${month}-${day}`
+            return (
+              <Link to={`/event-board?date=${formattedDateParam}`} className="calendar__view-all-link">
+                View all events on this date <ArrowRight size={14} />
+              </Link>
+            )
+          })()}
+        </div>
       </section>
     </section>
   )

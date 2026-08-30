@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import '../../styles/eventMap.css';
 
@@ -7,10 +7,7 @@ const mapContainerStyle = {
   height: '100%'
 };
 
-const DEFAULT_CENTER = {
-  lat: 20.5937,
-  lng: 78.9629
-};
+const LIBRARIES = ['places'];
 
 export default function EventMapPicker({
   latitude,
@@ -19,7 +16,7 @@ export default function EventMapPicker({
   initialCenter = [20.5937, 78.9629],
   initialZoom = 5
 }) {
-  const [map, setMap] = useState(null);
+  const [, setMap] = useState(null);
   const [center, setCenter] = useState({
     lat: initialCenter[0],
     lng: initialCenter[1]
@@ -28,17 +25,18 @@ export default function EventMapPicker({
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: LIBRARIES
   });
 
-  const onLoad = useCallback(function callback(map) {
-    setMap(map);
-    map.setOptions({
+  const onLoad = useCallback(function callback(mapInstance) {
+    setMap(mapInstance);
+    mapInstance.setOptions({
       gestureHandling: 'greedy'
     });
   }, []);
 
-  const onUnmount = useCallback(function callback(map) {
+  const onUnmount = useCallback(function callback() {
     setMap(null);
   }, []);
 
@@ -56,6 +54,7 @@ export default function EventMapPicker({
           };
           setCenter(loc);
           setZoom(13);
+          onLocationChange(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
           console.error("Error getting location: ", error);
@@ -79,7 +78,8 @@ export default function EventMapPicker({
 
   return (
     <div className="map-picker-container">
-      <div className="map-container" style={{ height: '350px' }}>
+      {/* Map Embedded Frame */}
+      <div className="map-picker-embedded-wrap">
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
           center={center}
@@ -103,23 +103,23 @@ export default function EventMapPicker({
         </GoogleMap>
       </div>
 
+      {/* Clearly Separated Button Action Row Below Map Container */}
       <div className="map-picker-actions">
-        <button type="button" className="secondary-button" style={{ minHeight: '36px', fontSize: '13px' }} onClick={useMyLocation}>
+        <button
+          type="button"
+          className="map-picker-btn"
+          onClick={useMyLocation}
+        >
           Use My Location
         </button>
-        <button type="button" className="secondary-button" style={{ minHeight: '36px', fontSize: '13px' }} onClick={clearLocation}>
+        <button
+          type="button"
+          className="map-picker-btn"
+          onClick={clearLocation}
+        >
           Clear Location
         </button>
       </div>
-
-      {(latitude !== null && longitude !== null) ? (
-        <div className="map-picker-coords">
-          <span><strong>Latitude:</strong> {latitude.toFixed(6)}</span>
-          <span><strong>Longitude:</strong> {longitude.toFixed(6)}</span>
-        </div>
-      ) : (
-        <p className="map-picker-help">Click on the map to select the exact event location.</p>
-      )}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import logo from '../assets/logo.jpeg'
+import logo from '../assets/eventhive.svg'
+import GradientBlinds from '../components/common/GradientBlinds.jsx'
 
-import Magnet from '../components/common/Magnet.jsx'
-import ClickSpark from '../components/common/ClickSpark.jsx'
+const BLINDS_GRADIENT_COLORS = ['#FF9FFC', '#5227FF'];
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -34,14 +34,29 @@ export default function RegisterPage() {
 
   return (
     <section className="auth-page">
+      <div className="auth-page__bg-blinds" aria-hidden="true">
+        <GradientBlinds
+          gradientColors={BLINDS_GRADIENT_COLORS}
+          angle={20}
+          noise={0.5}
+          blindCount={16}
+          blindMinWidth={60}
+          spotlightRadius={0.5}
+          spotlightSoftness={1}
+          spotlightOpacity={1}
+          mouseDampening={0.15}
+          distortAmount={0}
+          shineDirection="left"
+          mixBlendMode="lighten"
+        />
+      </div>
       <div className="auth-card">
         <div className="auth-brand-logo">
           <img src={logo} alt="" />
           <span>EventHive</span>
         </div>
-        <p className="eyebrow">Create a local EventHive account</p>
-        <h1>Create account</h1>
-        <p className="auth-card__description">Create a local EventHive account with a name, email, and password.</p>
+        <h1 className="auth-card__heading">Create your EventHive account</h1>
+        <p className="auth-card__description">Sign in to create events, RSVP, and participate in community requests.</p>
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <label className="form-field">
             <span>Name</span>
@@ -56,13 +71,9 @@ export default function RegisterPage() {
             <input type="password" autoComplete="new-password" minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
           </label>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <ClickSpark>
-            <Magnet strength={0.08} range={35}>
-              <button className="primary-button" type="submit" disabled={submitting}>
-                {submitting ? 'Creating account…' : 'Register'}
-              </button>
-            </Magnet>
-          </ClickSpark>
+          <button className="primary-button" type="submit" disabled={submitting}>
+            {submitting ? 'Creating account…' : 'Register'}
+          </button>
         </form>
         <p className="auth-card__footer">Already registered? <Link to="/login">Login</Link></p>
       </div>

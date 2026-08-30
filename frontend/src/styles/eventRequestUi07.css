@@ -170,7 +170,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 .event-form .form-field { min-width: 0; }
 .event-form .form-field label {
@@ -182,13 +182,6 @@
   font-size: 13px;
   font-weight: 750;
 }
-.event-form .form-field label[for='request-title']::after,
-.event-form .form-field label[for='request-description']::after,
-.event-form .form-field label[for='request-category']::after,
-.event-form .form-field label[for='request-date']::after,
-.event-form .form-field label[for='request-start']::after,
-.event-form .form-field label[for='request-end']::after,
-.event-form .form-field label[for='request-city']::after { content: '*'; color: var(--danger); font-weight: 800; }
 .event-form .form-field input,
 .event-form .form-field textarea,
 .event-form .form-field select {

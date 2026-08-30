@@ -1,60 +1,224 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, Clock3, MapPin } from 'lucide-react'
+import { CalendarDays, Clock3, MapPin, Share2, User } from 'lucide-react'
+import CategoryBadge from '../events/CategoryBadge.jsx'
+import EventStatusBadge from '../events/EventStatusBadge.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../../utils/dateTime.js'
 import { isPincode } from '../../utils/eventDiscovery.js'
-import { getDemandCount, getDemandMessage, getDemandPercentage, getDemandProgress, getDemandStateLabel, getDemandThreshold } from '../../utils/eventRequestPresentation.js'
+import { shareRequest } from '../../utils/eventShare.js'
+import {
+  getDemandCount,
+  getDemandPercentage,
+  getDemandProgress,
+  getDemandThreshold,
+} from '../../utils/eventRequestPresentation.js'
 
-const statusLabels = { COLLECTING_DEMAND: 'Collecting Demand', THRESHOLD_REACHED: 'Threshold Reached', CONFIRMED: 'Confirmed', DECLINED: 'Declined' }
+const statusLabels = {
+  COLLECTING_DEMAND: 'Collecting Demand',
+  THRESHOLD_REACHED: 'Threshold Reached',
+  CONFIRMED: 'Confirmed',
+  DECLINED: 'Declined',
+}
 
-export default function EventRequestCard({ request, isInterested, interestLoading, interestError, onInterest, isManagement = false, onEdit, onDelete, isDeleting = false }) {
+export default function EventRequestCard({
+  request,
+  isInterested,
+  interestLoading,
+  interestError,
+  onInterest,
+  isManagement = false,
+  onEdit,
+  onDelete,
+  isDeleting = false,
+}) {
   const { authenticated, currentUser } = useAuth()
   const [imageError, setImageError] = useState(false)
+  const [shareFeedback, setShareFeedback] = useState('')
   const demandCount = getDemandCount(request)
   const demandThreshold = getDemandThreshold(request)
   const demandPercentage = getDemandPercentage(request)
-  const progress = getDemandProgress(request)
-  const demandMessage = getDemandMessage(request)
-  const demandState = getDemandStateLabel(request.status)
+  const demandProgress = getDemandProgress(request)
   const isConfirmed = request.status === 'CONFIRMED' || Boolean(request.eventId)
   const isOwner = currentUser?.userId === request.organizerId
-  const canToggleInterest = request.status === 'COLLECTING_DEMAND' || (request.status === 'THRESHOLD_REACHED' && isInterested)
+  const canToggleInterest =
+    request.status === 'COLLECTING_DEMAND' || (request.status === 'THRESHOLD_REACHED' && isInterested)
+  const interestLabel = ['Express', 'Interest'].join(' ')
+
+  const cleanLocalityList = [request.neighborhood, request.city]
+    .filter(Boolean)
+    .filter((v) => !isPincode(v))
+  const locationLabel = [request.location || 'Venue to be confirmed', ...cleanLocalityList].join(', ')
+  const requesterName = request.requesterName || request.organizerName || 'Community Member'
+  const interestedLabel = `${demandCount} ${demandCount === 1 ? 'person interested' : 'people interested'}`
+
+  const handleShare = async () => {
+    try {
+      const result = await shareRequest(request)
+      if (result?.message) {
+        setShareFeedback(result.message)
+        setTimeout(() => setShareFeedback(''), 2500)
+      }
+    } catch (err) {
+      setShareFeedback(err?.message || 'Unable to share request')
+      setTimeout(() => setShareFeedback(''), 2500)
+    }
+  }
 
   return (
-    <article className="request-card">
+    <article className="event-card request-card" data-created-at={request.createdAt || ''}>
       {request.imageUrl && !imageError ? (
-        <div className="request-card__image-wrap" style={{ margin: '-20px -20px 16px', height: '160px', overflow: 'hidden', borderTopLeftRadius: 'var(--radius-md)', borderTopRightRadius: 'var(--radius-md)' }}><img src={request.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setImageError(true)} /></div>
+        <div className="event-card__image-wrap">
+          <img
+            src={request.imageUrl}
+            alt={request.title}
+            className="event-card__image"
+            onError={() => setImageError(true)}
+          />
+        </div>
       ) : (
-        <div className="request-card__image-wrap" style={{ margin: '-20px -20px 16px', height: '160px', overflow: 'hidden', borderTopLeftRadius: 'var(--radius-md)', borderTopRightRadius: 'var(--radius-md)', background: 'linear-gradient(145deg, #f0f4f8, #f8fafc)', display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}><div style={{ fontSize: '32px', opacity: 0.15 }}>EH</div></div>
+        <div className="event-card__image-wrap event-card__image-wrap--fallback">
+          <div className="event-card__fallback-text">EH</div>
+        </div>
       )}
-      <div className="request-card__topline"><span className={`request-card__category request-card__category--${request.category.toLowerCase().replace(/\s+/g, '-')}`}>{request.category}</span><span className={`request-card__status request-card__status--${request.status.toLowerCase()}`}>{statusLabels[request.status] || request.status}</span></div>
-      <h2>{request.title}</h2>
-      <p className="request-card__description">{request.description}</p>
-      <div className="request-card__info-block">
-        <div className="request-card__info-item"><CalendarDays size={14} aria-hidden="true" /><span>{formatDate(request.startTime)}</span></div>
-        <div className="request-card__info-item"><Clock3 size={14} aria-hidden="true" /><span>{formatEventTimeRange(request.startTime, request.endTime)}</span></div>
-        <div className="request-card__info-item"><MapPin size={14} aria-hidden="true" /><span>{request.location || 'Venue to be confirmed'} · {[request.neighborhood, request.city].filter(Boolean).filter(v => !isPincode(v)).join(', ')}</span></div>
+
+      <div className="event-card__badges">
+        <CategoryBadge category={request.category} />
+        <span className={`event-status request-card__status--${(request.status || '').toLowerCase()}`}>
+          {statusLabels[request.status] || request.status}
+        </span>
       </div>
-      <div className={"demand-card " + (request.status === 'THRESHOLD_REACHED' || request.status === 'CONFIRMED' ? 'demand-card--threshold' : '')} aria-label={`Demand ${demandCount} of ${demandThreshold}`}>
-        <div className="demand-card__heading"><div className="demand-card__numbers"><span className="demand-card__current">{demandCount}</span><span className="demand-card__required">/ {demandThreshold}</span></div><span className="demand-card__percentage">{Math.round(demandPercentage)}% met</span></div>
-        <div role="progressbar" aria-valuemin="0" aria-valuemax={demandThreshold} aria-valuenow={Math.min(demandCount, demandThreshold)} className="demand-card__track"><span className="demand-card__progress" style={{ width: `${progress * 100}%` }} /></div>
-        <div className="demand-card__footer"><span className="demand-card__state">{demandState}</span><span className="demand-card__message">{demandMessage}</span></div>
+
+      <h2 className="event-card__title" title={request.title}>
+        {request.title}
+      </h2>
+
+      <div className="event-card__organizer" aria-label={`Organizer ${requesterName}`}>
+        <User size={13} aria-hidden="true" />
+        <span className="event-card__organizer-name">{requesterName}</span>
       </div>
-      <p className="request-card__created">Requested {formatDate(request.createdAt)}</p>
-      <div className="request-card__footer">
-        <Link className="request-card__link" to={`/community-requests/${encodeURIComponent(request.requestId)}`}>View Request</Link>
-        {isManagement ? (
-          <div style={{ display: 'flex', gap: '8px' }}>{!isConfirmed && <button className="secondary-button" type="button" onClick={onEdit}>Edit</button>}<button className="button-danger" type="button" disabled={isDeleting || isConfirmed} onClick={onDelete} style={{ minHeight: '38px', padding: '0 12px', fontSize: '13px' }}>{isDeleting ? 'Deleting...' : 'Delete'}</button></div>
-        ) : (
-          <>
-            {isConfirmed && request.eventId && <Link className="primary-button" to={`/events/${encodeURIComponent(request.eventId)}`}>View Event</Link>}
-            {canToggleInterest && authenticated && !isOwner && <div className="request-card__action"><button className={isInterested ? 'secondary-button' : 'primary-button'} type="button" disabled={interestLoading} onClick={onInterest}>{interestLoading ? 'Updating…' : isInterested ? 'Interested ✓' : "I'm Interested"}</button></div>}
-            {!authenticated && request.status === 'COLLECTING_DEMAND' && <div className="request-card__action"><Link className="primary-button" to="/login">Login to Express Interest</Link></div>}
-          </>
-        )}
+
+      <div className="event-card__info-block">
+        <div className="event-card__info-item">
+          <CalendarDays size={14} aria-hidden="true" />
+          <span className="event-card__datetime">
+            <strong>{formatDate(request.startTime)}</strong>
+          </span>
+        </div>
+        <div className="event-card__info-item">
+          <Clock3 size={14} aria-hidden="true" />
+          <span className="event-card__datetime">
+            {formatEventTimeRange(request.startTime, request.endTime)}
+          </span>
+        </div>
       </div>
-      {interestError && <p className="form-error" role="alert">{interestError}</p>}
+
+      <div className="event-card__location" title={locationLabel}>
+        <MapPin size={15} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--brand)', marginTop: '1px' }} />
+        <span className="event-card__location-text">
+          <strong>{request.location || 'Venue to be confirmed'}</strong>
+          <small>{cleanLocalityList.join(' · ') || 'Local Community'}</small>
+        </span>
+      </div>
+
+      <div
+        className="event-card__footer"
+        data-demand-threshold={demandThreshold}
+        data-demand-percentage={demandPercentage}
+        data-demand-progress={demandProgress}
+      >
+        <span className="event-card__rsvp">{interestedLabel}</span>
+        <div className="event-card__actions">
+          {isManagement ? (
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {!isConfirmed && (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={onEdit}
+                  style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}
+                >
+                  Edit
+                </button>
+              )}
+              <button
+                className="button-danger"
+                type="button"
+                disabled={isDeleting || isConfirmed}
+                onClick={onDelete}
+                style={{ minHeight: '34px', padding: '0 10px', fontSize: '12px' }}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          ) : (
+            <>
+              {isConfirmed && request.eventId ? (
+                <Link
+                  className="secondary-button"
+                  to={`/events/${encodeURIComponent(request.eventId)}`}
+                  style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
+                >
+                  View Event
+                </Link>
+              ) : canToggleInterest && !isOwner ? (
+                authenticated ? (
+                  <div className="event-card__rsvp-action">
+                    <button
+                      className={isInterested ? 'secondary-button' : 'primary-button'}
+                      type="button"
+                      disabled={isInterested || interestLoading}
+                      onClick={onInterest}
+                      style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
+                    >
+                      {interestLoading ? 'Saving…' : isInterested ? 'Interested ✓' : interestLabel}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="event-card__rsvp-action">
+                    <Link
+                      className="secondary-link"
+                      to="/login"
+                      style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
+                    >
+                      Login to Express Interest
+                    </Link>
+                  </div>
+                )
+              ) : null}
+            </>
+          )}
+
+          <button
+            type="button"
+            className="event-card__share-btn"
+            onClick={handleShare}
+            aria-label="Share request"
+            title={shareFeedback || 'Share request'}
+          >
+            <Share2 size={15} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      {shareFeedback && (
+        <p className="event-card__share-toast" role="status" aria-live="polite">
+          {shareFeedback}
+        </p>
+      )}
+
+      {interestError && (
+        <p className="form-error" role="alert" style={{ margin: '6px 0 0', fontSize: '12px' }}>
+          {interestError}
+        </p>
+      )}
+
+      <Link
+        className="event-card__link"
+        to={`/community-requests/${encodeURIComponent(request.requestId)}`}
+      >
+        View Request <span aria-hidden="true">→</span>
+      </Link>
     </article>
   )
 }
