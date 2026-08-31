@@ -80,9 +80,8 @@ async function handleImageUpload(input) {
   }
 }
 
-async function persistEventEmbedding(event) {
-  const embedding = await generateEventEmbedding(canonicalizeEvent(event))
-  await eventRepository.saveEventEmbedding(event.eventId, embedding)
+async function generateEmbedding(event) {
+  return generateEventEmbedding(canonicalizeEvent(event))
 }
 
 async function createEvent(input, userId) {
@@ -90,8 +89,9 @@ async function createEvent(input, userId) {
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   if (event.latitude && event.longitude && !event.district) event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   await conflictService.checkAndThrow(event)
+  const embedding = await generateEmbedding(event)
   const createdEvent = await eventRepository.saveEvent(event)
-  await persistEventEmbedding(createdEvent)
+  await eventRepository.saveEventEmbedding(createdEvent.eventId, embedding)
   return createdEvent
 }
 
@@ -100,9 +100,10 @@ async function createEventAnyway(input, userId) {
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   if (event.latitude && event.longitude && !event.district) event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   const conflicts = await conflictService.checkConflicts(event)
+  const embedding = await generateEmbedding(event)
   const createdEvent = await eventRepository.saveEvent(event)
   if (conflicts.length > 0) await conflictService.saveConflicts(conflicts, createdEvent.eventId)
-  await persistEventEmbedding(createdEvent)
+  await eventRepository.saveEventEmbedding(createdEvent.eventId, embedding)
   return createdEvent
 }
 
@@ -128,8 +129,9 @@ async function saveEvent(input, userId) {
   if (event.latitude && event.longitude && (event.latitude !== existing.latitude || event.longitude !== existing.longitude || !event.district)) {
     event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   }
+  const embedding = await generateEmbedding(event)
   const savedEvent = await eventRepository.saveEvent(event)
-  await persistEventEmbedding(savedEvent)
+  await eventRepository.saveEventEmbedding(savedEvent.eventId, embedding)
   return savedEvent
 }
 
