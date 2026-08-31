@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const { getFirestore } = require('../config/firebaseAdmin')
 const { canonicalizeEvent } = require('../services/eventCanonicalization')
 const { generateEventEmbedding } = require('../services/eventEmbeddingService')
