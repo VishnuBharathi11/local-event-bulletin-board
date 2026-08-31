@@ -1,6 +1,7 @@
 const eventRepository = require('../repositories/eventRepository')
 const eventConflictRepository = require('../repositories/eventConflictRepository')
 const { detectConflicts } = require('./conflictDetectionService')
+const { detectSemanticConflicts } = require('./semanticConflictAnalyzer')
 
 class ConflictDetectedError extends Error {
   constructor(conflicts) {
@@ -11,9 +12,37 @@ class ConflictDetectedError extends Error {
   }
 }
 
-async function checkConflicts(proposedEvent) {
-  const existingEvents = await eventRepository.getEvents()
-  return detectConflicts(proposedEvent, existingEvents)
+function mergeConflicts(deterministicConflicts, semanticConflicts) {
+  const merged = new Map()
+
+  for (const conflict of deterministicConflicts) {
+    merged.set(conflict.conflictingEventId, conflict)
+  }
+
+  for (const conflict of semanticConflicts) {
+    const existing = merged.get(conflict.conflictingEventId)
+    if (!existing || (conflict.conflictScore > existing.conflictScore)) {
+      merged.set(conflict.conflictingEventId, conflict)
+    }
+  }
+
+  return [...merged.values()].sort((a, b) => {
+    if (b.conflictScore !== a.conflictScore) return b.conflictScore - a.conflictScore
+    return (b.semanticSimilarity || 0) - (a.semanticSimilarity || 0)
+  })
+}
+
+async function checkConflicts(proposedEvent, options = {}) {
+  const existingEvents = options.existingEvents || await eventRepository.getEvents()
+  const deterministicConflicts = detectConflicts(proposedEvent, existingEvents)
+  const semanticConflicts = await detectSemanticConflicts(proposedEvent, {
+    similaritySearcher: options.similaritySearcher,
+    candidateLimit: options.candidateLimit,
+    semanticThreshold: options.semanticThreshold,
+    firestore: options.firestore,
+  })
+
+  return mergeConflicts(deterministicConflicts, semanticConflicts)
 }
 
 async function suggestAlternatives(proposedEvent) {
@@ -106,8 +135,8 @@ async function suggestAlternatives(proposedEvent) {
   return suggestions
 }
 
-async function checkAndThrow(proposedEvent) {
-  const conflicts = await checkConflicts(proposedEvent)
+async function checkAndThrow(proposedEvent, options = {}) {
+  const conflicts = await checkConflicts(proposedEvent, options)
   if (conflicts.length > 0) {
     const suggestions = await suggestAlternatives(proposedEvent)
     const error = new ConflictDetectedError(conflicts)
@@ -135,5 +164,5 @@ async function saveConflicts(conflicts, eventId) {
   }
 }
 
-module.exports = { ConflictDetectedError, checkConflicts, suggestAlternatives, checkAndThrow, saveConflicts }
+module.exports = { ConflictDetectedError, mergeConflicts, checkConflicts, suggestAlternatives, checkAndThrow, saveConflicts }
 
