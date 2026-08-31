@@ -1,3 +1,4 @@
+const admin = require('firebase-admin')
 const { getFirestore } = require('../config/firebaseAdmin')
 const { fromFirestoreDocument, toFirestoreEvent } = require('../models/eventModel')
 
@@ -52,6 +53,25 @@ async function saveEvent(event) {
   return { ...entity, eventId: event.eventId }
 }
 
+async function saveEventEmbedding(eventId, embedding) {
+  if (typeof eventId !== 'string' || !eventId.trim()) throw new TypeError('eventId is required')
+  if (!embedding || !Array.isArray(embedding.vector)) throw new TypeError('embedding vector is required')
+  if (!admin.firestore.FieldValue || typeof admin.firestore.FieldValue.vector !== 'function') {
+    const error = new Error('Firestore vector FieldValue is unavailable in the installed Firebase Admin SDK')
+    error.code = 'FIRESTORE_VECTOR_UNAVAILABLE'
+    throw error
+  }
+
+  await getEventCollection().doc(eventId).set({
+    embedding: admin.firestore.FieldValue.vector(embedding.vector),
+    embeddingModel: embedding.embeddingModel,
+    embeddingDimensions: embedding.embeddingDimensions,
+    embeddingTaskType: embedding.embeddingTaskType,
+    embeddingConfigVersion: embedding.embeddingConfigVersion,
+    embeddingUpdatedAt: Date.now(),
+  }, { merge: true })
+}
+
 async function deleteEvent(eventId) {
   const batch = getFirestore().batch()
   batch.delete(getEventCollection().doc(eventId))
@@ -65,6 +85,7 @@ module.exports = {
   getUserEvents,
   getEventById,
   saveEvent,
+  saveEventEmbedding,
   deleteEvent,
   isEventExpired,
   filterActiveEvents,

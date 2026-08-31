@@ -1,6 +1,8 @@
 const eventRepository = require('../repositories/eventRepository')
 const userRepository = require('../repositories/userRepository')
 const { normalizeEvent, validateEventForCreation } = require('../models/eventModel')
+const { canonicalizeEvent } = require('./eventCanonicalization')
+const { generateEventEmbedding } = require('./eventEmbeddingService')
 const conflictService = require('./conflictService')
 const imageService = require('./imageService')
 const { getDistrictFromCoords } = require('./geocodingService')
@@ -78,12 +80,19 @@ async function handleImageUpload(input) {
   }
 }
 
+async function generateEmbedding(event) {
+  return generateEventEmbedding(canonicalizeEvent(event))
+}
+
 async function createEvent(input, userId) {
   await handleImageUpload(input)
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   if (event.latitude && event.longitude && !event.district) event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   await conflictService.checkAndThrow(event)
-  return eventRepository.saveEvent(event)
+  const embedding = await generateEmbedding(event)
+  const createdEvent = await eventRepository.saveEvent(event)
+  await eventRepository.saveEventEmbedding(createdEvent.eventId, embedding)
+  return createdEvent
 }
 
 async function createEventAnyway(input, userId) {
@@ -91,8 +100,10 @@ async function createEventAnyway(input, userId) {
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   if (event.latitude && event.longitude && !event.district) event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   const conflicts = await conflictService.checkConflicts(event)
+  const embedding = await generateEmbedding(event)
   const createdEvent = await eventRepository.saveEvent(event)
   if (conflicts.length > 0) await conflictService.saveConflicts(conflicts, createdEvent.eventId)
+  await eventRepository.saveEventEmbedding(createdEvent.eventId, embedding)
   return createdEvent
 }
 
@@ -118,7 +129,10 @@ async function saveEvent(input, userId) {
   if (event.latitude && event.longitude && (event.latitude !== existing.latitude || event.longitude !== existing.longitude || !event.district)) {
     event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   }
-  return eventRepository.saveEvent(event)
+  const embedding = await generateEmbedding(event)
+  const savedEvent = await eventRepository.saveEvent(event)
+  await eventRepository.saveEventEmbedding(savedEvent.eventId, embedding)
+  return savedEvent
 }
 
 async function deleteEvent(eventId, userId) {
