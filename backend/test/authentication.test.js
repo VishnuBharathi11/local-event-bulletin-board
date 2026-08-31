@@ -106,7 +106,7 @@ test('24. authentication controller returns only public user data', async () => 
   try {
     const response = fakeResponse()
     await authController.login({ body: {} }, response)
-    assert.deepEqual(response.body, { user: { userId: 'user-a', name: 'User A', email: 'user@example.com' } })
+    assert.deepEqual(response.body, { user: { userId: 'user-a', name: 'User A', email: 'user@example.com' }, token: 'token' })
   } finally { authService.login = original }
 })
 test('25. logout clears the HttpOnly session cookie', async () => {

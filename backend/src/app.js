@@ -20,7 +20,12 @@ function createApp() {
     ? configuredOrigins
     : (process.env.NODE_ENV === 'production' ? false : true)
 
-  app.use(cors({ origin: corsOrigin, credentials: true }))
+  app.use(cors({
+    origin: corsOrigin,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Auth-Token', 'Accept'],
+    exposedHeaders: ['X-Auth-Token', 'Set-Cookie'],
+  }))
   app.use(express.json({ limit: '10mb' }))
   app.use(express.urlencoded({ extended: true, limit: '10mb' }))
   app.use('/api', healthRoutes)

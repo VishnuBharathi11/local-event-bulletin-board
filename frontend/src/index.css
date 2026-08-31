@@ -89,15 +89,19 @@ button { border: 0; }
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: var(--text);
   text-decoration: none;
 }
 .brand__logo {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.brand:hover .brand__logo {
+  transform: scale(1.05);
 }
 
 .brand strong, .brand small { display: block; }
@@ -108,15 +112,27 @@ button { border: 0; }
   font-weight: 850;
   color: #6d28d9; /* Matching the vibrant purple from your uploaded image */
 }
-.brand small {
-  margin-top: 2px;
+.brand small, .brand__tagline {
+  margin-top: 3px;
   color: #64748b;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.9;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.95;
+}
+
+.brand__dot {
+  display: inline-block;
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background-color: #6d28d9; /* Filled with the title EventHive color */
+  flex-shrink: 0;
 }
 .main-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
 .nav-link {

@@ -14,7 +14,7 @@ const CATEGORIES = [
 
 export default function Step04Details({ form, update, errors = {} }) {
   function handleImageChange(event) {
-    const file = event.target.files[0]
+    const file = event.target?.files?.[0]
     if (!file) return
 
     if (file.size > 5 * 1024 * 1024) {
@@ -24,13 +24,19 @@ export default function Step04Details({ form, update, errors = {} }) {
 
     const reader = new FileReader()
     reader.onloadend = () => {
-      update('imageUrl', reader.result)
+      if (typeof reader.result === 'string') {
+        update('imageUrl', reader.result)
+      }
     }
     reader.readAsDataURL(file)
   }
 
-  function handleRemoveImage() {
-    update('imageUrl', '')
+  function clearImage(e) {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    update('imageUrl', null)
   }
 
   return (

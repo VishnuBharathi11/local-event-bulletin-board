@@ -29,13 +29,19 @@ export default function CommunityRequestsPage() {
           <p className="event-board-header__sub">
             See what events people are asking for and help bring them to life.
           </p>
-          <div className="event-board-header__actions" style={{ marginTop: '20px' }}>
+          <div className="event-board-header__actions" style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <Link
               className="primary-button event-board-header__btn"
               to="/community-requests/new"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               <PlusCircle size={16} /> Request Event
+            </Link>
+            <Link
+              className="event-board-header__link-how-it-works"
+              to="/how-it-works"
+            >
+              See How it works?
             </Link>
           </div>
         </div>

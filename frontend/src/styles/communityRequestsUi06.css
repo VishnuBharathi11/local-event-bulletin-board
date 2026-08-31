@@ -42,6 +42,27 @@
   min-width: 148px;
 }
 
+.event-board-header__link-how-it-works {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand, #6366f1);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm, 8px);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  transition: all 0.2s ease;
+}
+
+.event-board-header__link-how-it-works:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--brand-dark, #4f46e5);
+  transform: translateY(-1px);
+}
+
 .request-card--threshold {
   border-color: #b8c9df;
   background: linear-gradient(180deg, #fff 0%, #f7faff 100%);

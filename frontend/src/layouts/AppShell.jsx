@@ -36,7 +36,13 @@ export default function AppShell() {
             <img src={logo} alt="" className="brand__logo" />
             <span>
               <strong>EventHive</strong>
-              <small>LOCAL EVENT BULLETIN BOARD</small>
+              <small className="brand__tagline">
+                <span>DISCOVER</span>
+                <span className="brand__dot" aria-hidden="true" />
+                <span>CONNECT</span>
+                <span className="brand__dot" aria-hidden="true" />
+                <span>CELEBRATE</span>
+              </small>
             </span>
           </NavLink>
 

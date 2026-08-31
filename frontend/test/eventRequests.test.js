@@ -123,3 +123,9 @@ test('Event Request keeps selected venue data in the existing submission payload
   assert.match(requestForm, /longitude: form\.longitude/)
   assert.match(requestForm, /createEventRequest\(payload\)/)
 })
+
+test('Community Requests hero card contains a link to How It Works page', () => {
+  assert.match(page, /See How it works\?/)
+  assert.match(page, /to="\/how-it-works"/)
+})
+

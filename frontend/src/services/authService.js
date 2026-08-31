@@ -35,6 +35,13 @@ export function updateProfile(updates) {
   })
 }
 
+export function loginWithGoogle(idToken) {
+  return apiRequest('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  })
+}
+
 export function authenticateWithGoogle(idToken, mode = 'login') {
   return apiRequest('/auth/google', {
     method: 'POST',

@@ -13,7 +13,15 @@ function parseCookies(header = '') {
 
 async function resolveAuthenticatedUser(req) {
   const cookies = parseCookies(req.headers.cookie)
-  const token = cookies[SESSION_COOKIE]
+  let token = cookies[SESSION_COOKIE]
+
+  if (!token && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ')
+    if (parts.length === 2 && parts[0].toLowerCase() === 'bearer') {
+      token = parts[1]
+    }
+  }
+
   if (!token) return null
 
   try {

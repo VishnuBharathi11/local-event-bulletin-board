@@ -41,13 +41,15 @@ function handleError(res, error) {
 
 function setSessionCookie(res, token) {
   res.setHeader('Set-Cookie', `${authService.SESSION_COOKIE}=${encodeURIComponent(token)}; ${cookieOptions()}`)
+  res.setHeader('X-Auth-Token', token)
+  res.setHeader('Access-Control-Expose-Headers', 'X-Auth-Token')
 }
 
 async function register(req, res) {
   try {
     const result = await authService.register(req.body)
     setSessionCookie(res, result.token)
-    return res.status(201).json({ user: result.user })
+    return res.status(201).json({ user: result.user, token: result.token })
   } catch (error) {
     return handleError(res, error)
   }
@@ -57,7 +59,7 @@ async function login(req, res) {
   try {
     const result = await authService.login(req.body)
     setSessionCookie(res, result.token)
-    return res.status(200).json({ user: result.user })
+    return res.status(200).json({ user: result.user, token: result.token })
   } catch (error) {
     return handleError(res, error)
   }
@@ -70,7 +72,7 @@ async function loginWithGoogle(req, res) {
       req.body?.mode
     )
     setSessionCookie(res, result.token)
-    return res.status(200).json({ user: result.user })
+    return res.status(200).json({ user: result.user, token: result.token })
   } catch (error) {
     return handleError(res, error)
   }

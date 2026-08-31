@@ -82,12 +82,23 @@
     padding-inline: 16px;
   }
 
-  .brand strong {
-    font-size: 15px;
+  .brand__logo {
+    width: 36px;
+    height: 36px;
   }
 
-  .brand small {
-    font-size: 10px;
+  .brand strong {
+    font-size: 18px;
+  }
+
+  .brand small, .brand__tagline {
+    font-size: 8.5px;
+    gap: 4px;
+  }
+
+  .brand__dot {
+    width: 3.5px;
+    height: 3.5px;
   }
 
   .auth-nav__state,
