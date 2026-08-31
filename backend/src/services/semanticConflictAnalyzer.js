@@ -19,13 +19,11 @@ async function detectSemanticConflicts(proposedEvent, options = {}) {
   if (!proposedEvent || typeof proposedEvent !== 'object' || Array.isArray(proposedEvent)) {
     throw new TypeError('proposedEvent must be an object')
   }
-  if (typeof proposedEvent.eventId !== 'string' || !proposedEvent.eventId.trim()) {
-    throw new TypeError('proposedEvent.eventId is required')
-  }
 
   const canonicalText = canonicalizeEvent(proposedEvent)
   const similaritySearcher = options.similaritySearcher || findSimilarEvents
   const candidateLimit = options.candidateLimit || DEFAULT_CANDIDATE_LIMIT
+  const proposedEventId = typeof proposedEvent.eventId === 'string' ? proposedEvent.eventId.trim() : ''
 
   const candidates = await similaritySearcher(canonicalText, {
     limit: candidateLimit,
@@ -33,7 +31,7 @@ async function detectSemanticConflicts(proposedEvent, options = {}) {
   }, options.firestore)
 
   const results = candidates
-    .filter((candidate) => candidate.eventId !== proposedEvent.eventId)
+    .filter((candidate) => !proposedEventId || candidate.eventId !== proposedEventId)
     .map((candidate) => buildSemanticConflictResult(
       proposedEvent,
       candidate,
