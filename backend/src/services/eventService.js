@@ -1,6 +1,8 @@
 const eventRepository = require('../repositories/eventRepository')
 const userRepository = require('../repositories/userRepository')
 const { normalizeEvent, validateEventForCreation } = require('../models/eventModel')
+const { canonicalizeEvent } = require('./eventCanonicalization')
+const { generateEventEmbedding } = require('./eventEmbeddingService')
 const conflictService = require('./conflictService')
 const imageService = require('./imageService')
 const { getDistrictFromCoords } = require('./geocodingService')
@@ -78,12 +80,19 @@ async function handleImageUpload(input) {
   }
 }
 
+async function persistEventEmbedding(event) {
+  const embedding = await generateEventEmbedding(canonicalizeEvent(event))
+  await eventRepository.saveEventEmbedding(event.eventId, embedding)
+}
+
 async function createEvent(input, userId) {
   await handleImageUpload(input)
   const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
   if (event.latitude && event.longitude && !event.district) event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   await conflictService.checkAndThrow(event)
-  return eventRepository.saveEvent(event)
+  const createdEvent = await eventRepository.saveEvent(event)
+  await persistEventEmbedding(createdEvent)
+  return createdEvent
 }
 
 async function createEventAnyway(input, userId) {
@@ -93,6 +102,7 @@ async function createEventAnyway(input, userId) {
   const conflicts = await conflictService.checkConflicts(event)
   const createdEvent = await eventRepository.saveEvent(event)
   if (conflicts.length > 0) await conflictService.saveConflicts(conflicts, createdEvent.eventId)
+  await persistEventEmbedding(createdEvent)
   return createdEvent
 }
 
@@ -118,7 +128,9 @@ async function saveEvent(input, userId) {
   if (event.latitude && event.longitude && (event.latitude !== existing.latitude || event.longitude !== existing.longitude || !event.district)) {
     event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
   }
-  return eventRepository.saveEvent(event)
+  const savedEvent = await eventRepository.saveEvent(event)
+  await persistEventEmbedding(savedEvent)
+  return savedEvent
 }
 
 async function deleteEvent(eventId, userId) {
