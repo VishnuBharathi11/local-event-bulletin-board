@@ -97,13 +97,43 @@ async function createEvent(input, userId) {
 
 async function createEventAnyway(input, userId) {
   await handleImageUpload(input)
-  const event = validateEventForCreation(withAuthenticatedOrganizer(input, userId))
-  if (event.latitude && event.longitude && !event.district) event.district = await getDistrictFromCoords(event.latitude, event.longitude) || ''
+
+  const event = validateEventForCreation(
+    withAuthenticatedOrganizer(input, userId)
+  )
+
+  if (event.latitude && event.longitude && !event.district) {
+    event.district =
+      await getDistrictFromCoords(event.latitude, event.longitude) || ''
+  }
+
   const conflicts = await conflictService.checkConflicts(event)
+
+  const hardConflicts = conflicts.filter(
+    (conflict) => conflict.isHardConflict
+  )
+
+  if (hardConflicts.length > 0) {
+    const suggestions = await conflictService.suggestAlternatives(event)
+    const error = new conflictService.ConflictDetectedError(hardConflicts)
+
+    error.message =
+      'This venue is already occupied during the selected time. Choose a different time or venue.'
+
+    error.suggestions = suggestions
+
+    throw error
+  }
+
   const embedding = await generateEmbedding(event)
   const createdEvent = await eventRepository.saveEvent(event)
-  if (conflicts.length > 0) await conflictService.saveConflicts(conflicts, createdEvent.eventId)
+
+  if (conflicts.length > 0) {
+    await conflictService.saveConflicts(conflicts, createdEvent.eventId)
+  }
+
   await eventRepository.saveEventEmbedding(createdEvent.eventId, embedding)
+
   return createdEvent
 }
 

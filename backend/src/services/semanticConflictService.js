@@ -62,7 +62,8 @@ function classifySemanticConflict(enrichedConflict) {
     throw new TypeError('enriched conflict is required')
   }
 
-  return enrichedConflict.conflictScore >= CONFLICT_THRESHOLD
+    return enrichedConflict.isHardConflict ||
+    enrichedConflict.conflictScore >= CONFLICT_THRESHOLD
     ? 'POTENTIAL_CONFLICT'
     : 'NO_DETERMINISTIC_CONFLICT'
 }

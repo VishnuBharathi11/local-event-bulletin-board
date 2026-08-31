@@ -95,7 +95,12 @@ test('self event is excluded from candidate results', () => {
 
 test('multiple conflicts are sorted by descending score', () => {
   const conflicts = detectConflicts(event({ eventId: 'new' }), [
-    event({ eventId: 'weak', title: 'Other', category: 'Food' }),
+    event({
+  eventId: 'weak',
+  title: 'Other',
+  category: 'Food',
+  location: 'Different Venue',
+}),
     event({ eventId: 'strong' }),
   ])
   assert.deepEqual(conflicts.map((item) => item.conflictingEventId), ['strong'])

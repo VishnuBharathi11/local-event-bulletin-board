@@ -10,9 +10,10 @@ function stripEmbeddingMetadata(event = {}) {
 }
 
 function hasConflictSignal(conflict) {
-  // Semantic similarity is supporting evidence. The deterministic conflict
-  // threshold remains the decision boundary; semantics can strengthen it.
-  return conflict.conflictScore >= conflict.conflictThreshold
+  // A hard scheduling collision is authoritative even when its
+  // deterministic score is below the general potential-conflict threshold.
+  return Boolean(conflict.isHardConflict) ||
+    conflict.conflictScore >= conflict.conflictThreshold
 }
 
 async function detectSemanticConflicts(proposedEvent, options = {}) {

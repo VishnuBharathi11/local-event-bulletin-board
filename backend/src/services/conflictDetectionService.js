@@ -85,13 +85,26 @@ function calculateConflict(newEventInput, existingInput) {
   // Time overlap = 30 points.
   // Boundary-touching events do not overlap.
 
-  const overlaps =
+     const overlaps =
     newEvent.startTime < existing.endTime &&
     newEvent.endTime > existing.startTime
 
   if (overlaps) {
     score += 30
     reasons.push('Time overlaps with existing event')
+  }
+
+  const sameSpecificLocation =
+    newEvent.location.trim().toLocaleLowerCase() !== '' &&
+    newEvent.location.trim().toLocaleLowerCase() ===
+      existing.location.trim().toLocaleLowerCase()
+
+  // A venue cannot host two overlapping events at the same time.
+  // This is a hard scheduling conflict regardless of category/title similarity.
+  const isHardConflict = sameSpecificLocation && overlaps
+
+  if (isHardConflict) {
+    reasons.push('Same venue has an overlapping event')
   }
 
   // Same category = 20 points.
@@ -137,10 +150,15 @@ function calculateConflict(newEventInput, existingInput) {
   }
 
   return {
+
     conflictId: '',
     eventId: newEvent.eventId,
     conflictingEventId: existing.eventId,
     conflictScore: score,
+    isHardConflict,
+    conflictType: isHardConflict
+      ? 'HARD_SCHEDULING_CONFLICT'
+      : 'POTENTIAL_SCHEDULING_CONFLICT',
     activitySimilarity: activity.activitySimilarity,
     activityDomain: activity.activityDomain,
     activityReason: activity.activityReason,
@@ -159,7 +177,10 @@ function detectConflicts(newEventInput, existingEvents) {
       conflict: calculateConflict(newEvent, existing),
       index,
     }))
-    .filter(({ conflict }) => conflict.conflictScore >= CONFLICT_THRESHOLD)
+        .filter(({ conflict }) =>
+      conflict.isHardConflict ||
+      conflict.conflictScore >= CONFLICT_THRESHOLD
+    )
     .sort((a, b) => {
       if (b.conflict.conflictScore !== a.conflict.conflictScore) {
         return b.conflict.conflictScore - a.conflict.conflictScore
