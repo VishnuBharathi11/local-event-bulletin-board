@@ -218,7 +218,6 @@ export default function RequestStep01BasicInfo({ form, update, currentUser, erro
                 aria-busy={generatingDescription}
                 aria-label="Regenerate AI event request description"
               >
-                <Sparkles size={15} aria-hidden="true" />
                 {generatingDescription ? 'Generating...' : 'Regenerate'}
               </button>
             </div>

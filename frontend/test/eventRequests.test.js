@@ -39,8 +39,8 @@ test('authenticated users load existing interest state without a new endpoint', 
 })
 
 test('interest loading prevents duplicate clicks and shows Saving', () => {
-  assert.match(hook, /if \(!authenticated \|\| interestLoadingId \|\| interestedIds\.has\(requestId\)\) return/)
-  assert.match(card, /disabled=\{isInterested \|\| interestLoading\}/)
+  assert.match(hook, /if \(!authenticated \|\| interestLoadingId\)/)
+  assert.match(card, /disabled=\{interestLoading\}/)
   assert.match(card, /interestLoading \? 'Saving…'/)
 })
 

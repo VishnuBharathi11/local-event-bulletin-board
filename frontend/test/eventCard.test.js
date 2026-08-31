@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 const source = fs.readFileSync(fileURLToPath(new URL('../src/components/events/EventCard.jsx', import.meta.url)), 'utf8')
 
 test('EventCard reuses the existing RSVP hook and exposes the RSVP action directly on the card', () => {
-  assert.match(source, /useEventRSVP\(event\.eventId, authenticated\)/)
+  assert.match(source, /useEventRSVP\(event\??\.eventId, authenticated\)/)
   assert.match(source, /rsvp\.setGoing\(\)/)
   assert.match(source, /rsvp\.setNotGoing\(\)/)
   assert.match(source, /onRsvpChanged\?\.\(\)/)

@@ -14,11 +14,11 @@ export function useEventRequests() {
     setInterestError(null)
     setInterestedIds(new Set())
     try {
-      let requests = await getEventRequests()
+      const requests = await getEventRequests()
       let existingInterestIds = new Set()
       if (authenticated && requests.length > 0) {
-        if (currentUser?.userId) requests = requests.filter(r => r.organizerId !== currentUser.userId)
-        const interestResults = await Promise.all(requests.map(async (request) => ({ requestId: request.requestId, interested: await getInterestStatus(request.requestId) })))
+        const requestsToFetchInterest = currentUser?.userId ? requests.filter(r => r.organizerId !== currentUser.userId) : requests
+        const interestResults = await Promise.all(requestsToFetchInterest.map(async (request) => ({ requestId: request.requestId, interested: await getInterestStatus(request.requestId) })))
         existingInterestIds = new Set(interestResults.filter((result) => Boolean(result.interested?.interested)).map((result) => result.requestId))
       }
       setInterestedIds(existingInterestIds)
@@ -32,7 +32,7 @@ export function useEventRequests() {
   useEffect(() => { reload() }, [reload])
 
   const toggleInterest = useCallback(async (requestId) => {
-    if (!authenticated || interestLoadingId || interestedIds.has(requestId)) return
+    if (!authenticated || interestLoadingId) return
     const currentlyInterested = interestedIds.has(requestId)
     setInterestLoadingId(requestId)
     setInterestError(null)

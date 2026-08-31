@@ -28,7 +28,8 @@ import {
   declineEventRequest,
   expressInterest,
   getEventRequestById,
-  getInterestStatus
+  getInterestStatus,
+  removeInterest
 } from '../services/eventRequestService.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { formatDate, formatEventTimeRange } from '../utils/dateTime.js'
@@ -73,7 +74,6 @@ export default function EventRequestDetailsPage() {
   const [error, setError] = useState(null)
   const [conflicts, setConflicts] = useState([])
   const [copied, setCopied] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -105,12 +105,15 @@ export default function EventRequestDetailsPage() {
   }, [requestId, authenticated])
 
   async function handleInterest() {
+    if (!authenticated || action === 'interest') return
     setAction('interest')
     setError(null)
     try {
-      const updated = await expressInterest(requestId)
+      const updated = interested
+        ? await removeInterest(requestId)
+        : await expressInterest(requestId)
       setRequest(updated)
-      setInterested(true)
+      setInterested(!interested)
     } catch (actionError) {
       setError(actionError.message)
     } finally {
@@ -223,52 +226,15 @@ export default function EventRequestDetailsPage() {
           </div>
 
           <div className="request-view-actions">
-            <button
-              type="button"
-              className="request-action-btn request-action-btn--share"
-              onClick={handleShare}
-              title="Share event request"
-            >
-              <Share2 size={15} strokeWidth={2.2} />
-              <span>{copied ? 'Copied!' : 'Share'}</span>
-            </button>
-
-            <div className="request-menu-wrapper">
-              <button
-                type="button"
-                className="request-action-btn request-action-btn--more"
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-label="More options"
+            {isOrganizer && (
+              <Link
+                to={`/community-requests/edit/${encodeURIComponent(requestId)}`}
+                className="request-action-btn request-action-btn--edit"
               >
-                <MoreHorizontal size={18} />
-              </button>
-
-              {menuOpen && (
-                <div className="request-dropdown-menu">
-                  {isOrganizer && (
-                    <Link
-                      to={`/community-requests/edit/${encodeURIComponent(requestId)}`}
-                      className="request-dropdown-item"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <Edit3 size={14} />
-                      <span>Edit Request</span>
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    className="request-dropdown-item"
-                    onClick={() => {
-                      handleShare()
-                      setMenuOpen(false)
-                    }}
-                  >
-                    <Share2 size={14} />
-                    <span>Copy Link</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                <Edit3 size={15} strokeWidth={2.2} />
+                <span>Edit</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -528,29 +494,31 @@ export default function EventRequestDetailsPage() {
             </div>
 
             {/* Interest CTA Card */}
-            <div className="request-cta-card">
-              <p className="request-cta-text">
-                Help bring this event idea to life by expressing interest!
-              </p>
+            {!isOrganizer && (
+              <div className="request-cta-card">
+                <p className="request-cta-text">
+                  Help bring this event idea to life by expressing interest!
+                </p>
 
-              {authenticated ? (
-                <button
-                  type="button"
-                  className="request-cta-button"
-                  onClick={handleInterest}
-                  disabled={action === 'interest'}
-                >
-                  <span>{action === 'interest' ? 'Updating…' : (interested ? "I'm Interested ✓" : "I'm Interested")}</span>
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  className="request-cta-button"
-                >
-                  <span>Log In to Express Interest</span>
-                </Link>
-              )}
-            </div>
+                {authenticated ? (
+                  <button
+                    type="button"
+                    className="request-cta-button"
+                    onClick={handleInterest}
+                    disabled={action === 'interest'}
+                  >
+                    <span>{action === 'interest' ? 'Updating…' : (interested ? 'Interested ✓' : 'Interested')}</span>
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="request-cta-button"
+                  >
+                    <span>Log In to Express Interest</span>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

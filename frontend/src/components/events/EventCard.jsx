@@ -21,12 +21,13 @@ export default function EventCard({
   style = {}
 }) {
   const { authenticated, currentUser } = useAuth()
-  const rsvp = useEventRSVP(event.eventId, authenticated)
+  const rsvp = useEventRSVP(event?.eventId, authenticated)
   const [imageError, setImageError] = useState(false)
   const [lifecycleStatus, setLifecycleStatus] = useState(() => getEventLifecycleStatus(event))
   const [shareFeedback, setShareFeedback] = useState('')
 
   useEffect(() => {
+    if (!event) return undefined
     let timerId
     let cancelled = false
 
@@ -35,7 +36,7 @@ export default function EventCard({
       const nextStatus = getEventLifecycleStatus(event)
       setLifecycleStatus(nextStatus)
       if (nextStatus === 'EXPIRED') {
-        onExpired?.(event.eventId)
+        onExpired?.(event?.eventId)
         return
       }
       const boundary = getNextEventLifecycleBoundary(event)
@@ -47,8 +48,9 @@ export default function EventCard({
       cancelled = true
       if (timerId) window.clearTimeout(timerId)
     }
-  }, [event.eventId, event.startTime, event.endTime, event.expireAt, onExpired])
+  }, [event?.eventId, event?.startTime, event?.endTime, event?.expireAt, onExpired])
 
+  if (!event) return null
   if (lifecycleStatus === 'EXPIRED' && !isManagement) return null
 
   const rsvpCount = rsvp.hasCount ? rsvp.rsvpCount : (Number(event.rsvpCount) || 0)
@@ -56,7 +58,7 @@ export default function EventCard({
   const cleanLocalityList = [event.neighborhood, event.city].filter(Boolean).filter(val => !isPincode(val))
   const locationLabel = [event.location, ...cleanLocalityList].join(', ')
   const isOwner = currentUser?.userId === event.organizerId
-  const canModify = event.startTime - Date.now() > 2 * 60 * 60 * 1000
+  const canModify = event.startTime ? event.startTime - Date.now() > 2 * 60 * 60 * 1000 : false
   const isOngoing = lifecycleStatus === 'ACTIVE'
 
 async function handleGoing() {

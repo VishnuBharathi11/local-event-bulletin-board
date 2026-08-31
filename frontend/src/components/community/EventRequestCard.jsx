@@ -43,8 +43,7 @@ export default function EventRequestCard({
   const isOwner = currentUser?.userId === request.organizerId
   const canToggleInterest =
     request.status === 'COLLECTING_DEMAND' || (request.status === 'THRESHOLD_REACHED' && isInterested)
-  const interestLabel = ['Express', 'Interest'].join(' ')
-
+  const interestLabel = 'Interested'
   const cleanLocalityList = [request.neighborhood, request.city]
     .filter(Boolean)
     .filter((v) => !isPincode(v))
@@ -167,7 +166,7 @@ export default function EventRequestCard({
                     <button
                       className={isInterested ? 'secondary-button' : 'primary-button'}
                       type="button"
-                      disabled={isInterested || interestLoading}
+                      disabled={interestLoading}
                       onClick={onInterest}
                       style={{ minHeight: '34px', padding: '0 12px', fontSize: '12px' }}
                     >
