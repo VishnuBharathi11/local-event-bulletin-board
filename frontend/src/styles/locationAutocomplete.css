@@ -1,0 +1,125 @@
+.location-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+.location-autocomplete__input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.location-autocomplete__input-wrap .form-input {
+  padding-right: 40px;
+}
+
+.location-autocomplete__loading,
+.location-autocomplete__chevron {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.location-autocomplete__loading {
+  width: 15px;
+  height: 15px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #6d28d9;
+  border-radius: 50%;
+  animation: location-autocomplete-spin 0.7s linear infinite;
+}
+
+.location-autocomplete__chevron {
+  color: #94a3b8;
+}
+
+.location-autocomplete__menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  max-height: 270px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  padding: 5px;
+}
+
+.location-autocomplete__option {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 10px 11px;
+  text-align: left;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+.location-autocomplete__option:hover,
+.location-autocomplete__option--active {
+  background: #f8f5fe;
+}
+
+.location-autocomplete__option-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #ede4fc;
+  color: #6d28d9;
+}
+
+.location-autocomplete__option-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.location-autocomplete__option-copy strong {
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1.3;
+  color: #0f172a;
+}
+
+.location-autocomplete__option-copy span {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-autocomplete__error {
+  display: block;
+  margin-top: 2px;
+  color: #b91c1c;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+@keyframes location-autocomplete-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .location-autocomplete__menu {
+    max-height: 240px;
+  }
+
+  .location-autocomplete__option {
+    min-height: 52px;
+  }
+}
