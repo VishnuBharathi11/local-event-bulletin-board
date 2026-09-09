@@ -1,209 +1,748 @@
-# Local Event Bulletin Board
+<div align="center">
 
-> A smart hyperlocal event coordination platform — built for Cognizant Hackathon 2026.
+# EventHive
+### Local Event Bulletin Board
 
-Most event apps make an organizer plan first and hope people show up. This platform flips that: the community expresses interest first, and an event only becomes real once enough demand exists. It also warns organizers when a new event is likely to clash with an existing one nearby, before either ever goes live.
+<p>A smart hyperlocal event coordination platform for discovering, creating, and organizing community events.</p>
+
+<p>
+<a href="https://eventhive.web.app"><strong>Live Application</strong></a>
+&nbsp;·&nbsp;
+<a href="https://github.com/VishnuBharathi11/local-event-bulletin-board"><strong>Source Code</strong></a>
+</p>
+
+<p>
+<img src="https://img.shields.io/badge/React-Frontend-61DAFB?logo=react&logoColor=111827" alt="React">
+<img src="https://img.shields.io/badge/Node.js-Backend-339933?logo=node.js&logoColor=white" alt="Node.js">
+<img src="https://img.shields.io/badge/Express-API-000000?logo=express&logoColor=white" alt="Express">
+<img src="https://img.shields.io/badge/Firebase-Firestore-FFCA28?logo=firebase&logoColor=111827" alt="Firebase">
+<img src="https://img.shields.io/badge/Google%20Cloud-Deployment-4285F4?logo=googlecloud&logoColor=white" alt="Google Cloud">
+<img src="https://img.shields.io/badge/AI-Gemini%20%2B%20Vertex%20AI-8E75B2" alt="AI">
+</p>
+
+</div>
 
 ---
 
-## Table of Contents
+## Overview
 
-- [Problem Statement](#problem-statement)
-- [Core Innovations](#core-innovations)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Data Model](#data-model)
-- [API Endpoints](#api-endpoints)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Scope](#scope)
-- [Roadmap](#roadmap)
-- [Team](#team)
+**EventHive** is a hyperlocal event coordination platform that brings fragmented local event information into one searchable community bulletin board.
+
+Community members can discover upcoming events, create events, search and filter by location and category, view events on maps and calendars, RSVP, share events, create community requests, express interest, and benefit from intelligent conflict and semantic analysis.
+
+The project was developed as a **Cognizant Hackathon 2026** solution.
 
 ---
 
-## Problem Statement
+## Problem
 
-Local events are shared through fragmented channels — messaging groups, social media, posters, and personal networks. This creates a handful of recurring problems:
+Local event information is commonly distributed across social-media posts, messaging groups, posters, and word of mouth. This creates four recurring problems:
 
-- Organizers can't gauge interest before committing effort
-- Similar events overlap and unintentionally split the audience
-- There's no single place to discover what's happening nearby
-- Expired events clutter active listings
-- Small events (a badminton match, a study group) often never get posted at all — organizers fear being the only one who shows up
-
-## Core Innovations
-
-### 1. Demand-Driven Event Confirmation
-Instead of an organizer creating an event and hoping people attend, users express interest first. A demand counter tracks how many people want the event. Once a configurable threshold is reached, the organizer is notified to review and confirm — the event is **never auto-published**, keeping the organizer in control of venue, timing, and execution.
-
-```
-Requested → Collecting Demand → Threshold Reached → Organizer Confirms → Published
-```
-
-### 2. Similar-Event Conflict Detection
-Before a new event goes live, it's scored against existing nearby events on four weighted signals:
-
-| Signal | Weight |
+| Problem | Impact |
 |---|---|
-| Location match | 30 |
-| Time overlap | 30 |
-| Category match | 20 |
-| Title/description similarity | 20 |
+| Fragmented information | Events are difficult to discover in one place. |
+| Low visibility | Small community events can be lost among unrelated content. |
+| Scheduling conflicts | Similar events may compete for the same time, location, or audience. |
+| Unknown demand | Organizers have little structured information about what the community wants. |
 
-A score above the configurable threshold (default: 70) flags a potential conflict. This is **advisory only** — it never auto-cancels or blocks an event. The organizer always makes the final call.
+---
+
+## Solution
+
+EventHive combines an event bulletin board with demand-driven community coordination and intelligent analysis.
+
+<div align="center">
+
+**Discover → Create → Coordinate → Understand Demand → Avoid Conflicts**
+
+</div>
+
+### Core workflow
+
+1. Discover local events.
+2. Search, filter, and sort events.
+3. Open event details and view the location.
+4. RSVP using the **I'm Going** counter.
+5. Create events through a multi-step form.
+6. Detect potential event conflicts.
+7. Create Community Requests for events that do not yet exist.
+8. Let other users express interest.
+9. Use semantic and conversational intelligence to explore event information.
+
+---
 
 ## Features
 
-**Core MVP**
-- Event creation with validated fields
-- Event board — cards with title, date, location, category, RSVP count, and demand/conflict status
-- Search and filter by title, city, neighborhood, category, and date
-- Chronological date sorting, with expired events excluded
-- Category tags (Sports, Music, Food, Workshops, Meetups, Student Events, Garage Sale, Community)
-- "I'm Going" RSVP counter with duplicate prevention
-- Shareable per-event links (`/events/{eventId}`)
-- Automatic expiration — instant query-level filtering, backed by Firestore TTL for background cleanup
+### Event Discovery
 
-**Innovations**
-- Demand-driven event confirmation
-- Similar-event conflict detection with an advisory alert
+- Search by event information
+- Category filtering
+- Date filtering
+- City and neighborhood filtering
+- Date-based sorting
+- Event status and expiration handling
+- Responsive event cards
+- Event detail pages
+- Google Maps integration
 
-## Tech Stack
+### Event Creation
 
-| Layer | Technology |
-|---|---|
-| Frontend | React |
-| Backend | Node.js / Express, deployed on Google Cloud Run |
-| Database | Firestore |
-| Async processing | Pub/Sub *(used only where it provides real benefit — not added for its own sake)* |
-| AI (optional) | Vertex AI, for semantic conflict similarity *(P2 — only if time permits)* |
-| Observability | Cloud Logging + Cloud Monitoring |
+- Multi-step creation workflow
+- Basic information
+- Date and time
+- Location search
+- Map-based location support
+- Description and category
+- Review before publishing
+- Organizer ownership
 
-## Architecture
+### Coordination
 
-```
-User → HTTPS → Frontend (React)
-                  │
-                  ▼
-        Backend REST API — Cloud Run
-   (Event · Discovery · RSVP · Demand ·
-    Conflict · Lifecycle · Sharing modules)
-                  │
-      ┌───────────┼───────────────┐
-      ▼           ▼               ▼
-  Firestore   Vertex AI (opt.)  Cloud Logging
-  (events,    (semantic         → Cloud
-  requests,   similarity)       Monitoring
-  RSVPs,
-  conflicts)
-```
+- **I'm Going** RSVP counter
+- Calendar view
+- Shareable event links
+- Event expiration
+- Location visualization
+- Authentication-protected actions
 
-The backend is a single modular Cloud Run service rather than a microservices split — with a small team and a short build window, this keeps clean module boundaries without the deployment overhead of running several services.
+### Community Requests
 
-## Data Model
+Community Requests allow users to express demand for events before they exist.
 
-**`events/{eventId}`**
-`title, description, category, city, neighborhood, location, startTime, endTime, status, rsvpCount, demandCount, confirmationThreshold, conflictStatus, expireAt, organizerId, createdAt`
+Users can:
 
-**`eventRequests/{requestId}`**
-`eventType, description, city, neighborhood, requestedTime, interestCount, demandThreshold, status, createdAt`
+- Create an event request
+- Generate or improve request descriptions with AI assistance
+- Specify date, time, and location requirements
+- Express interest
+- Remove interest
+- View community demand
+- Edit requests they own
 
-**`eventRSVPs/{rsvpId}`**
-`eventId, userId` — prevents duplicate RSVPs per event
+### Conflict Intelligence
 
-**`eventConflicts/{conflictId}`**
-`conflictScore, reasons, status`
+EventHive evaluates multiple signals instead of relying only on title matching.
 
-## API Endpoints
+Signals include:
 
-```
-POST   /events                         Create an event
-GET    /events                         List events (sorted, non-expired)
-GET    /events/:id                     Get a single event
-GET    /events/calendar                Monthly calendar view
-GET    /events/search                  Search / filter events
-POST   /events/:id/rsvp                Increment RSVP count
-GET    /events/:id/conflicts           Check for potential conflicts
+- City similarity
+- Neighborhood similarity
+- Specific location similarity
+- Time overlap
+- Category similarity
+- Title similarity
 
-POST   /event-requests                 Create a demand request
-GET    /event-requests                 List demand requests
-POST   /event-requests/:id/interest    Register interest ("I'm in")
+The deterministic conflict threshold is:
+
+```text
+CONFLICT_THRESHOLD = 70
 ```
 
-## Getting Started
+A hard scheduling conflict is detected when the same specific venue has overlapping event times, regardless of category or title similarity.
 
-```bash
-# clone the repo
-git clone <repo-url>
-cd local-event-bulletin-board
+### Semantic Intelligence
 
-# backend
-cd server
-npm install
-# add your Firestore service account credentials — see .env.example
-npm run dev
+The backend contains services for:
 
-# frontend
-cd ../client
-npm install
-npm run dev
-```
+- Semantic event similarity
+- Activity-domain similarity
+- Semantic event discovery
+- Semantic conflict analysis
+- Semantic trend clustering
+- Event embeddings
+- Embedding validation and backfill
 
-### Deployment (Cloud Run)
+### Conversational Assistant
 
-```bash
-gcloud run deploy event-bulletin-board \
-  --source . \
-  --region <your-region> \
-  --allow-unauthenticated
-```
+The chatbot architecture includes:
 
-## Project Structure
+- Capability discovery
+- Upcoming-event lookup
+- Event detail lookup
+- Community-demand lookup
+- Deterministic trend intelligence
+- Conversation context
+- Orchestration
+- Conversational hardening
+- Gemini integration
 
-```
-├── client/                # React frontend
-│   ├── src/
-│   │   ├── components/    # Event cards, forms, calendar, filters
-│   │   ├── pages/
-│   │   └── api/           # API client calls
-├── server/                # Express backend on Cloud Run
-│   ├── routes/
-│   ├── modules/           # event, discovery, rsvp, demand, conflict, lifecycle
-│   └── firestore/         # DB access layer
-└── README.md
-```
-
-## Scope
-
-**In scope:** event board, creation, search, categories, calendar, RSVP, shareable links, expiration, demand-driven confirmation, conflict detection, GCP deployment.
-
-**Explicitly out of scope for this MVP:** paid ticketing, payment processing, reserved seating, QR-code ticket validation, full social-network features, advanced recommendation engine, historical timing prediction, mobile app.
-
-## Roadmap
-
-| Priority | Scope |
-|---|---|
-| P0 — MVP (built) | Event board, RSVP, search, categories, calendar, sharing, expiration, GCP deployment |
-| P1 — Core Innovation (built) | Demand-driven confirmation, conflict detection |
-| P2 — AI Enhancement (optional) | Semantic conflict similarity via Vertex AI |
-| P3 — Future Roadmap | Advanced recommendations, historical timing analysis, notifications, maps, organizer analytics, mobile app |
-
-## Team
-
-Built for Cognizant Hackathon 2026.
-
-| Area | Owner |
-|---|---|
-| Solution architecture | — |
-| Event board & UI | — |
-| Event creation & integration | — |
-| Event APIs & backend | — |
-| RSVP & lifecycle | — |
-| Search, categories & sharing | — |
-| GCP deployment | — |
+The architecture keeps deterministic business rules separate from AI-assisted functionality.
 
 ---
 
-*"The platform does more than publish events — it helps communities and organizers make better event decisions."*
+## Architecture
+
+```mermaid
+flowchart TB
+    U[Community User]
+
+    subgraph FE[Frontend]
+        R[React + Vite]
+        AUTH[Firebase Auth]
+        UI[Event Board / Calendar / Requests / Chat]
+        MAP[Google Maps]
+    end
+
+    subgraph BE[Backend]
+        API[Node.js + Express]
+        C[Controllers]
+        S[Business Services]
+        CHAT[Chatbot Orchestration]
+        CON[Conflict Intelligence]
+        SEM[Semantic Intelligence]
+        AI[AI Services]
+    end
+
+    subgraph GCP[Google Cloud / Firebase]
+        FS[(Cloud Firestore)]
+        VAI[Vertex AI / Gemini]
+        CS[Cloud Storage]
+        CR[Cloud Run]
+        MON[Cloud Monitoring]
+    end
+
+    U --> FE
+    R --> UI
+    AUTH --> R
+    MAP --> R
+    R --> API
+    API --> C
+    C --> S
+    S --> FS
+    S --> CON
+    S --> SEM
+    S --> AI
+    CHAT --> S
+    AI --> VAI
+    SEM --> VAI
+    S --> CS
+    API --> CR
+    CR --> FS
+    CR --> VAI
+    CR --> MON
+```
+
+---
+
+## Technology Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | React + Vite | Web application |
+| Backend | Node.js + Express | REST API and business logic |
+| Authentication | Firebase Authentication | User identity |
+| Database | Cloud Firestore | Application persistence |
+| Maps | Google Maps Platform | Location search and visualization |
+| AI | Vertex AI / Gemini | AI-assisted functionality |
+| Semantic Layer | Embeddings + vector-search infrastructure | Similarity and discovery |
+| Storage | Cloud Storage | Assets and files |
+| Backend Deployment | Cloud Run | Containerized API |
+| Frontend Hosting | Firebase Hosting | Web hosting |
+| Monitoring | Google Cloud Monitoring | Observability |
+| Testing | Node.js Test Runner | Automated tests |
+
+---
+
+## Application Architecture
+
+```text
+Browser
+   │
+   ▼
+React + Vite
+   │
+   ▼
+Express REST API
+   │
+   ├── Controllers
+   │      └── Services
+   │             ├── Event Services
+   │             ├── RSVP Services
+   │             ├── Community Request Services
+   │             ├── Conflict Intelligence
+   │             ├── Semantic Intelligence
+   │             ├── Trend Intelligence
+   │             └── Chatbot Orchestration
+   │
+   ├──────────────► Cloud Firestore
+   ├──────────────► Vertex AI / Gemini
+   ├──────────────► Cloud Storage
+   └──────────────► Google Maps services
+```
+
+---
+
+## Repository Structure
+
+```text
+local-event-bulletin-board/
+│
+├── backend/
+│   ├── docs/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── routes/
+│   │   ├── scripts/
+│   │   └── services/
+│   └── test/
+│
+├── docs/
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   ├── layouts/
+│   │   ├── navigation/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── state/
+│   │   ├── styles/
+│   │   └── utils/
+│   └── test/
+│
+├── cloudbuild.yaml
+├── firebase.json
+├── firestore.indexes.json
+├── firestore.rules
+├── package.json
+└── README.md
+```
+
+---
+
+## Data Model
+
+Primary Firestore collections:
+
+| Collection | Purpose |
+|---|---|
+| `events` | Published events |
+| `eventRequests` | Community event requests |
+| `eventRSVPs` | RSVP records |
+| `eventRequestInterest` | Interest in community requests |
+| `eventConflicts` | Detected conflicts |
+| `registrations` | Registration information |
+| `users` | User information |
+
+A typical event contains:
+
+```text
+eventId
+title
+description
+category
+city
+neighborhood
+location
+district
+startTime
+endTime
+status
+rsvpCount
+organizerId
+createdAt
+expireAt
+conflictStatus
+imageUrl
+latitude
+longitude
+```
+
+---
+
+## Conflict Detection Model
+
+### Deterministic scoring
+
+```text
+Same city              → 15
+Same neighborhood      → 10
+Same specific location →  5
+Time overlap            → 30
+Same category           → 20
+Title similarity        → up to 20
+```
+
+Potential conflicts are evaluated against the configured threshold.
+
+### Hard scheduling rule
+
+```text
+Same specific venue
+        +
+Overlapping time
+        =
+Hard scheduling conflict
+```
+
+This protects against direct venue-time collisions even when two events have unrelated titles.
+
+### Semantic layer
+
+Semantic similarity extends deterministic detection by recognizing related activities whose wording may be different.
+
+---
+
+## Community Demand
+
+Community Requests introduce a demand-driven workflow:
+
+```text
+User wants an event
+        │
+        ▼
+Create Community Request
+        │
+        ▼
+Other users express interest
+        │
+        ▼
+Demand accumulates
+        │
+        ▼
+Community / organizer understands demand
+```
+
+This changes the platform from simply listing existing events to also capturing unmet community demand.
+
+---
+
+## AI and Semantic Architecture
+
+```text
+                ┌──────────────────┐
+                │   EventHive UI   │
+                └────────┬─────────┘
+                         │
+                         ▼
+                ┌──────────────────┐
+                │ Express Backend  │
+                └────────┬─────────┘
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+   Deterministic      Semantic       Chatbot
+   Intelligence       Services      Orchestration
+          │              │              │
+          │              ▼              │
+          │        Embeddings           │
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                ┌──────────────────┐
+                │ Vertex AI/Gemini│
+                └──────────────────┘
+```
+
+AI is used as an assistance and intelligence layer while deterministic application logic remains responsible for predictable business rules.
+
+---
+
+## Google Cloud Architecture
+
+| Service | Role |
+|---|---|
+| Firebase Authentication | Authentication |
+| Cloud Firestore | Database |
+| Firebase Hosting | Frontend hosting |
+| Cloud Run | Backend deployment |
+| Vertex AI | AI and semantic capabilities |
+| Cloud Storage | File and asset storage |
+| Google Maps Platform | Maps and location |
+| Cloud Monitoring | Monitoring |
+
+Production flow:
+
+```text
+User Browser
+     │
+     ├────────► Firebase Hosting
+     │              │
+     │              ▼
+     │          React App
+     │              │
+     │              ▼
+     │         Cloud Run API
+     │              │
+     │        ┌─────┼─────┐
+     │        ▼     ▼     ▼
+     │   Firestore Vertex Storage
+     │             AI
+     │
+     └────────► Google Maps
+```
+
+---
+
+## Live Application
+
+<div align="center">
+
+<a href="https://eventhive.web.app">
+  <strong>EventHive — Live Application</strong>
+</a>
+
+<br><br>
+
+<a href="https://local-event-backend-33286237488.asia-south1.run.app">
+  <strong>Backend — Cloud Run</strong>
+</a>
+
+<br><br>
+
+<a href="https://github.com/VishnuBharathi11/local-event-bulletin-board">
+  <strong>GitHub Repository</strong>
+</a>
+
+</div>
+
+---
+
+## API Structure
+
+| Area | Route |
+|---|---|
+| Health | `/api/health` |
+| Authentication | `/api/auth/*` |
+| Events | `/api/events/*` |
+| Event Requests | `/api/event-requests/*` |
+| RSVP | `/api/rsvp/*` |
+| AI | `/api/ai/*` |
+| Chatbot | `/api/chatbot/*` |
+| Location | `/api/location/*` |
+
+The chatbot foundation includes capabilities and application-data tools for upcoming events, event details, and community demand.
+
+---
+
+## Testing
+
+Run backend tests:
+
+```bash
+node --test backend/test/*.test.js
+```
+
+Run frontend tests:
+
+```bash
+node --test frontend/test/*.test.js
+```
+
+Build the production frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+Validated implementation:
+
+```text
+Backend tests       → 76 passing
+Frontend tests      → 25 passing
+Production build    → successful
+```
+
+---
+
+## Environment Configuration
+
+Environment templates are provided at:
+
+```text
+backend/.env.example
+frontend/.env.example
+```
+
+Configure environment-specific values for:
+
+- Firebase
+- Google Maps
+- Google Cloud
+- Vertex AI
+- Backend API endpoints
+
+Do not commit private keys, service-account credentials, or other secrets.
+
+---
+
+## Security
+
+The application uses:
+
+- Firebase Authentication
+- Protected backend routes
+- Owner-only modification of owned resources
+- Server-side business logic
+- Environment-based secrets
+- Restricted Google API keys
+- Separation of public client configuration from backend credentials
+
+---
+
+## Deployment
+
+### Frontend
+
+Build:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+Deploy through the configured Firebase Hosting workflow.
+
+### Backend
+
+Install dependencies:
+
+```bash
+cd backend
+npm install
+```
+
+The backend is containerized with the provided `Dockerfile` and deployed to Google Cloud Run.
+
+---
+
+## Project Evolution
+
+```text
+Initial Prototype
+       │
+       ▼
+Event Board
+       │
+       ▼
+Event Creation + RSVP
+       │
+       ▼
+Community Requests
+       │
+       ▼
+Deterministic Conflict Detection
+       │
+       ▼
+Chatbot Foundation
+       │
+       ▼
+Trend Intelligence
+       │
+       ▼
+Semantic Intelligence
+       │
+       ▼
+AI-Assisted Event Creation
+       │
+       ▼
+Integrated Web Application
+```
+
+The current `main` branch is the web-first implementation. The legacy Android/Kotlin implementation has been removed from the current source tree.
+
+---
+
+## Hackathon Innovation
+
+### Demand-driven coordination
+
+Community Requests capture demand before an event exists.
+
+### Multi-signal conflict detection
+
+Conflict analysis combines time, location, category, city, neighborhood, and title signals.
+
+### Hard scheduling protection
+
+Same-venue overlapping events are treated as hard conflicts.
+
+### Semantic intelligence
+
+Embedding-based services support similarity, discovery, conflict analysis, and trend clustering.
+
+### Explainable architecture
+
+Deterministic metrics provide predictable behavior while AI is used for assistance and explanation.
+
+### Conversational access
+
+The chatbot provides a natural-language interface over EventHive capabilities and event intelligence.
+
+---
+
+## Demo Flow
+
+```text
+01  Open EventHive
+02  Discover events
+03  Search and filter
+04  Open event details
+05  View map / calendar
+06  Create an event
+07  Demonstrate conflict intelligence
+08  Create a Community Request
+09  Demonstrate community interest
+10  Demonstrate conversational intelligence
+```
+
+---
+
+## Team Architecture
+
+The project uses responsibility-based ownership across:
+
+- Solution Architecture & Overall Integration
+- Event Discovery & Experience
+- Event Creation & Workflow
+- Event Data & Lifecycle
+- Community Requests & Demand
+- AI & Semantic Intelligence
+- Conversational Intelligence
+- Discovery & Sharing
+
+---
+
+## Project Status
+
+<div align="center">
+
+**Integrated Web Application**
+
+The current `main` branch contains the cleaned EventHive web implementation with React, Node.js/Express, Firebase, Google Cloud, AI, semantic intelligence, and automated tests.
+
+</div>
+
+---
+
+## License
+
+This repository was developed as a hackathon project.
+
+If an open-source license is added later, this section should be updated accordingly.
+
+---
+
+<div align="center">
+
+## EventHive
+
+**Discover local events. Create community experiences. Coordinate intelligently.**
+
+<br>
+
+<a href="https://eventhive.web.app">Live Application</a>
+&nbsp;·&nbsp;
+<a href="https://github.com/VishnuBharathi11/local-event-bulletin-board">GitHub</a>
+
+</div>
