@@ -1,0 +1,45 @@
+/* Request-card footer layout: keep demand text intact and actions aligned. */
+.request-card .event-card__footer {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.request-card .event-card__rsvp {
+  min-width: 0;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.request-card .event-card__actions {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.request-card .event-card__rsvp-action {
+  min-width: 0;
+}
+
+.request-card .event-card__rsvp-action .secondary-link,
+.request-card .event-card__rsvp-action .primary-button,
+.request-card .event-card__rsvp-action .secondary-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .request-card .event-card__actions {
+    justify-content: stretch;
+  }
+
+  .request-card .event-card__rsvp-action {
+    flex: 1 1 auto;
+  }
+
+  .request-card .event-card__rsvp-action .secondary-link,
+  .request-card .event-card__rsvp-action .primary-button,
+  .request-card .event-card__rsvp-action .secondary-button {
+    width: 100%;
+  }
+}
