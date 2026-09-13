@@ -26,6 +26,7 @@ import {
   confirmEventRequest,
   confirmEventRequestAnyway,
   declineEventRequest,
+  deleteEventRequest,
   expressInterest,
   getEventRequestById,
   getInterestStatus,
@@ -162,6 +163,23 @@ export default function EventRequestDetailsPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!authenticated || action === 'delete') return
+    const confirmed = window.confirm('Are you sure you want to delete this event request? This action cannot be undone.')
+    if (!confirmed) return
+
+    setAction('delete')
+    setError(null)
+    try {
+      await deleteEventRequest(requestId)
+      navigate('/community-requests', { replace: true })
+    } catch (actionError) {
+      setError(actionError.message)
+    } finally {
+      setAction(null)
+    }
+  }
+
   async function handleShare() {
     try {
       await navigator.clipboard.writeText(window.location.href)
@@ -186,7 +204,6 @@ export default function EventRequestDetailsPage() {
   const hasReachedThreshold = demandCount >= demandThreshold && demandThreshold > 0
   const canReview = isOrganizer && (request.status === 'THRESHOLD_REACHED' || hasReachedThreshold) && (request.status === 'COLLECTING_DEMAND' || request.status === 'THRESHOLD_REACHED')
 
-  // Lifecycle node statuses
   const isCollecting = request.status === 'COLLECTING_DEMAND'
   const isThresholdMet = request.status === 'THRESHOLD_REACHED' || hasReachedThreshold
   const isConfirmed = request.status === 'CONFIRMED'
@@ -207,13 +224,11 @@ export default function EventRequestDetailsPage() {
   return (
     <section className="event-request-view-page">
       <div className="event-request-view-card">
-        {/* Top Back Link */}
         <Link className="request-view-back-link" to="/community-requests">
           <ArrowLeft size={16} strokeWidth={2.2} />
           <span>Back to Community Requests</span>
         </Link>
 
-        {/* Badges & Action Buttons */}
         <div className="request-view-top-row">
           <div className="request-view-badges">
             <span className="request-badge request-badge--category">
@@ -226,22 +241,31 @@ export default function EventRequestDetailsPage() {
           </div>
 
           <div className="request-view-actions">
-            {isOrganizer && (
-              <Link
-                to={`/community-requests/edit/${encodeURIComponent(requestId)}`}
-                className="request-action-btn request-action-btn--edit"
-              >
-                <Edit3 size={15} strokeWidth={2.2} />
-                <span>Edit</span>
-              </Link>
+            {isOrganizer && !isConfirmed && (
+              <>
+                <Link
+                  to={`/community-requests/edit/${encodeURIComponent(requestId)}`}
+                  className="request-action-btn request-action-btn--edit"
+                >
+                  <Edit3 size={15} strokeWidth={2.2} />
+                  <span>Edit</span>
+                </Link>
+                <button
+                  type="button"
+                  className="button-danger"
+                  onClick={handleDelete}
+                  disabled={action !== null}
+                  style={{ minHeight: '38px', padding: '8px 14px', fontSize: '13px' }}
+                >
+                  <span>{action === 'delete' ? 'Deleting…' : 'Delete'}</span>
+                </button>
+              </>
             )}
           </div>
         </div>
 
-        {/* Event Request Title */}
         <h1 className="request-view-title">{request.title}</h1>
 
-        {/* Meta Info Row */}
         <div className="request-view-meta-row">
           <div className="request-view-meta-item">
             <User size={15} strokeWidth={2} />
@@ -253,11 +277,8 @@ export default function EventRequestDetailsPage() {
           </div>
         </div>
 
-        {/* Two-Column Grid */}
         <div className="request-view-grid">
-          {/* Main Left Column */}
           <div className="request-view-main-column">
-            {/* Large Event Request Image */}
             <div className="request-view-image-wrap">
               <img
                 src={request.imageUrl || defaultHeroImage}
@@ -266,14 +287,12 @@ export default function EventRequestDetailsPage() {
               />
             </div>
 
-            {/* Event Description (if present) */}
             {request.description && (
               <div className="request-view-desc-box">
                 <p>{request.description}</p>
               </div>
             )}
 
-            {/* Community Interest Section */}
             <div className="request-view-section">
               <div className="request-view-section-header">
                 <Users size={17} className="request-view-section-icon" strokeWidth={2.2} />
@@ -310,7 +329,6 @@ export default function EventRequestDetailsPage() {
               </div>
             </div>
 
-            {/* Request Status Lifecycle Section */}
             <div className="request-view-section">
               <div className="request-view-section-header">
                 <RotateCw size={17} className="request-view-section-icon" strokeWidth={2.2} />
@@ -319,7 +337,6 @@ export default function EventRequestDetailsPage() {
 
               <div className="request-lifecycle-card">
                 <div className="request-lifecycle-flow">
-                  {/* Stage 1: Collecting Demand */}
                   <div className="request-lifecycle-node">
                     <div className={`request-lifecycle-icon ${stage1Active ? 'request-lifecycle-icon--active' : stage1Completed ? 'request-lifecycle-icon--completed' : ''}`}>
                       <Users size={16} strokeWidth={2.2} />
@@ -336,7 +353,6 @@ export default function EventRequestDetailsPage() {
                     <ArrowRight size={15} />
                   </div>
 
-                  {/* Stage 2: Threshold Reached */}
                   <div className="request-lifecycle-node">
                     <div className={`request-lifecycle-icon ${stage2Active ? 'request-lifecycle-icon--active' : stage2Completed ? 'request-lifecycle-icon--completed' : ''}`}>
                       <Hourglass size={16} strokeWidth={2.2} />
@@ -353,7 +369,6 @@ export default function EventRequestDetailsPage() {
                     <ArrowRight size={15} />
                   </div>
 
-                  {/* Stage 3: Organizer Review */}
                   <div className="request-lifecycle-node">
                     <div className={`request-lifecycle-icon ${stage3Active ? 'request-lifecycle-icon--active' : stage3Completed ? 'request-lifecycle-icon--completed' : ''}`}>
                       <UserCheck size={16} strokeWidth={2.2} />
@@ -370,7 +385,6 @@ export default function EventRequestDetailsPage() {
                     <ArrowRight size={15} />
                   </div>
 
-                  {/* Stage 4: Confirmed */}
                   <div className="request-lifecycle-node">
                     <div className={`request-lifecycle-icon ${stage4Active ? 'request-lifecycle-icon--active' : stage4Completed ? 'request-lifecycle-icon--completed' : isDeclined ? 'request-lifecycle-icon--declined' : ''}`}>
                       <CheckCircle2 size={16} strokeWidth={2.2} />
@@ -386,7 +400,6 @@ export default function EventRequestDetailsPage() {
               </div>
             </div>
 
-            {/* Organizer Action Required Section (if eligible) */}
             {canReview && (
               <section className="request-details__organizer" style={{ marginTop: '20px', padding: '18px 22px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '14px' }}>
                 <p className="eyebrow" style={{ color: '#ea580c', margin: '0 0 4px', fontSize: '11px', fontWeight: 800 }}>ORGANIZER ACTION REQUIRED</p>
@@ -404,9 +417,7 @@ export default function EventRequestDetailsPage() {
             )}
           </div>
 
-          {/* Right Sidebar Column */}
           <div className="request-view-sidebar-column">
-            {/* Request Information Card */}
             <div className="request-info-sidebar-card">
               <div className="request-info-sidebar-header">
                 <Info size={17} className="request-info-icon" />
@@ -414,7 +425,6 @@ export default function EventRequestDetailsPage() {
               </div>
 
               <div className="request-info-list">
-                {/* Category */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <LayoutGrid size={15} strokeWidth={2.2} />
@@ -425,7 +435,6 @@ export default function EventRequestDetailsPage() {
                   </div>
                 </div>
 
-                {/* City */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <Building2 size={15} strokeWidth={2.2} />
@@ -436,7 +445,6 @@ export default function EventRequestDetailsPage() {
                   </div>
                 </div>
 
-                {/* Neighborhood */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <MapPin size={15} strokeWidth={2.2} />
@@ -447,7 +455,6 @@ export default function EventRequestDetailsPage() {
                   </div>
                 </div>
 
-                {/* Location */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <MapPin size={15} strokeWidth={2.2} />
@@ -458,7 +465,6 @@ export default function EventRequestDetailsPage() {
                   </div>
                 </div>
 
-                {/* Proposed Date */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <Calendar size={15} strokeWidth={2.2} />
@@ -469,7 +475,6 @@ export default function EventRequestDetailsPage() {
                   </div>
                 </div>
 
-                {/* Proposed Time */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <Clock size={15} strokeWidth={2.2} />
@@ -480,7 +485,6 @@ export default function EventRequestDetailsPage() {
                   </div>
                 </div>
 
-                {/* Created On */}
                 <div className="request-info-row">
                   <div className="request-info-icon-box">
                     <PenLine size={15} strokeWidth={2.2} />
@@ -493,7 +497,6 @@ export default function EventRequestDetailsPage() {
               </div>
             </div>
 
-            {/* Interest CTA Card */}
             {!isOrganizer && (
               <div className="request-cta-card">
                 <p className="request-cta-text">
