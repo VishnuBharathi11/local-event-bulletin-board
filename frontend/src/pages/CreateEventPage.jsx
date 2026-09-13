@@ -24,6 +24,7 @@ function initialForm() {
     location: '',
     city: '',
     neighborhood: '',
+    maxParticipants: '',
     imageUrl: null,
     latitude: null,
     longitude: null,
@@ -89,6 +90,7 @@ export default function CreateEventPage() {
           location: data.location || '',
           city: data.city || '',
           neighborhood: data.neighborhood || '',
+          maxParticipants: data.maxParticipants ?? '',
           imageUrl: data.imageUrl || null,
           latitude: data.latitude || null,
           longitude: data.longitude || null,
@@ -156,6 +158,11 @@ export default function CreateEventPage() {
       if (!form.category) {
         stepErrors.category = 'Please select a category.'
       }
+
+      const maxParticipants = Number(form.maxParticipants)
+      if (!form.maxParticipants || !Number.isInteger(maxParticipants) || maxParticipants <= 0) {
+        stepErrors.maxParticipants = 'Maximum participants must be a positive whole number.'
+      }
     }
 
     setErrors(stepErrors)
@@ -211,6 +218,7 @@ export default function CreateEventPage() {
         neighborhood: form.neighborhood ? form.neighborhood.trim() : '',
         latitude: form.latitude,
         longitude: form.longitude,
+        maxParticipants: Number(form.maxParticipants),
         startTime,
         endTime,
         status: 'PUBLISHED',
@@ -242,6 +250,7 @@ export default function CreateEventPage() {
           neighborhood: form.neighborhood ? form.neighborhood.trim() : '',
           latitude: form.latitude,
           longitude: form.longitude,
+          maxParticipants: Number(form.maxParticipants),
           startTime,
           endTime,
           imageUrl: form.imageUrl,
