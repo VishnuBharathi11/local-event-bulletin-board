@@ -8,6 +8,7 @@ import { useEventRequests } from '../hooks/useEventRequests.js'
 import '../styles/communityRequests.css'
 import '../styles/communityRequestsUi06.css'
 import '../styles/eventRequestUi07.css'
+import '../styles/communityRequestCardAlignment.css'
 
 export default function CommunityRequestsPage() {
   const { status, requests, reload, interestedIds, interestLoadingId, interestError, toggleInterest } = useEventRequests()
