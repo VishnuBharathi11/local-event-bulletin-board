@@ -95,6 +95,17 @@ async function rsvpToEvent(eventId, userId) {
       eventSnapshot.get('rsvpCount') || 0,
     )
 
+    const maxParticipants = Number(
+      eventSnapshot.get('maxParticipants') || 0,
+    )
+
+    if (maxParticipants > 0 && currentCount >= maxParticipants) {
+      throw Object.assign(
+        new Error('This event has reached its maximum participant limit.'),
+        { code: 'EVENT_FULL' },
+      )
+    }
+
     transaction.set(rsvpRef, {
       rsvpId: getRSVPId(eventId, userId),
       eventId,
