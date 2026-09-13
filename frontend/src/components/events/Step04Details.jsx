@@ -66,6 +66,24 @@ export default function Step04Details({ form, update, errors = {} }) {
           {errors.category && <span className="form-field-error">{errors.category}</span>}
         </div>
 
+        <div className="form-group">
+          <label htmlFor="event-max-participants">
+            Maximum Participants <span className="required-star">*</span>
+          </label>
+          <input
+            id="event-max-participants"
+            type="number"
+            min="1"
+            step="1"
+            inputMode="numeric"
+            placeholder="e.g. 50"
+            value={form.maxParticipants ?? ''}
+            onChange={(e) => update('maxParticipants', e.target.value)}
+            className={`form-input ${errors.maxParticipants ? 'form-input--error' : ''}`}
+          />
+          {errors.maxParticipants && <span className="form-field-error">{errors.maxParticipants}</span>}
+        </div>
+
         {/* Image Upload Box */}
         <div className="form-group">
           <label htmlFor="event-banner-upload">
