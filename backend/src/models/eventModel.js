@@ -12,7 +12,7 @@ const EVENT_CATEGORIES = Object.freeze([
 
 const DEFAULT_EVENT = Object.freeze({
   eventId: '', title: '', description: '', category: '', city: '', neighborhood: '', location: '', district: '',
-  startTime: 0, endTime: 0, status: 'DRAFT', rsvpCount: 0, organizerId: '', createdAt: 0, expireAt: 0, conflictStatus: 'NONE',
+  startTime: 0, endTime: 0, status: 'DRAFT', rsvpCount: 0, maxParticipants: 0, organizerId: '', createdAt: 0, expireAt: 0, conflictStatus: 'NONE',
   imageUrl: '',
   latitude: null,
   longitude: null,
@@ -27,7 +27,7 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
     eventId: String(eventId || ''), title: input.title ?? DEFAULT_EVENT.title, description: input.description ?? DEFAULT_EVENT.description,
     category: input.category ?? DEFAULT_EVENT.category, city: input.city ?? DEFAULT_EVENT.city, neighborhood: input.neighborhood ?? DEFAULT_EVENT.neighborhood,
     location: input.location ?? DEFAULT_EVENT.location, district: input.district ?? DEFAULT_EVENT.district, startTime: input.startTime ?? DEFAULT_EVENT.startTime, endTime: input.endTime ?? DEFAULT_EVENT.endTime,
-    status: input.status ?? DEFAULT_EVENT.status, rsvpCount: input.rsvpCount ?? DEFAULT_EVENT.rsvpCount, organizerId: input.organizerId ?? DEFAULT_EVENT.organizerId,
+    status: input.status ?? DEFAULT_EVENT.status, rsvpCount: input.rsvpCount ?? DEFAULT_EVENT.rsvpCount, maxParticipants: input.maxParticipants ?? DEFAULT_EVENT.maxParticipants, organizerId: input.organizerId ?? DEFAULT_EVENT.organizerId,
     createdAt: input.createdAt ?? DEFAULT_EVENT.createdAt, expireAt: input.expireAt ?? DEFAULT_EVENT.expireAt, conflictStatus: input.conflictStatus ?? DEFAULT_EVENT.conflictStatus,
     imageUrl: input.imageUrl ?? DEFAULT_EVENT.imageUrl,
     latitude: input.latitude !== undefined && input.latitude !== null ? Number(input.latitude) : null,
@@ -38,6 +38,7 @@ function normalizeEvent(input = {}, eventId = input.eventId || '') {
   for (const field of stringFields) if (typeof event[field] !== 'string') throw new TypeError(`${field} must be a string`)
   for (const field of ['startTime', 'endTime', 'createdAt', 'expireAt']) if (!isSafeInteger(event[field])) throw new TypeError(`${field} must be a safe integer`)
   if (!Number.isInteger(event.rsvpCount)) throw new TypeError('rsvpCount must be an integer')
+  if (!Number.isInteger(event.maxParticipants) || event.maxParticipants < 0) throw new TypeError('maxParticipants must be a non-negative integer')
   if (!EVENT_STATUSES.includes(event.status)) throw new TypeError(`status must be one of: ${EVENT_STATUSES.join(', ')}`)
 
   if (event.latitude !== null && (!Number.isFinite(event.latitude) || event.latitude < -90 || event.latitude > 90)) {
@@ -61,6 +62,8 @@ function validateEventForCreation(event) {
   if (normalized.endTime <= normalized.startTime) throw new TypeError('endTime must be after startTime')
   if (normalized.endTime <= Date.now()) throw new TypeError('event must end in the future')
   if (normalized.expireAt !== normalized.endTime) throw new TypeError('expireAt must match endTime')
+  if (normalized.maxParticipants <= 0) throw new TypeError('maxParticipants must be greater than 0')
+  if (normalized.maxParticipants < normalized.rsvpCount) throw new TypeError('maxParticipants cannot be less than rsvpCount')
   return normalized
 }
 
