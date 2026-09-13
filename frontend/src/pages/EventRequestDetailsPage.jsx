@@ -241,20 +241,22 @@ export default function EventRequestDetailsPage() {
           </div>
 
           <div className="request-view-actions">
-            {isOrganizer && !isConfirmed && (
+            {isOrganizer && (
               <>
-                <Link
-                  to={`/community-requests/edit/${encodeURIComponent(requestId)}`}
-                  className="request-action-btn request-action-btn--edit"
-                >
-                  <Edit3 size={15} strokeWidth={2.2} />
-                  <span>Edit</span>
-                </Link>
+                {!isConfirmed && (
+                  <Link
+                    to={`/community-requests/edit/${encodeURIComponent(requestId)}`}
+                    className="request-action-btn request-action-btn--edit"
+                  >
+                    <Edit3 size={15} strokeWidth={2.2} />
+                    <span>Edit</span>
+                  </Link>
+                )}
                 <button
                   type="button"
                   className="button-danger"
                   onClick={handleDelete}
-                  disabled={action !== null}
+                  disabled={action !== null || isConfirmed}
                   style={{ minHeight: '38px', padding: '8px 14px', fontSize: '13px' }}
                 >
                   <span>{action === 'delete' ? 'Deleting…' : 'Delete'}</span>
